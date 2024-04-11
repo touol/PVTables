@@ -1,0 +1,32 @@
+{
+  "name": "pvtables",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "Alexandr Tuniekov",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.5.3"
+  },
+  "peerDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "axios": "^1.6.2",
+    "primeicons": "^6.0.1",
+    "primevue": "^3.45.0",
+    "vue": "^3.4.21"
+  }
+}
