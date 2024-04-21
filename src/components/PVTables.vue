@@ -72,7 +72,10 @@
             <GTSAutocomplete 
               :table="col.table" 
               v-model:id="data[field]" 
-              @keydown.enter="onCellEditComplete({ data, field, newValue: data[field] })"/>
+              @set-value="onCellEditComplete({ data, field, newValue: data[field] })"
+            />
+              <!-- @blur="onCellEditComplete({ data, field, newValue: data[field] })"
+              @option-select="onCellEditComplete({ data, field, newValue: data[field] })" -->
           </template>
         </Column>
         <Column

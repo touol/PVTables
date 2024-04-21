@@ -32,12 +32,13 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:id"]);
+const emit = defineEmits(['update:id', 'set-value']);
 
 const selectedItem = ref({});
 
 const onAutocompleteItemSelect = ($evt) => {
   model.value = $evt.value.id;
+  emit('set-value')
 }
 
 const items = ref([]);
@@ -79,9 +80,7 @@ async function getOptionById(id) {
 const falsyModelValues = [null, '', '0']
 
 onBeforeMount(async () => {
-  if (falsyModelValues.includes(model.value)) {
-    model.value = "";
-  } else {
+  if (!falsyModelValues.includes(model.value)) {
     const option = await getOptionById(model.value);
     selectedItem.value = option;
   }
@@ -98,5 +97,7 @@ const onUserInputEnd = async ($evt) => {
 
   selectedItem.value = option
   model.value = userInput
+
+  emit('set-value')
 }
 </script>
