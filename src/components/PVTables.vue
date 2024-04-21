@@ -69,7 +69,10 @@
         </Column>
         <Column v-else-if="col.type == 'autocomplete'" :field="col.field" :header="col.label" style="min-width: 350px">
           <template #body="{ data, field }"> 
-            <GTSAutocomplete :table="col.table" v-model:id="data[field]"/>
+            <GTSAutocomplete 
+              :table="col.table" 
+              v-model:id="data[field]" 
+              @keydown.enter="onCellEditComplete({ data, field, newValue: data[field] })"/>
           </template>
         </Column>
         <Column
@@ -614,7 +617,6 @@ const refresh = () => {
 };
 defineExpose({ refresh });
 const onCellEditComplete = async (event) => {
-  console.log('onCellEditComplete')
   let { data, newValue, field } = event;
 
   try {
