@@ -71,11 +71,11 @@
           <template #body="{ data, field }"> 
             <GTSAutocomplete 
               :table="col.table" 
-              v-model:id="data[field]" 
+              v-model:id="data[field]"
+              :options="autocompleteSettings[field].rows"
               @set-value="onCellEditComplete({ data, field, newValue: data[field] })"
+              @error="showErrorToast"
             />
-              <!-- @blur="onCellEditComplete({ data, field, newValue: data[field] })"
-              @option-select="onCellEditComplete({ data, field, newValue: data[field] })" -->
           </template>
         </Column>
         <Column
@@ -88,24 +88,18 @@
         <template v-if="col.type == 'decimal'" #body="{ data, field }">
           {{ replace_point(data[field]) }}
         </template>
-        <template v-else-if="col.type == 'autocomplete'" #body> 
-          <GTSAutocomplete :table="col.table"></GTSAutocomplete>
+        <template v-else-if="col.type == 'boolean'" #body="{ data, field }">
+          <InputSwitch v-model="data[field]" />
         </template>
-          <template v-else-if="col.type == 'boolean'" #body="{ data, field }">
-            <InputSwitch v-model="data[field]" />
+          <template v-else #body="{ data, field }">
+            {{ data[field] }}
           </template>
-          <!-- <template > -->
-            <!-- </template> -->
-            <template v-else #body="{ data, field }">
-              {{ data[field] }}
-            </template>
-            
-            <template v-if="col.type == 'textarea'" #editor="{ data, field }">
-              <Textarea v-model="data[field]" rows="1" />
-            </template>
-            <template v-else-if="col.type == 'number'" #editor="{ data, field }">
-              <InputNumber v-model="data[field]" />
-            </template>
+          <template v-if="col.type == 'textarea'" #editor="{ data, field }">
+            <Textarea v-model="data[field]" rows="1" />
+          </template>
+          <template v-else-if="col.type == 'number'" #editor="{ data, field }">
+            <InputNumber v-model="data[field]" />
+          </template>
           <template v-else-if="col.type == 'decimal'" #editor="{ data, field }">
             <InputNumber
               v-model="data[field]"
@@ -408,6 +402,7 @@ onMounted(async () => {
         cols.push(fields[field]);
         filter_fields.push(field);
       }
+
       globalFilterFields.value = filter_fields;
       initFilters();
 
@@ -544,6 +539,8 @@ const setExpandedRow = async (event, tmpt) => {
 //     }
 //   }
 // }
+const autocompleteSettings = ref({})
+
 const loadLazyData = (event) => {
   loading.value = true;
   lazyParams.value = {
@@ -603,6 +600,7 @@ const loadLazyData = (event) => {
         });
       }
       lineItems.value = rows;
+      autocompleteSettings.value = response.data.data.autocomplete
       totalRecords.value = response.data.data.total;
       loading.value = false;
     })
@@ -857,4 +855,18 @@ const onRowSelect = () => {
 const onRowUnselect = () => {
   selectAll.value = false;
 };
+
+const showErrorToast = ({ 
+  detail, 
+  severity = 'error', 
+  summary = 'Ошибка', 
+  life = 3000
+}) => {
+  mytoast.add({
+    severity,
+    summary,
+    life,
+    detail
+  });
+}
 </script>

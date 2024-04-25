@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
+  "peerDependencies": {
     "axios": "^1.6.8",
     "primeicons": "^7.0.0",
     "primevue": "^3.51.0",

@@ -1,6 +1,6 @@
 <template>
   <InputGroup>
-    <InputText v-model="model" @blur="onUserInputEnd" @keydown.enter="onUserInputEnd"/>
+    <InputText v-model="model" @blur="onUserInputEnd" @keydown.enter="onUserInputEnd" @focus="idCache = model" class="gts-ac__id-field"/>
     <AutoComplete
       v-model="selectedItem"
       @item-select="onAutocompleteItemSelect"
@@ -8,15 +8,15 @@
       @complete="search"
       option-label="content"
       :suggestions="items"
-    >
-    </AutoComplete>
+      class="gts-ac__search-field"
+    />
   </InputGroup>
 </template>
 
 <script setup>
 import AutoComplete from "primevue/autocomplete";
 import InputGroup from "primevue/inputgroup";
-import { onBeforeMount, ref } from "vue";
+import { ref } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
 
@@ -30,15 +30,20 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  options: {
+    type: Object,
+    default: () => []
+  }
 });
 
-const emit = defineEmits(['update:id', 'set-value']);
+const emit = defineEmits(['update:id', 'set-value', 'error']);
 
 const selectedItem = ref({});
+const idCache = ref('')
 
-const onAutocompleteItemSelect = ($evt) => {
-  model.value = $evt.value.id;
-  emit('set-value')
+const [ option ] = props.options.filter((option) => model.value === option.id)
+if (option) {
+  selectedItem.value = option
 }
 
 const items = ref([]);
@@ -56,9 +61,13 @@ const search = async ({ query }) => {
       }
     );
 
+    if (!response.data.success) {
+      throw new Error(response.data.message)
+    }
+
     items.value = response.data.data.rows;
-  } catch (e) {
-    console.log("Autocomplete search error: \n", e);
+  } catch (error) {
+    emit('error', { detail: error.message })
   }
 };
 
@@ -73,31 +82,55 @@ async function getOptionById(id) {
       },
     }
   );
+    
+  if (!response.data.success) {
+    throw new Error(response.data.message)
+  }
 
   return response.data.data.rows[0] || null;
 }
 
-const falsyModelValues = [null, '', '0']
-
-onBeforeMount(async () => {
-  if (!falsyModelValues.includes(model.value)) {
-    const option = await getOptionById(model.value);
-    selectedItem.value = option;
-  }
-});
-
 const onUserInputEnd = async ($evt) => {
   const userInput = $evt.target.value
 
-  let option = {}
-
-  if (userInput !== '' && userInput !== '0') {
-    option = await getOptionById($evt.target.value);
+  if (userInput === '' || userInput === '0') {
+    model.value = userInput
+    selectedItem.value = {}
+    return
   }
 
-  selectedItem.value = option
-  model.value = userInput
+  try {
+    const option = await getOptionById($evt.target.value);
+
+    if (!option) {
+      emit('error', { detail: 'Отсутствует такой ID' })
+      model.value = idCache.value
+      return
+    }
+
+    selectedItem.value = option
+    model.value = userInput
+  } catch (error) {
+    emit('error', { detail: error.message })
+  }
 
   emit('set-value')
 }
+
+const onAutocompleteItemSelect = ($evt) => {
+  model.value = $evt.value.id;
+  emit('set-value')
+}
 </script>
+
+
+<style>
+  .gts-ac__id-field {
+    flex: 0 1 20%;
+  }
+
+  .gts-ac__search-field input{
+    border-top-right-radius: unset;
+    border-bottom-right-radius: unset;
+  }
+</style>
