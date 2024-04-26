@@ -67,30 +67,37 @@
             {{ data[field] }}
           </template>
         </Column>
-        <Column v-else-if="col.type == 'autocomplete'" :field="col.field" :header="col.label" style="min-width: 350px">
-          <template #body="{ data, field }"> 
-            <GTSAutocomplete 
-              :table="col.table" 
+        <Column
+          v-else-if="col.type == 'autocomplete'"
+          :field="col.field"
+          :header="col.label"
+          style="min-width: 350px"
+        >
+          <template #body="{ data, field }">
+            <GTSAutocomplete
+              :table="col.table"
               v-model:id="data[field]"
               :options="autocompleteSettings[field].rows"
-              @set-value="onCellEditComplete({ data, field, newValue: data[field] })"
+              @set-value="
+                onCellEditComplete({ data, field, newValue: data[field] })
+              "
               @error="showErrorToast"
             />
           </template>
         </Column>
         <Column
-        v-else
-        :field="col.field"
-        :header="col.label"
-        style="min-width: 12rem"
-        sortable
+          v-else
+          :field="col.field"
+          :header="col.label"
+          style="min-width: 12rem"
+          sortable
         >
-        <template v-if="col.type == 'decimal'" #body="{ data, field }">
-          {{ replace_point(data[field]) }}
-        </template>
-        <template v-else-if="col.type == 'boolean'" #body="{ data, field }">
-          <InputSwitch v-model="data[field]" />
-        </template>
+          <template v-if="col.type == 'decimal'" #body="{ data, field }">
+            {{ replace_point(data[field]) }}
+          </template>
+          <template v-else-if="col.type == 'boolean'" #body="{ data, field }">
+            <InputSwitch v-model="data[field]" />
+          </template>
           <template v-else #body="{ data, field }">
             {{ data[field] }}
           </template>
@@ -105,26 +112,26 @@
               v-model="data[field]"
               :minFractionDigits="col.FractionDigits"
               :maxFractionDigits="col.FractionDigits"
-              />
-            </template>
-            <template v-else-if="col.type == 'boolean'" #editor="{ data, field }">
-              <InputSwitch v-model="data[field]" />
-            </template>
-            <template v-else #editor="{ data, field }">
-              <InputText v-model="data[field]" />
-            </template>
-            
-            <template #filter="{ filterModel }">
-              <InputText
+            />
+          </template>
+          <template v-else-if="col.type == 'boolean'" #editor="{ data, field }">
+            <InputSwitch v-model="data[field]" />
+          </template>
+          <template v-else #editor="{ data, field }">
+            <InputText v-model="data[field]" />
+          </template>
+
+          <template #filter="{ filterModel }">
+            <InputText
               v-model="filterModel.value"
               type="text"
               class="p-column-filter"
               :placeholder="filterPlaceholder(col)"
-              />
-            </template>
-          </Column>
-        </template>
-        <Column
+            />
+          </template>
+        </Column>
+      </template>
+      <Column
         v-if="actions_row"
         :exportable="false"
         style="white-space: nowrap"
@@ -166,6 +173,14 @@
           </template>
           <template v-else-if="col.type == 'number'">
             <InputNumber :id="col.field" v-model="lineItem[col.field]" />
+          </template>
+          <template v-else-if="col.type == 'autocomplete'">
+            <GTSAutocomplete
+              v-model:id="lineItem[col.field]"
+              :table="col.table"
+              :options="autocompleteSettings[col.field].rows"
+              @error="showErrorToast"
+            />
           </template>
           <template v-else-if="col.type == 'decimal'">
             <InputNumber
@@ -255,6 +270,7 @@
     </Dialog>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted, defineComponent, defineEmits } from "vue";
 defineComponent({
@@ -381,14 +397,9 @@ onMounted(async () => {
     );
     // console.log(response);
     if (!response.data.success) {
-      mytoast.add({
-        severity: "error",
-        summary: "Ошибка",
-        detail: response.data.message,
-        life: 3000,
-      });
-      return;
+      throw new Error(response.data.message);
     }
+    
     if (response.data.data.hasOwnProperty("fields")) {
       fields = response.data.data.fields;
       let filter_fields = [];
@@ -477,12 +488,7 @@ onMounted(async () => {
 
     loadLazyData();
   } catch (error) {
-    mytoast.add({
-      severity: "error",
-      summary: "Ошибка",
-      detail: error.message,
-      life: 3000,
-    });
+    showErrorToast({ detail: error.message });
     console.error(error);
   }
 });
@@ -539,7 +545,7 @@ const setExpandedRow = async (event, tmpt) => {
 //     }
 //   }
 // }
-const autocompleteSettings = ref({})
+const autocompleteSettings = ref({});
 
 const loadLazyData = (event) => {
   loading.value = true;
@@ -567,14 +573,9 @@ const loadLazyData = (event) => {
       // console.log(response.headers);
       // console.log(response.config);
       if (!response.data.success) {
-        mytoast.add({
-          severity: "error",
-          summary: "Ошибка",
-          detail: response.data.message,
-          life: 3000,
-        });
-        return;
+        throw new Error(response.data.message)
       }
+      
       let rows = [];
       if (response.data.data.rows.length) {
         response.data.data.rows.forEach(function (item) {
@@ -600,17 +601,12 @@ const loadLazyData = (event) => {
         });
       }
       lineItems.value = rows;
-      autocompleteSettings.value = response.data.data.autocomplete
+      autocompleteSettings.value = response.data.data.autocomplete;
       totalRecords.value = response.data.data.total;
       loading.value = false;
     })
     .catch(function (error) {
-      mytoast.add({
-        severity: "error",
-        summary: "Ошибка",
-        detail: error.message,
-        life: 3000,
-      });
+      showErrorToast({ detail: error.message });
     });
 };
 const refresh = () => {
@@ -626,13 +622,7 @@ const onCellEditComplete = async (event) => {
       [field]: newValue,
     });
     if (!response.data.success) {
-      mytoast.add({
-        severity: "error",
-        summary: "Ошибка",
-        detail: response.data.message,
-        life: 3000,
-      });
-      return;
+      throw new Error(response.data.message);
     }
     if (response.data.success) {
       data[field] = newValue;
@@ -640,12 +630,7 @@ const onCellEditComplete = async (event) => {
     // console.log(response);
   } catch (error) {
     event.preventDefault();
-    mytoast.add({
-      severity: "error",
-      summary: "Ошибка",
-      detail: error.message,
-      life: 3000,
-    });
+    showErrorToast({ detail: error.message });
     console.error(error);
   }
 };
@@ -682,13 +667,7 @@ const saveLineItem = () => {
       .patch("/api/" + props.table, lineItem.value)
       .then((response) => {
         if (!response.data.success) {
-          mytoast.add({
-            severity: "error",
-            summary: "Ошибка",
-            detail: response.data.message,
-            life: 3000,
-          });
-          return;
+          throw new Error(response.data.message);
         }
         lineItems.value[findIndexById(Number(lineItem.value.id))] =
           lineItem.value;
@@ -696,12 +675,7 @@ const saveLineItem = () => {
         lineItem.value = {};
       })
       .catch(function (error) {
-        mytoast.add({
-          severity: "error",
-          summary: "Ошибка",
-          detail: error.message,
-          life: 3000,
-        });
+        showErrorToast({ detail: error.message });
       });
     // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Updated', life: 3000});
   } else {
@@ -709,13 +683,7 @@ const saveLineItem = () => {
       .put("/api/" + props.table, lineItem.value)
       .then((response) => {
         if (!response.data.success) {
-          mytoast.add({
-            severity: "error",
-            summary: "Ошибка",
-            detail: response.data.message,
-            life: 3000,
-          });
-          return;
+          throw new Error(response.data.message);
         }
         loading.value = true;
         lineItemDialog.value = false;
@@ -724,12 +692,7 @@ const saveLineItem = () => {
         loadLazyData();
       })
       .catch(function (error) {
-        mytoast.add({
-          severity: "error",
-          summary: "Ошибка",
-          detail: error.message,
-          life: 3000,
-        });
+        showErrorToast({ detail: error.message });
       });
     // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Created', life: 3000});
   }
@@ -765,14 +728,9 @@ const deleteLineItem = () => {
 
     .then((response) => {
       if (!response.data.success) {
-        mytoast.add({
-          severity: "error",
-          summary: "Ошибка",
-          detail: response.data.message,
-          life: 3000,
-        });
-        return;
+        throw new Error(response.data.message);
       }
+      
       lineItems.value = lineItems.value.filter(
         (val) => val.id !== lineItem.value.id
       );
@@ -788,12 +746,7 @@ const deleteLineItem = () => {
       //     });
     })
     .catch(function (error) {
-      mytoast.add({
-        severity: "error",
-        summary: "Ошибка",
-        detail: error.message,
-        life: 3000,
-      });
+      showErrorToast({ detail: error.message });
     });
 };
 const confirmDeleteSelected = () => {
@@ -809,14 +762,9 @@ const deleteSelectedLineItems = () => {
     .delete("/api/" + props.table + "?ids=" + ids.join(","))
     .then((response) => {
       if (!response.data.success) {
-        mytoast.add({
-          severity: "error",
-          summary: "Ошибка",
-          detail: response.data.message,
-          life: 3000,
-        });
-        return;
+        throw new Error(response.data.message);
       }
+
       lineItems.value = lineItems.value.filter(
         (val) => !selectedlineItems.value.includes(val)
       );
@@ -825,12 +773,7 @@ const deleteSelectedLineItems = () => {
       // mytoast.add({severity:'success', summary: 'Successful', detail: 'Line Items Deleted', life: 3000});
     })
     .catch(function (error) {
-      mytoast.add({
-        severity: "error",
-        summary: "Ошибка",
-        detail: error.message,
-        life: 3000,
-      });
+      showErrorToast({ detail: error.message });
     });
 };
 
@@ -856,17 +799,12 @@ const onRowUnselect = () => {
   selectAll.value = false;
 };
 
-const showErrorToast = ({ 
-  detail, 
-  severity = 'error', 
-  summary = 'Ошибка', 
-  life = 3000
-}) => {
+const showErrorToast = ({ detail, severity, summary, life }) => {
   mytoast.add({
-    severity,
-    summary,
-    life,
-    detail
+    severity: severity || "error",
+    summary: summary || "Ошибка",
+    life: life || 3000,
+    detail,
   });
-}
+};
 </script>

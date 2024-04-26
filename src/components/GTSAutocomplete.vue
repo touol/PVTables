@@ -16,7 +16,7 @@
 <script setup>
 import AutoComplete from "primevue/autocomplete";
 import InputGroup from "primevue/inputgroup";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
 
@@ -39,13 +39,17 @@ const props = defineProps({
 const emit = defineEmits(['update:id', 'set-value', 'error']);
 
 const selectedItem = ref({});
+
+watch(model, (nv) => {
+  const [ option ] = props.options.filter((option) => model.value === option.id)
+  if (option) {
+    selectedItem.value = option
+  } else {
+    selectedItem.value = {}
+  }
+}, { immediate: true })
+
 const idCache = ref('')
-
-const [ option ] = props.options.filter((option) => model.value === option.id)
-if (option) {
-  selectedItem.value = option
-}
-
 const items = ref([]);
 
 const search = async ({ query }) => {
