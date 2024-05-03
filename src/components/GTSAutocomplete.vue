@@ -1,14 +1,14 @@
 <template>
-  <InputGroup>
+  <InputGroup @keydown.tab.stop>
     <InputText v-model="model" @blur="onUserInputEnd" @keydown.enter="onUserInputEnd" @focus="idCache = model" class="gts-ac__id-field"/>
     <AutoComplete
       v-model="selectedItem"
-      @item-select="onAutocompleteItemSelect"
       dropdown
-      @complete="search"
       option-label="content"
       :suggestions="items"
       class="gts-ac__search-field"
+      @complete="search"
+      @item-select="onAutocompleteItemSelect"
     />
   </InputGroup>
 </template>

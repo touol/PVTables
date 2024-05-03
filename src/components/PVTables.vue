@@ -92,33 +92,30 @@
           style="min-width: 12rem"
           sortable
         >
-          <template v-if="col.type == 'decimal'" #body="{ data, field }">
-            {{ replace_point(data[field]) }}
+          <template #body="{ data, field }">
+            <template v-if="col.type == 'decimal'" >
+              {{ replace_point(data[field]) }}
+            </template>
+            <InputSwitch 
+              v-else-if="col.type == 'boolean'" 
+              v-model="data[field]" 
+              @keydown.tab.stop
+              @change="onCellEditComplete({ data, field, newValue: data[field] })"
+            />
+            <template v-else>
+              {{ data[field] }}
+            </template>
           </template>
-          <template v-else-if="col.type == 'boolean'" #body="{ data, field }">
-            <InputSwitch v-model="data[field]" />
-          </template>
-          <template v-else #body="{ data, field }">
-            {{ data[field] }}
-          </template>
-          <template v-if="col.type == 'textarea'" #editor="{ data, field }">
-            <Textarea v-model="data[field]" rows="1" />
-          </template>
-          <template v-else-if="col.type == 'number'" #editor="{ data, field }">
-            <InputNumber v-model="data[field]" />
-          </template>
-          <template v-else-if="col.type == 'decimal'" #editor="{ data, field }">
+          <template v-if="col.type !== 'boolean'" #editor="{ data, field }">
+            <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
+            <InputNumber v-else-if="col.type == 'number'" v-model="data[field]" />
             <InputNumber
+              v-else-if="col.type == 'decimal'"
               v-model="data[field]"
               :minFractionDigits="col.FractionDigits"
               :maxFractionDigits="col.FractionDigits"
             />
-          </template>
-          <template v-else-if="col.type == 'boolean'" #editor="{ data, field }">
-            <InputSwitch v-model="data[field]" />
-          </template>
-          <template v-else #editor="{ data, field }">
-            <InputText v-model="data[field]" />
+            <InputText v-else v-model="data[field]" />
           </template>
 
           <template #filter="{ filterModel }">
