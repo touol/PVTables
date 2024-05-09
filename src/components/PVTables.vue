@@ -81,7 +81,6 @@
               @set-value="
                 onCellEditComplete({ data, field, newValue: data[field] })
               "
-              @error="showErrorToast"
             />
           </template>
         </Column>
@@ -269,7 +268,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineComponent, defineEmits } from "vue";
+import { ref, onMounted, defineComponent } from "vue";
 defineComponent({
   name: "PVTables",
 });
@@ -289,6 +288,7 @@ import InputSwitch from "primevue/inputswitch";
 // import ToggleButton from 'primevue/togglebutton';
 import GTSAutocomplete from "./GTSAutocomplete.vue";
 import { FilterMatchMode, FilterOperator } from "primevue/api";
+import { useNotifications } from "../composables/useNotifications";
 
 const props = defineProps({
   table: {
@@ -306,6 +306,8 @@ const props = defineProps({
     default: {},
   },
 });
+
+const { notify } = useNotifications();
 
 //filters
 const filters = ref();
@@ -352,13 +354,7 @@ const clearFilter = () => {
 const filterPlaceholder = (col) => {
   return "Поиск по " + col.label;
 };
-const emit = defineEmits(["message"]);
-const mytoast = {
-  add: (data) => {
-    emit("message", data);
-    // mytoast.add({ severity: 'error', summary: 'Ошибка', detail: error.message, life: 3000 })
-  },
-};
+
 const dt = ref();
 const loading = ref(true);
 const totalRecords = ref(0);
@@ -485,8 +481,7 @@ onMounted(async () => {
 
     loadLazyData();
   } catch (error) {
-    showErrorToast({ detail: error.message });
-    console.error(error);
+    notify('error', { detail: error.message }, true);
   }
 });
 
@@ -603,7 +598,7 @@ const loadLazyData = (event) => {
       loading.value = false;
     })
     .catch(function (error) {
-      showErrorToast({ detail: error.message });
+      notify('error', { detail: error.message });
     });
 };
 const refresh = () => {
@@ -627,8 +622,7 @@ const onCellEditComplete = async (event) => {
     // console.log(response);
   } catch (error) {
     event.preventDefault();
-    showErrorToast({ detail: error.message });
-    console.error(error);
+    notify('error', { detail: error.message }, true);
   }
 };
 const onPage = (event) => {
@@ -672,7 +666,7 @@ const saveLineItem = () => {
         lineItem.value = {};
       })
       .catch(function (error) {
-        showErrorToast({ detail: error.message });
+        notify('error', { detail: error.message });
       });
     // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Updated', life: 3000});
   } else {
@@ -689,7 +683,7 @@ const saveLineItem = () => {
         loadLazyData();
       })
       .catch(function (error) {
-        showErrorToast({ detail: error.message });
+        notify('error', { detail: error.message });
       });
     // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Created', life: 3000});
   }
@@ -743,7 +737,7 @@ const deleteLineItem = () => {
       //     });
     })
     .catch(function (error) {
-      showErrorToast({ detail: error.message });
+      notify('error', { detail: error.message });
     });
 };
 const confirmDeleteSelected = () => {
@@ -770,7 +764,7 @@ const deleteSelectedLineItems = () => {
       // mytoast.add({severity:'success', summary: 'Successful', detail: 'Line Items Deleted', life: 3000});
     })
     .catch(function (error) {
-      showErrorToast({ detail: error.message });
+      notify('error', { detail: error.message });
     });
 };
 
@@ -794,14 +788,5 @@ const onRowSelect = () => {
 };
 const onRowUnselect = () => {
   selectAll.value = false;
-};
-
-const showErrorToast = ({ detail, severity, summary, life }) => {
-  mytoast.add({
-    severity: severity || "error",
-    summary: summary || "Ошибка",
-    life: life || 3000,
-    detail,
-  });
 };
 </script>

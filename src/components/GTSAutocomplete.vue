@@ -16,9 +16,10 @@
 <script setup>
 import AutoComplete from "primevue/autocomplete";
 import InputGroup from "primevue/inputgroup";
-import { ref, watch } from "vue";
+import { ref, watchEffect } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
+import { useNotifications } from "../composables/useNotifications";
 
 const model = defineModel("id", {
   type: String,
@@ -36,18 +37,20 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:id', 'set-value', 'error']);
+const emit = defineEmits(['update:id', 'set-value']);
+
+const { notify } = useNotifications()
 
 const selectedItem = ref({});
 
-watch(model, (nv) => {
+watchEffect(() => {
   const [ option ] = props.options.filter((option) => model.value === option.id)
   if (option) {
     selectedItem.value = option
   } else {
     selectedItem.value = {}
   }
-}, { immediate: true })
+})
 
 const idCache = ref('')
 const items = ref([]);
@@ -71,7 +74,7 @@ const search = async ({ query }) => {
 
     items.value = response.data.data.rows;
   } catch (error) {
-    emit('error', { detail: error.message })
+    notify('error', error.message)
   }
 };
 
@@ -107,7 +110,8 @@ const onUserInputEnd = async ($evt) => {
     const option = await getOptionById($evt.target.value);
 
     if (!option) {
-      emit('error', { detail: 'Отсутствует такой ID' })
+      notify('error', { detail: 'Отсутствует такой ID' })
+      emit()
       model.value = idCache.value
       return
     }
@@ -115,7 +119,7 @@ const onUserInputEnd = async ($evt) => {
     selectedItem.value = option
     model.value = userInput
   } catch (error) {
-    emit('error', { detail: error.message })
+    notify('error', { detail: error.message })
   }
 
   emit('set-value')

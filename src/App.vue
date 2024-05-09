@@ -1,21 +1,34 @@
 <script setup>
+import Button from 'primevue/button';
 import PVTables from './components/PVTables.vue'
 import Toast from 'primevue/toast';
-import { useToast } from "primevue/usetoast";
+import { computed, ref } from 'vue';
 
-const toast = useToast()
+const possibleTables = computed(() => ['tSkladNaryadSmena', 'tSkladSmena'])
 
-const showToast = (msgObj = {}) => toast.add(msgObj)
+const currentTable = ref('tSkladNaryadSmena')
+
+const switchTable = (tableName) => {
+  currentTable.value = tableName
+}
 </script>
 
 <template>
   <div>
+    <Button 
+      v-for="tableName in possibleTables"
+      :label="tableName"
+      severity="info"
+      @click="switchTable(tableName)"
+    />
+  </div>
+  <div>
     <PVTables 
-      table="tSkladNaryadSmena"
+      :table="currentTable"
       :actions="{}"
       :filters="{}"
       :reload="false"
-      @message="showToast"
+      :key="currentTable"
     />
   </div>
   <Toast/>
