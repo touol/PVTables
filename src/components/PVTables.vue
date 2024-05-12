@@ -101,11 +101,16 @@
               @keydown.tab.stop
               @change="onCellEditComplete({ data, field, newValue: data[field] })"
             />
+            <GTSDate 
+              v-else-if="col.type === 'date'" 
+              :model-value="data[field]"
+              @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
+            />
             <template v-else>
               {{ data[field] }}
             </template>
           </template>
-          <template v-if="col.type !== 'boolean'" #editor="{ data, field }">
+          <template v-if="!['boolean', 'date'].includes(col.type)" #editor="{ data, field }">
             <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
             <InputNumber v-else-if="col.type == 'number'" v-model="data[field]" />
             <InputNumber
@@ -189,6 +194,7 @@
           <template v-else-if="col.type == 'boolean'">
             <InputSwitch :id="col.field" v-model="lineItem[col.field]" />
           </template>
+          <GTSDate v-else-if="col.type === 'date'" v-model="lineItem[col.field]"/>
           <template v-else>
             <InputText :id="col.field" v-model.trim="lineItem[col.field]" />
           </template>
@@ -289,6 +295,7 @@ import InputSwitch from "primevue/inputswitch";
 import GTSAutocomplete from "./GTSAutocomplete.vue";
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import { useNotifications } from "../composables/useNotifications";
+import GTSDate from "./GTSDate.vue";
 
 const props = defineProps({
   table: {
