@@ -77,7 +77,7 @@
             <GTSAutocomplete
               :table="col.table"
               v-model:id="data[field]"
-              :options="autocompleteSettings[field].rows"
+              :options="autocompleteSettings[field]?.rows"
               @set-value="
                 onCellEditComplete({ data, field, newValue: data[field] })
               "
@@ -179,8 +179,7 @@
             <GTSAutocomplete
               v-model:id="lineItem[col.field]"
               :table="col.table"
-              :options="autocompleteSettings[col.field].rows"
-              @error="showErrorToast"
+              :options="autocompleteSettings[col.field]?.rows"
             />
           </template>
           <template v-else-if="col.type == 'decimal'">
@@ -314,6 +313,8 @@ const props = defineProps({
   },
 });
 
+const api = apiCtor(props.table)
+
 const { notify } = useNotifications();
 
 //filters
@@ -349,14 +350,14 @@ const initFilters = () => {
   //   // verified: { value: null, matchMode: FilterMatchMode.EQUALS }
   // };
 };
-const onFilter = (event) => {
+const onFilter = async (event) => {
   lazyParams.value.filters = filters.value;
-  loadLazyData(event);
+  await loadLazyData(event);
 };
-const clearFilter = () => {
+const clearFilter = async () => {
   initFilters();
   lazyParams.value.filters = filters.value;
-  loadLazyData();
+  await loadLazyData();
 };
 const filterPlaceholder = (col) => {
   return "Поиск по " + col.label;
@@ -386,22 +387,10 @@ onMounted(async () => {
     // filters: filters.value
   };
   try {
-    const response = await axios.post(
-      "/api/" + props.table,
-      {},
-      {
-        params: {
-          api_action: "options",
-        },
-      }
-    );
-    // console.log(response);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
-    
-    if (response.data.data.hasOwnProperty("fields")) {
-      fields = response.data.data.fields;
+    const response = await api.options()
+
+    if (response.data.hasOwnProperty("fields")) {
+      fields = response.data.fields;
       let filter_fields = [];
       let cols = [];
       for (let field in fields) {
@@ -417,7 +406,7 @@ onMounted(async () => {
       globalFilterFields.value = filter_fields;
       initFilters();
 
-      let actions0 = response.data.data.actions;
+      let actions0 = response.data.actions;
 
       for (let action in props.actions) {
         actions0[action] = props.actions[action];
@@ -486,7 +475,7 @@ onMounted(async () => {
       columns.value = cols;
     }
 
-    loadLazyData();
+    await loadLazyData();
   } catch (error) {
     notify('error', { detail: error.message }, true);
   }
@@ -546,7 +535,7 @@ const setExpandedRow = async (event, tmpt) => {
 // }
 const autocompleteSettings = ref({});
 
-const loadLazyData = (event) => {
+const loadLazyData = async (event) => {
   loading.value = true;
   lazyParams.value = {
     ...lazyParams.value,
@@ -563,82 +552,62 @@ const loadLazyData = (event) => {
     multiSortMeta: lazyParams.value.multiSortMeta,
     filters: filters.value,
   };
-  axios
-    .get("/api/" + props.table, { params: params })
-    .then(function (response) {
-      // console.log(response.data);
-      // console.log(response.status);
-      // console.log(response.statusText);
-      // console.log(response.headers);
-      // console.log(response.config);
-      if (!response.data.success) {
-        throw new Error(response.data.message)
-      }
-      
-      let rows = [];
-      if (response.data.data.rows.length) {
-        response.data.data.rows.forEach(function (item) {
-          for (let field in fields) {
-            if (field == "id") item[field] = Number(item[field]);
-            switch (fields[field].type) {
-              case "boolean":
-                if (item.hasOwnProperty(field)) {
-                  if (item[field] === "0") {
-                    item[field] = false;
-                  } else {
-                    item[field] = true;
-                  }
-                }
-                break;
-              case "number":
-              case "decimal":
-                item[field] = Number(item[field]);
-                break;
-            }
-          }
-          rows.push(item);
-        });
-      }
-      lineItems.value = rows;
-      autocompleteSettings.value = response.data.data.autocomplete;
-      totalRecords.value = response.data.data.total;
-      loading.value = false;
-    })
-    .catch(function (error) {
-      notify('error', { detail: error.message });
-    });
+ 
+  try {
+    const response = await api.read(params)
+    
+    
+    lineItems.value = rowsHandler(response.data.rows, fields)
+
+    // TODO переход на другую страницу не имеет нужных данных, здесь ошибка
+    // нужно или глубоко мёржить данные с имеющимися,
+    // или отдавать полные данные для автокомплита на запрос каждой страницы
+
+    autocompleteSettings.value = response.data.autocomplete;
+
+    //
+
+    totalRecords.value = response.data.total;
+    loading.value = false;
+  } catch (error) {
+    notify('error', { detail: error.message });
+  }
 };
 const refresh = () => {
   loadLazyData();
 };
 defineExpose({ refresh });
+
+const { cacheAction, cache } = useActionsCaching()
+
 const onCellEditComplete = async (event) => {
   let { data, newValue, field } = event;
 
+  const payload = {
+    id: data.id,
+    [field]: newValue,
+  }
+
+  cacheAction({type: 'update', payload})
+
   try {
-    const response = await axios.patch("/api/" + props.table, {
-      id: data.id,
-      [field]: newValue,
-    });
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
-    if (response.data.success) {
+    const response = await api.update(payload)
+    
+    if (response.success) {
       data[field] = newValue;
     }
-    // console.log(response);
   } catch (error) {
     event.preventDefault();
     notify('error', { detail: error.message }, true);
   }
 };
-const onPage = (event) => {
+const onPage = async (event) => {
   lazyParams.value = event;
-  loadLazyData(event);
+  await loadLazyData(event);
 };
-const onSort = (event) => {
+const onSort = async (event) => {
   lazyParams.value = event;
-  loadLazyData(event);
+  await loadLazyData(event);
 };
 const replace_point = (text) => {
   return text.toString().replace(".", ",");
@@ -657,42 +626,30 @@ const hideDialog = () => {
   lineItemDialog.value = false;
   submitted.value = false;
 };
-const saveLineItem = () => {
+const saveLineItem = async () => {
   submitted.value = true;
 
   if (lineItem.value.id) {
-    axios
-      .patch("/api/" + props.table, lineItem.value)
-      .then((response) => {
-        if (!response.data.success) {
-          throw new Error(response.data.message);
-        }
-        lineItems.value[findIndexById(Number(lineItem.value.id))] =
-          lineItem.value;
-        lineItemDialog.value = false;
-        lineItem.value = {};
-      })
-      .catch(function (error) {
-        notify('error', { detail: error.message });
-      });
-    // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Updated', life: 3000});
-  } else {
-    axios
-      .put("/api/" + props.table, lineItem.value)
-      .then((response) => {
-        if (!response.data.success) {
-          throw new Error(response.data.message);
-        }
-        loading.value = true;
-        lineItemDialog.value = false;
-        lineItem.value = {};
 
-        loadLazyData();
-      })
-      .catch(function (error) {
-        notify('error', { detail: error.message });
-      });
-    // mytoast.add({severity:'success', summary: 'Successful', detail: 'Raw Material Request Created', life: 3000});
+    try {
+      await api.update(lineItem.value)
+  
+      lineItems.value[findIndexById(Number(lineItem.value.id))] =
+      lineItem.value;
+      lineItemDialog.value = false;
+      lineItem.value = {};
+    } catch (error) {
+      notify('error', { detail: error.message });
+    }
+  } else {
+    try {
+      await api.create()
+      loading.value = true;
+      lineItemDialog.value = false;
+      lineItem.value = {};
+    } catch (error) {
+      notify('error', { detail: error.message });
+    }
   }
 };
 const findIndexById = (id) => {
@@ -720,59 +677,40 @@ const confirmDeleteLineItem = (item) => {
   lineItem.value = item;
   deleteLineItemDialog.value = true;
 };
-const deleteLineItem = () => {
-  axios
-    .delete("/api/" + props.table + "?ids=" + lineItem.value.id)
+const deleteLineItem = async () => {
+  try {
+    await api.delete({ ids: lineItem.value.id })
 
-    .then((response) => {
-      if (!response.data.success) {
-        throw new Error(response.data.message);
-      }
-      
-      lineItems.value = lineItems.value.filter(
-        (val) => val.id !== lineItem.value.id
-      );
+    // TODO желательно рефрешнуть страницу после удаления ряда
+    lineItems.value = lineItems.value.filter(
+      (val) => val.id !== lineItem.value.id
+    );
 
-      deleteLineItemDialog.value = false;
-      lineItem.value = {};
-      // mytoast.add(
-      //     {
-      //         severity:'success',
-      //         summary: 'Successful',
-      //         detail: 'Line Item Deleted',
-      //         life: 3000
-      //     });
-    })
-    .catch(function (error) {
-      notify('error', { detail: error.message });
-    });
+    deleteLineItemDialog.value = false;
+    lineItem.value = {}
+  } catch (error) {
+    notify('error', { detail: error.message });
+  }
 };
 const confirmDeleteSelected = () => {
   if (selectedlineItems.value && selectedlineItems.value.length)
     deleteLineItemsDialog.value = true;
 };
-const deleteSelectedLineItems = () => {
-  let ids = [];
-  selectedlineItems.value.forEach(function (entry) {
-    ids.push(entry.id);
-  });
-  axios
-    .delete("/api/" + props.table + "?ids=" + ids.join(","))
-    .then((response) => {
-      if (!response.data.success) {
-        throw new Error(response.data.message);
-      }
+const deleteSelectedLineItems = async () => {
+  const ids = selectedlineItems.value.map((line) => line.id).join(',');
 
-      lineItems.value = lineItems.value.filter(
-        (val) => !selectedlineItems.value.includes(val)
-      );
-      deleteLineItemsDialog.value = false;
-      selectedlineItems.value = null;
-      // mytoast.add({severity:'success', summary: 'Successful', detail: 'Line Items Deleted', life: 3000});
-    })
-    .catch(function (error) {
-      notify('error', { detail: error.message });
-    });
+  try {
+    await api.delete({ ids })
+
+    // TODO желательно рефрешнуть страницу после удаления ряда
+    lineItems.value = lineItems.value.filter(
+      (val) => !selectedlineItems.value.includes(val)
+    );
+    deleteLineItemsDialog.value = false;
+    selectedlineItems.value = null;
+  } catch (error) {
+    notify('error', { detail: error.message });
+  }
 };
 
 //selected

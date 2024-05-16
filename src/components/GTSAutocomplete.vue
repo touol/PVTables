@@ -16,7 +16,7 @@
 <script setup>
 import AutoComplete from "primevue/autocomplete";
 import InputGroup from "primevue/inputgroup";
-import { ref, watchEffect } from "vue";
+import { ref, watch, watchEffect } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
 import { useNotifications } from "../composables/useNotifications";
@@ -111,7 +111,6 @@ const onUserInputEnd = async ($evt) => {
 
     if (!option) {
       notify('error', { detail: 'Отсутствует такой ID' })
-      emit()
       model.value = idCache.value
       return
     }
