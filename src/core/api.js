@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useNotifications } from "../composables/useNotifications";
 
-// console.log(import.meta.env)
+console.log(import.meta.env)
 
 export default (tableName) => {  
   const instance = axios.create({
@@ -44,8 +44,12 @@ export default (tableName) => {
       return response
     },
 
-    update: async (data = null, params = {}) => {
-      const response = await instance.patch('/', data, { params })
+    update: async (params = {}) => {
+      const query = {
+        api_action: 'update',
+        ...params
+      } 
+      const response = await instance.post('/', null, { params: query})
       return response
     },
 
@@ -64,13 +68,12 @@ export default (tableName) => {
       return response
     },
 
-    autocomplete: async (data = null, params = {}) => {
+    autocomplete: async ( params = {}) => {
       const query = {
         api_action: 'autocomplete',
         ...params
       }
-
-      const response = await instance.post('/', data, { params: query})
+      const response = await instance.post('/', null, { params: query})
       return response
     },
   }
