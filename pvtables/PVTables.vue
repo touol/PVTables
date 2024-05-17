@@ -648,7 +648,7 @@ const saveLineItem = async () => {
     }
   } else {
     try {
-      await api.create()
+      await api.create(lineItem.value)
       loading.value = true;
       lineItemDialog.value = false;
       lineItem.value = {};
