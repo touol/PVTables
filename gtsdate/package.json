@@ -1,0 +1,7 @@
+{
+    "main": "./gtsdate.cjs",
+    "module": "./gtsdate.js",
+    "browser": {
+        "./sfc": "./GTSDate.vue"
+    }
+}

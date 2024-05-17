@@ -1,0 +1,4 @@
+{
+    "main": "./api.cjs",
+    "module": "./api.js"
+}

@@ -1,6 +1,6 @@
 <script setup>
 import Button from 'primevue/button';
-import PVTables from './components/PVTables.vue'
+import PVTables from 'pvtables/pvtables'
 import Toast from 'primevue/toast';
 import { computed, ref } from 'vue';
 

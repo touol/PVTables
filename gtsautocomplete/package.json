@@ -1,0 +1,7 @@
+{
+    "main": "./gtsautocomplete.cjs",
+    "module": "./gtsautocomplete.js",
+    "browser": {
+        "./sfc": "./gtsAutoComplete.vue"
+    }
+}

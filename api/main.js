@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useNotifications } from "../composables/useNotifications";
+import { useNotifications } from "pvtables/notify";
 
 // console.log(import.meta.env)
 

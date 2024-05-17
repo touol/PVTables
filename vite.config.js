@@ -2,30 +2,36 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import external_packages from './build/external_packages.json'
+import libraries from './build/libraries.js'
 
-console.log(import.meta.env)
+// console.log(resolve(__dirname, './pvtables/pvtables.vue'))
 // https://vitejs.dev/config/
+let aliases = {}
+for(let key in libraries){
+  aliases['pvtables/' + key] = libraries[key].path
+  external_packages.push('pvtables/' + key)
+}
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
   return {
     plugins: [vue()],
-      build: {
-      lib: {
-        entry: [
-          resolve(__dirname, 'build/index.js'),
-        ],
-          name: 'PVTables'
-      },
-      rollupOptions: {
-        external: ['vue', 'primevue', 'axios', ...external_packages],
-          output: {
-          globals: {
-            vue: 'Vue'
-          }
-        }
-      }
-    },
+    // build: {
+    //   lib: {
+    //     entry: [
+    //       resolve(__dirname, 'build/index.js'),
+    //     ],
+    //       name: 'PVTables'
+    //   },
+    //   rollupOptions: {
+    //     external: ['vue', 'primevue', 'axios', ...external_packages],
+    //       output: {
+    //       globals: {
+    //         vue: 'Vue'
+    //       }
+    //     }
+    //   }
+    // },
     server: {
       // dev api access
       proxy: {
@@ -35,6 +41,9 @@ export default defineConfig(({ mode }) => {
           // rewrite: (path) => path.replace(/^\/api/, ''),
         }
       }
+    },
+    resolve: {
+      alias: aliases
     }
   }
 })

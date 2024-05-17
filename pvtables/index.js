@@ -1,4 +1,4 @@
-import pvtables from './pvtables.vue'
+import pvtables from './PVTables.vue'
 
 export default {
     install: (app, options) => {

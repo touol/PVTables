@@ -19,7 +19,7 @@ import InputGroup from "primevue/inputgroup";
 import { ref, watch, watchEffect } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
-import { useNotifications } from "../composables/useNotifications";
+import { useNotifications } from "pvtables/notify";
 
 const model = defineModel("id", {
   type: String,
