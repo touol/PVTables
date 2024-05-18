@@ -594,7 +594,7 @@ const onCellEditComplete = async (event) => {
   }
 
   cacheAction({type: 'update', payload})
-
+  
   try {
     const response = await api.update(payload)
     
@@ -602,7 +602,7 @@ const onCellEditComplete = async (event) => {
       data[field] = newValue;
     }
   } catch (error) {
-    // event.preventDefault();
+    // event.preventDefault(); // При ошибке на gtsAutoComplete не срабатывает. Не понятно что делать???
     notify('error', { detail: error.message }, true);
   }
 };
