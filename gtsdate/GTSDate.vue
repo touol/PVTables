@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Calendar v-model="computedDate" />
+    <Calendar v-model="computedDate" showIcon :showOnFocus="false" :disabled="disabled"/>
   </div>
 </template>
 
@@ -12,6 +12,10 @@ const props = defineProps({
   modelValue: {
     type: String,
     default: ''
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
   }
 })
 

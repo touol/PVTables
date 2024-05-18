@@ -1,6 +1,7 @@
 <template>
   <InputGroup @keydown.tab.stop>
-    <InputText v-model="model" @blur="onUserInputEnd" @keydown.enter="onUserInputEnd" @focus="idCache = model" class="gts-ac__id-field"/>
+    <InputText v-model="model" @blur="onUserInputEnd" @keydown.enter="onUserInputEnd" @focus="idCache = model" class="gts-ac__id-field"
+    :disabled="disabled"/>
     <AutoComplete
       v-model="selectedItem"
       dropdown
@@ -9,6 +10,7 @@
       class="gts-ac__search-field"
       @complete="search"
       @item-select="onAutocompleteItemSelect"
+      :disabled="disabled"
     />
   </InputGroup>
 </template>
@@ -16,8 +18,7 @@
 <script setup>
 import AutoComplete from "primevue/autocomplete";
 import InputGroup from "primevue/inputgroup";
-import { ref, watch, watchEffect } from "vue";
-import axios from "axios";
+import { readonly, ref, watch, watchEffect } from "vue";
 import InputText from "primevue/inputtext";
 import { useNotifications } from "pvtables/notify";
 import apiCtor from 'pvtables/api'
@@ -31,12 +32,17 @@ const props = defineProps({
   table: {
     type: String,
     required: true,
+  },  
+  disabled: {
+    type: Boolean,
+    default: false,
   },
   options: {
     type: Object,
     default: () => []
   }
 });
+
 const api = apiCtor(props.table)
 const emit = defineEmits(['update:id', 'set-value']);
 

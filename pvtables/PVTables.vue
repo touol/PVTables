@@ -26,10 +26,12 @@
     <DataTable
       :value="lineItems"
       lazy
+
       paginator
       :first="first"
       :rows="10"
       :rowsPerPageOptions="[10, 60, 30, 10]"
+
       ref="dt"
       dataKey="id"
       :totalRecords="totalRecords"
@@ -37,6 +39,7 @@
       @page="onPage($event)"
       @sort="onSort($event)"
       sortMode="multiple"
+
       editMode="cell"
       @cell-edit-complete="onCellEditComplete"
       v-model:selection="selectedlineItems"
@@ -44,10 +47,12 @@
       @select-all-change="onSelectAllChange"
       @row-select="onRowSelect"
       @row-unselect="onRowUnselect"
+
       v-model:filters="filters"
       filterDisplay="menu"
       :globalFilterFields="globalFilterFields"
       @filter="onFilter($event)"
+      
       v-model:expandedRows="expandedRows"
       showGridlines
     >
@@ -71,7 +76,9 @@
           v-else-if="col.type == 'autocomplete'"
           :field="col.field"
           :header="col.label"
-          style="min-width: 350px"
+          :class="getClass(col)"
+          :style='{"min-width": "350px"}'
+          sortable
         >
           <template #body="{ data, field }">
             <GTSAutocomplete
@@ -81,6 +88,15 @@
               @set-value="
                 onCellEditComplete({ data, field, newValue: data[field] })
               "
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText
+              v-model="filterModel.value"
+              type="text"
+              class="p-column-filter"
+              :placeholder="filterPlaceholder(col)"
             />
           </template>
         </Column>
@@ -88,7 +104,8 @@
           v-else
           :field="col.field"
           :header="col.label"
-          style="min-width: 12rem"
+          :class="getClass(col)"
+          :style='{"min-width": "350px"}'
           sortable
         >
           <template #body="{ data, field }">
@@ -100,17 +117,19 @@
               v-model="data[field]" 
               @keydown.tab.stop
               @change="onCellEditComplete({ data, field, newValue: data[field] })"
+              :disabled="col.readonly"
             />
             <GTSDate 
               v-else-if="col.type === 'date'" 
               :model-value="data[field]"
               @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
+              :disabled="col.readonly"
             />
             <template v-else>
               {{ data[field] }}
             </template>
           </template>
-          <template v-if="!['boolean', 'date'].includes(col.type)" #editor="{ data, field }">
+          <template v-if="!['boolean', 'date'].includes(col.type) && !col.readonly" #editor="{ data, field }">
             <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
             <InputNumber v-else-if="col.type == 'number'" v-model="data[field]" />
             <InputNumber
@@ -170,16 +189,17 @@
             <p :id="col.field">{{ lineItem[col.field] }}</p>
           </template>
           <template v-else-if="col.type == 'textarea'">
-            <Textarea :id="col.field" v-model.trim="lineItem[col.field]" />
+            <Textarea :id="col.field" v-model.trim="lineItem[col.field]" :disabled="col.readonly"/>
           </template>
           <template v-else-if="col.type == 'number'">
-            <InputNumber :id="col.field" v-model="lineItem[col.field]" />
+            <InputNumber :id="col.field" v-model="lineItem[col.field]" :disabled="col.readonly"/>
           </template>
           <template v-else-if="col.type == 'autocomplete'">
             <GTSAutocomplete
               v-model:id="lineItem[col.field]"
               :table="col.table"
               :options="autocompleteSettings[col.field]?.rows"
+              :disabled="col.readonly"
             />
           </template>
           <template v-else-if="col.type == 'decimal'">
@@ -188,14 +208,15 @@
               v-model="lineItem[col.field]"
               :minFractionDigits="col.FractionDigits"
               :maxFractionDigits="col.FractionDigits"
+              :disabled="col.readonly"
             />
           </template>
           <template v-else-if="col.type == 'boolean'">
-            <InputSwitch :id="col.field" v-model="lineItem[col.field]" />
+            <InputSwitch :id="col.field" v-model="lineItem[col.field]" :disabled="col.readonly"/>
           </template>
-          <GTSDate v-else-if="col.type === 'date'" v-model="lineItem[col.field]"/>
+          <GTSDate v-else-if="col.type === 'date'" v-model="lineItem[col.field]" :disabled="col.readonly"/>
           <template v-else>
-            <InputText :id="col.field" v-model.trim="lineItem[col.field]" />
+            <InputText :id="col.field" v-model.trim="lineItem[col.field]" :disabled="col.readonly"/>
           </template>
         </div>
       </template>
@@ -273,7 +294,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineComponent } from "vue";
+import { ref, onMounted, defineComponent, readonly } from "vue";
 defineComponent({
   name: "PVTables",
 });
@@ -404,6 +425,13 @@ onMounted(async () => {
           fields[field].label = field;
         }
         if (!fields[field].hasOwnProperty("type")) fields[field].type = "text";
+        if (fields[field].hasOwnProperty("readonly")){
+          if(fields[field].readonly === true || fields[field].readonly == 1){
+            fields[field].readonly = true
+          }else{
+            fields[field].readonly = false
+          }
+        } 
         cols.push(fields[field]);
         filter_fields.push(field);
       }
@@ -739,4 +767,15 @@ const onRowSelect = () => {
 const onRowUnselect = () => {
   selectAll.value = false;
 };
+const getClass = (col) => {
+  if(col.readonly){
+    return 'readonly'
+  }
+};
 </script>
+
+<style>
+  td.readonly{
+    background-color:#b9b9b9
+  }
+</style>
