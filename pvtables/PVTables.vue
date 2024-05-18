@@ -602,7 +602,7 @@ const onCellEditComplete = async (event) => {
       data[field] = newValue;
     }
   } catch (error) {
-    event.preventDefault();
+    // event.preventDefault();
     notify('error', { detail: error.message }, true);
   }
 };

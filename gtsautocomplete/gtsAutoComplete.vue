@@ -57,51 +57,17 @@ const idCache = ref('')
 const items = ref([]);
 
 const search = async ({ query }) => {
-  // try {
-  //   const response = await axios.post(
-  //     "/api" + "/" + props.table,
-  //     {},
-  //     {
-  //       params: {
-  //         api_action: "autocomplete",
-  //         query,
-  //       },
-  //     }
-  //   );
-
-  //   if (!response.data.success) {
-  //     throw new Error(response.data.message)
-  //   }
-
-  //   items.value = response.data.data.rows;
-  // } catch (error) {
-  //   notify('error', error.message)
-  // }
   try {
     const response = await api.autocomplete({query})
-    items.value = response.data.data.rows;
+    items.value = response.data.rows;
   } catch (error) {
     notify('error', { detail: error.message });
   }
 };
 
 async function getOptionById(id) {
-  // const response = await axios.post(
-  //   "/api" + "/" + props.table,
-  //   {},
-  //   {
-  //     params: {
-  //       api_action: "autocomplete",
-  //       id,
-  //     },
-  //   }
-  // );
-    
-  // if (!response.data.success) {
-  //   throw new Error(response.data.message)
-  // }
   const response = await api.autocomplete({id})
-  return response.data.data.rows[0] || null;
+  return response.data.rows[0] || null;
 }
 
 const onUserInputEnd = async ($evt) => {

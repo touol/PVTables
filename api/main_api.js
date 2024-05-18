@@ -45,7 +45,7 @@ export default (tableName) => {
     },
 
     update: async (data = null, params = {}) => {
-      const response = await instance.patch('/', data, { params })
+      const response = await instance.patch('/', data, params)
       return response
     },
 
@@ -64,13 +64,13 @@ export default (tableName) => {
       return response
     },
 
-    autocomplete: async (data = null, params = {}) => {
+    autocomplete: async (params = {}) => {
       const query = {
         api_action: 'autocomplete',
         ...params
       }
 
-      const response = await instance.post('/', data, { params: query})
+      const response = await instance.post('/', null, { params: query})
       return response
     },
   }
