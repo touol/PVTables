@@ -55,6 +55,8 @@
       
       v-model:expandedRows="expandedRows"
       showGridlines
+      scrollable scrollHeight="50rem"
+      resizableColumns columnResizeMode="expand"
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <template
@@ -77,7 +79,7 @@
           :field="col.field"
           :header="col.label"
           :class="getClass(col)"
-          :style='{"min-width": "350px"}'
+          style="min-width:350px"
           sortable
         >
           <template #body="{ data, field }">
@@ -105,7 +107,7 @@
           :field="col.field"
           :header="col.label"
           :class="getClass(col)"
-          :style='{"min-width": "350px"}'
+          style="min-width:350px"
           sortable
         >
           <template #body="{ data, field }">
