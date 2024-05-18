@@ -595,8 +595,10 @@ const loadLazyData = async (event) => {
     // TODO переход на другую страницу не имеет нужных данных, здесь ошибка
     // нужно или глубоко мёржить данные с имеющимися,
     // или отдавать полные данные для автокомплита на запрос каждой страницы
-
-    autocompleteSettings.value = response.data.autocomplete;
+    for(let af in response.data.autocomplete){
+      autocompleteSettings.value[af] = response.data.autocomplete[af];
+    }
+      
 
     //
 
