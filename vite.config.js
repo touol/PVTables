@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
     server: {
       // dev api access
       proxy: {
-        [env.VITE_API_BASE_URL]: {
-          target: `${env.VITE_API_BASE_URL}`,
+        [env.VITE_API_BASE_URL + 'api/']: {
+          target: `${env.VITE_API_BASE_URL}api/`,
           changeOrigin: true,
           // rewrite: (path) => path.replace(/^\/api/, ''),
         }

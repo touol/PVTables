@@ -20,6 +20,7 @@ import { ref, watch, watchEffect } from "vue";
 import axios from "axios";
 import InputText from "primevue/inputtext";
 import { useNotifications } from "pvtables/notify";
+import apiCtor from 'pvtables/api'
 
 const model = defineModel("id", {
   type: String,
@@ -36,7 +37,7 @@ const props = defineProps({
     default: () => []
   }
 });
-
+const api = apiCtor(props.table)
 const emit = defineEmits(['update:id', 'set-value']);
 
 const { notify } = useNotifications()
@@ -56,44 +57,50 @@ const idCache = ref('')
 const items = ref([]);
 
 const search = async ({ query }) => {
+  // try {
+  //   const response = await axios.post(
+  //     "/api" + "/" + props.table,
+  //     {},
+  //     {
+  //       params: {
+  //         api_action: "autocomplete",
+  //         query,
+  //       },
+  //     }
+  //   );
+
+  //   if (!response.data.success) {
+  //     throw new Error(response.data.message)
+  //   }
+
+  //   items.value = response.data.data.rows;
+  // } catch (error) {
+  //   notify('error', error.message)
+  // }
   try {
-    const response = await axios.post(
-      "/api" + "/" + props.table,
-      {},
-      {
-        params: {
-          api_action: "autocomplete",
-          query,
-        },
-      }
-    );
-
-    if (!response.data.success) {
-      throw new Error(response.data.message)
-    }
-
+    const response = await api.autocomplete({query})
     items.value = response.data.data.rows;
   } catch (error) {
-    notify('error', error.message)
+    notify('error', { detail: error.message });
   }
 };
 
 async function getOptionById(id) {
-  const response = await axios.post(
-    "/api" + "/" + props.table,
-    {},
-    {
-      params: {
-        api_action: "autocomplete",
-        id,
-      },
-    }
-  );
+  // const response = await axios.post(
+  //   "/api" + "/" + props.table,
+  //   {},
+  //   {
+  //     params: {
+  //       api_action: "autocomplete",
+  //       id,
+  //     },
+  //   }
+  // );
     
-  if (!response.data.success) {
-    throw new Error(response.data.message)
-  }
-
+  // if (!response.data.success) {
+  //   throw new Error(response.data.message)
+  // }
+  const response = await api.autocomplete({id})
   return response.data.data.rows[0] || null;
 }
 
