@@ -5,7 +5,7 @@ const __dirname = dirname(__filename);
 
 export default {
     api:{
-        path:resolve(__dirname, '../api/main.js'),
+        path:resolve(__dirname, '../api/main_api.js'),
     },
     pvtables:{
         path:resolve(__dirname, '../pvtables/PVTables.vue'),
