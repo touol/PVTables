@@ -1,8 +1,11 @@
 {
   "name": "pvtables",
-  "private": true,
+  "private": false,
   "version": "0.0.0",
+  "description": "Table for MODX on PrimeVue",
+  "author": "Alexandr Tuniekov",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "node ./build/build.js && node ./build/copy.js",
