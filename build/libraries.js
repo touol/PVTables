@@ -18,6 +18,9 @@ export default {
     gtsautocomplete:{
         path:resolve(__dirname, '../gtsautocomplete/gtsAutoComplete.vue')
     },
+    gtsselect:{
+        path:resolve(__dirname, '../gtsselect/gtsSelect.vue')
+    },
     gtsdate:{
         path:resolve(__dirname, '../gtsdate/GTSDate.vue')
     },

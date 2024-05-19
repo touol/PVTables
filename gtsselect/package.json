@@ -1,0 +1,7 @@
+{
+    "main": "./gtsselect.cjs",
+    "module": "./gtsselect.js",
+    "browser": {
+        "./sfc": "./gtsSelect.vue"
+    }
+}

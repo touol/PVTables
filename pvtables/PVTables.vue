@@ -103,6 +103,33 @@
           </template>
         </Column>
         <Column
+          v-else-if="col.type == 'select'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          style="min-width:350px"
+          sortable
+        >
+          <template #body="{ data, field }">
+            <GTSSelect
+              v-model:id="data[field]"
+              :options="selectSettings[field]?.rows"
+              @set-value="
+                onCellEditComplete({ data, field, newValue: data[field] })
+              "
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText
+              v-model="filterModel.value"
+              type="text"
+              class="p-column-filter"
+              :placeholder="filterPlaceholder(col)"
+            />
+          </template>
+        </Column>
+        <Column
           v-else
           :field="col.field"
           :header="col.label"
@@ -201,6 +228,13 @@
               v-model:id="lineItem[col.field]"
               :table="col.table"
               :options="autocompleteSettings[col.field]?.rows"
+              :disabled="col.readonly"
+            />
+          </template>
+          <template v-else-if="col.type == 'select'">
+            <GTSSelect
+              v-model:id="lineItem[col.field]"
+              :options="selectSettings[col.field]?.rows"
               :disabled="col.readonly"
             />
           </template>
@@ -316,8 +350,10 @@ import InputSwitch from "primevue/inputswitch";
 // import ToggleButton from 'primevue/togglebutton';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 
+
 import GTSDate from "pvtables/gtsdate";
 import GTSAutocomplete from "pvtables/gtsautocomplete";
+import GTSSelect from "pvtables/gtsselect";
 import { useNotifications } from "pvtables/notify";
 
 import { useActionsCaching } from "./composables/useActionsCaching";
@@ -404,6 +440,7 @@ let actions = ref([]);
 const actions_row = ref(false);
 const actions_head = ref(false);
 const globalFilterFields = ref([]);
+const selectSettings = ref({});
 
 onMounted(async () => {
   loading.value = true;
@@ -507,6 +544,9 @@ onMounted(async () => {
         // console.log('actions.value',actions.value)
       }
       // await din_import()
+      if(response.data.selects){
+        selectSettings.value = response.data.selects;
+      }
       columns.value = cols;
     }
 
@@ -597,10 +637,11 @@ const loadLazyData = async (event) => {
     // TODO переход на другую страницу не имеет нужных данных, здесь ошибка
     // нужно или глубоко мёржить данные с имеющимися,
     // или отдавать полные данные для автокомплита на запрос каждой страницы
-    for(let af in response.data.autocomplete){
-      autocompleteSettings.value[af] = response.data.autocomplete[af];
-    }
-      
+    if(response.data.autocomplete){
+      for(let af in response.data.autocomplete){
+        autocompleteSettings.value[af] = response.data.autocomplete[af];
+      }
+    }  
 
     //
 
