@@ -3,7 +3,7 @@
     <Toolbar class="p-mb-4">
       <template #start>
         <Button
-          v-for="action in actions.filter((x) => x.head)"
+          v-for="action in cur_actions.filter((x) => x.head)"
           :icon="action.icon"
           :label="action.label"
           :class="action.class"
@@ -187,7 +187,7 @@
       >
         <template #body="slotProps">
           <Button
-            v-for="action in actions.filter((x) => x.row)"
+            v-for="action in cur_actions.filter((x) => x.row)"
             :icon="action.icon"
             :class="action.class"
             @click="action.click(slotProps.data, columns)"
@@ -195,10 +195,18 @@
         </template>
       </Column>
       <template #expansion="slotProps">
-        <div class="p-3">
+        <div v-if="subs[slotProps.data.id].action == 'subtables'" class="p-3">
           <PVTables
-            :table="subtables[slotProps.data.id]"
+            :table="subs[slotProps.data.id].table"
+            :actions="actions"
             :filters="subfilters[slotProps.data.id]"
+          />
+        </div>
+        <div v-if="subs[slotProps.data.id].action == 'subtabs'" class="p-3">
+          <PVTabs 
+            :tabs="subs[slotProps.data.id].tabs"
+            :actions="actions"
+            :filters="{}"
           />
         </div>
       </template>
@@ -330,7 +338,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineComponent, readonly } from "vue";
+import { ref, onMounted, defineComponent } from "vue";
 defineComponent({
   name: "PVTables",
 });
@@ -356,9 +364,12 @@ import GTSAutocomplete from "pvtables/gtsautocomplete";
 import GTSSelect from "pvtables/gtsselect";
 import { useNotifications } from "pvtables/notify";
 
+import PVTabs from 'pvtables/pvtabs'
+
 import { useActionsCaching } from "./composables/useActionsCaching";
 import apiCtor from 'pvtables/api'
 import { rowsHandler } from "./core/helpers";
+
 
 const props = defineProps({
   table: {
@@ -367,6 +378,7 @@ const props = defineProps({
   },
   actions: {
     type: Object,
+    default: {},
   },
   reload: {
     type: Boolean,
@@ -436,7 +448,7 @@ const columns = ref([{ field: "id", label: "ID" }]);
 let fields = {};
 const lineItems = ref();
 // const countRow  = ref(60);
-let actions = ref([]);
+let cur_actions = ref([]);
 const actions_row = ref(false);
 const actions_head = ref(false);
 const globalFilterFields = ref([]);
@@ -480,9 +492,15 @@ onMounted(async () => {
 
       let actions0 = response.data.actions;
 
-      for (let action in props.actions) {
-        actions0[action] = props.actions[props.table][action];
+      console.log('props.table',props.table)
+      // console.log('props.actions',props.actions)
+      if (props.actions.hasOwnProperty(props.table)) {
+        for (let action in props.actions[props.table]) {
+          // console.log('action',action,props.actions[props.table][action])
+          actions0[action] = props.actions[props.table][action];
+        }
       }
+      // console.log('actions0',actions0)
       for (let action in actions0) {
         let tmp = { ...actions0[action] };
         let addtmp = true;
@@ -522,8 +540,7 @@ onMounted(async () => {
           case "subtables":
             addtmp = false;
             for (let tmptable in actions0[action]) {
-              let tmpt = { ...actions0[action][tmptable] };
-              // tmpt.action = action
+              let tmpt = { action:action,...actions0[action][tmptable] };
               tmpt.table = tmptable;
               if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
               if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
@@ -532,17 +549,33 @@ onMounted(async () => {
               if (!tmpt.hasOwnProperty("click"))
                 tmpt.click = (event) => setExpandedRow(event, tmpt);
               actions_row.value = true;
-              actions.value.push(tmpt);
+              cur_actions.value.push(tmpt);
+            }
+            break;
+          case "subtabs":
+            addtmp = false;
+            for (let tmptable in actions0[action]) {
+              let tmpt = { action:action,tabs:{ ...actions0[action][tmptable] } };
+              tmpt.table = tmptable;
+              if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
+              if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
+              if (!tmpt.hasOwnProperty("class"))
+                tmpt.class = "p-button-rounded p-button-success";
+              if (!tmpt.hasOwnProperty("click"))
+                tmpt.click = (event) => setExpandedRow(event, tmpt);
+              actions_row.value = true;
+              cur_actions.value.push(tmpt);
             }
             break;
         }
         if (addtmp) {
           if (tmp.hasOwnProperty("row")) actions_row.value = true;
-          if (tmp.hasOwnProperty("row")) actions_head.value = true;
-          actions.value.push(tmp);
+          // if (tmp.hasOwnProperty("row")) actions_head.value = true;
+          cur_actions.value.push(tmp);
         }
-        // console.log('actions.value',actions.value)
+        
       }
+      console.log('cur_actions.value',cur_actions.value)
       // await din_import()
       if(response.data.selects){
         selectSettings.value = response.data.selects;
@@ -558,15 +591,16 @@ onMounted(async () => {
 
 //expand row
 const expandedRows = ref({});
-const subtables = ref({});
+const subs = ref({});
 const subfilters = ref({});
 const delExpand = async (tmp) => {
   expandedRows.value = { ...tmp };
 };
 const setExpandedRow = async (event, tmpt) => {
+  console.log('tmpt',tmpt)
   let tmp = { ...expandedRows.value };
   if (tmp.hasOwnProperty(event.id)) {
-    if (subtables.value[event.id] == tmpt.table) {
+    if (subs.value[event.id].table == tmpt.table) {
       delete tmp[event.id];
       await delExpand(tmp);
       return;
@@ -578,7 +612,7 @@ const setExpandedRow = async (event, tmpt) => {
   } else {
     tmp[event.id] = true;
   }
-  subtables.value[event.id] = tmpt.table;
+  subs.value[event.id] = tmpt;
 
   if (tmpt.hasOwnProperty("where")) {
     let tmpfilters = {};
@@ -596,6 +630,7 @@ const setExpandedRow = async (event, tmpt) => {
     subfilters.value[event.id] = tmpfilters;
   }
   expandedRows.value = { ...tmp };
+  console.log('expandedRows.value',expandedRows.value)
 };
 
 // const din_import = async () =>{
