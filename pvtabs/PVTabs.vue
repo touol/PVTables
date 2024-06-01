@@ -28,7 +28,10 @@ for(let key in props.tabs){
 const refresh = (table) => {
   // console.log('childComponentRefs',childComponentRefs)
   if(table){
-    childComponentRefs.value[table].refresh();
+    childComponentRefs.value[table].refresh(table);
+    for(let key in props.tabs){
+      childComponentRefs.value[key].refresh(table);
+    }
   }else{
     for(let key in props.tabs){
       childComponentRefs.value[key].refresh();
@@ -44,7 +47,7 @@ defineExpose({ refresh });
       <PVTables 
         :table="tab.table"
         :actions="actions"
-        :filters="filters"
+        :filters="filters[tab.key]"
         :reload="false"
         :key="tab.key"
         :ref="el => { if (el) childComponentRefs[tab.key] = el }"

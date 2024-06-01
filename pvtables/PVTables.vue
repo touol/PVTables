@@ -55,7 +55,7 @@
       
       v-model:expandedRows="expandedRows"
       showGridlines
-      scrollable scrollHeight="50rem"
+      scrollable scrollHeight="45rem"
       resizableColumns columnResizeMode="expand"
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
@@ -200,13 +200,15 @@
             :table="subs[slotProps.data.id].table"
             :actions="actions"
             :filters="subfilters[slotProps.data.id]"
+            :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
           />
         </div>
         <div v-if="subs[slotProps.data.id].action == 'subtabs'" class="p-3">
           <PVTabs 
             :tabs="subs[slotProps.data.id].tabs"
             :actions="actions"
-            :filters="{}"
+            :filters="subfilters[slotProps.data.id]"
+            :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
           />
         </div>
       </template>
@@ -450,7 +452,7 @@ const lineItems = ref();
 // const countRow  = ref(60);
 let cur_actions = ref([]);
 const actions_row = ref(false);
-const actions_head = ref(false);
+// const actions_head = ref(false);
 const globalFilterFields = ref([]);
 const selectSettings = ref({});
 
@@ -492,7 +494,7 @@ onMounted(async () => {
 
       let actions0 = response.data.actions;
 
-      console.log('props.table',props.table)
+      // console.log('props.table',props.table)
       // console.log('props.actions',props.actions)
       if (props.actions.hasOwnProperty(props.table)) {
         for (let action in props.actions[props.table]) {
@@ -575,7 +577,7 @@ onMounted(async () => {
         }
         
       }
-      console.log('cur_actions.value',cur_actions.value)
+      // console.log('cur_actions.value',cur_actions.value)
       // await din_import()
       if(response.data.selects){
         selectSettings.value = response.data.selects;
@@ -592,12 +594,27 @@ onMounted(async () => {
 //expand row
 const expandedRows = ref({});
 const subs = ref({});
+const childComponentRefs = ref({})
+const refresh = (table) => {
+  // console.log('table',table)
+  // console.log('props.table',props.table)
+  // console.log('childComponentRefs',childComponentRefs)
+  if(!table || table == props.table){
+    loadLazyData();
+  }else if(table && childComponentRefs.value){
+    for(let id in childComponentRefs.value){
+      childComponentRefs.value[id].refresh(table)
+    }
+  }
+};
+defineExpose({ refresh });
+
 const subfilters = ref({});
 const delExpand = async (tmp) => {
   expandedRows.value = { ...tmp };
 };
 const setExpandedRow = async (event, tmpt) => {
-  console.log('tmpt',tmpt)
+  // console.log('tmpt',tmpt)
   let tmp = { ...expandedRows.value };
   if (tmp.hasOwnProperty(event.id)) {
     if (subs.value[event.id].table == tmpt.table) {
@@ -614,23 +631,44 @@ const setExpandedRow = async (event, tmpt) => {
   }
   subs.value[event.id] = tmpt;
 
-  if (tmpt.hasOwnProperty("where")) {
-    let tmpfilters = {};
-    for (let field in tmpt.where) {
-      tmpfilters[field] = {
-        operator: FilterOperator.AND,
-        constraints: [
-          {
-            value: event[tmpt.where[field]],
-            matchMode: FilterMatchMode.EQUALS,
-          },
-        ],
-      };
+  if(tmpt.action == 'subtables'){
+    if (tmpt.hasOwnProperty("where")) {
+      let tmpfilters = {};
+      for (let field in tmpt.where) {
+        tmpfilters[field] = {
+          operator: FilterOperator.AND,
+          constraints: [
+            {
+              value: event[tmpt.where[field]],
+              matchMode: FilterMatchMode.EQUALS,
+            },
+          ],
+        };
+      }
+      subfilters.value[event.id] = tmpfilters;
     }
-    subfilters.value[event.id] = tmpfilters;
+  }else if(tmpt.action == 'subtabs'){
+    for(let key in tmpt.tabs){
+      if (tmpt.tabs[key].hasOwnProperty("where")) {
+        let tmpfilters = {};
+        for (let field in tmpt.tabs[key].where) {
+          tmpfilters[field] = {
+            operator: FilterOperator.AND,
+            constraints: [
+              {
+                value: event[tmpt.tabs[key].where[field]],
+                matchMode: FilterMatchMode.EQUALS,
+              },
+            ],
+          };
+        }
+        subfilters.value[event.id] = {}
+        subfilters.value[event.id][key] = tmpfilters;
+      }
+    }
   }
   expandedRows.value = { ...tmp };
-  console.log('expandedRows.value',expandedRows.value)
+  // console.log('expandedRows.value',expandedRows.value)
 };
 
 // const din_import = async () =>{
@@ -686,10 +724,7 @@ const loadLazyData = async (event) => {
     notify('error', { detail: error.message });
   }
 };
-const refresh = () => {
-  loadLazyData();
-};
-defineExpose({ refresh });
+
 
 const { cacheAction, cache } = useActionsCaching()
 

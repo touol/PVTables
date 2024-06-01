@@ -22,7 +22,7 @@ const actions = ref({
       class:"p-button-rounded p-button-danger",
       head_click: (data,colomns) => {
         // console.log('delete',data,colomns)
-        childComponentRef.value.refresh('tSkladNaryadSmena');
+        childComponentRef.value.refresh('tSkladSmena');
       }
     }
   }
