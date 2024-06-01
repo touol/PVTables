@@ -14,7 +14,7 @@
         <Button
           icon="pi pi-refresh"
           class="p-button-rounded p-button-success"
-          @click="refresh"
+          @click="refresh()"
         />
         <Button
           type="button"
