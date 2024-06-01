@@ -1,0 +1,7 @@
+{
+    "main": "./pvtab.cjs",
+    "module": "./pvtab.js",
+    "browser": {
+        "./sfc": "./PVTab.vue"
+    }
+}

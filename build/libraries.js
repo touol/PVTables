@@ -8,12 +8,20 @@ export default {
         path:resolve(__dirname, '../api/main_api.js'),
     },
     pvtables:{
-        path:resolve(__dirname, '../pvtables/PVTables.vue'),
+        path:resolve(__dirname, '../pvtables/index.js'),
         entry:resolve(__dirname, '../pvtables/index.js'),
     },
     pvtable:{
         path:resolve(__dirname, '../pvtable/PVTable.vue'),
-        entry:resolve(__dirname, '../pvtable/main.js'),
+        entry:resolve(__dirname, '../pvtable/pvtable_main.js'),
+    },
+    pvtabs:{
+        path:resolve(__dirname, '../pvtabs/PVTabs.vue'),
+        entry:resolve(__dirname, '../pvtabs/index.js'),
+    },
+    pvtab:{
+        path:resolve(__dirname, '../pvtab/PVTab.vue'),
+        entry:resolve(__dirname, '../pvtab/pvtab_main.js'),
     },
     gtsautocomplete:{
         path:resolve(__dirname, '../gtsautocomplete/gtsAutoComplete.vue')

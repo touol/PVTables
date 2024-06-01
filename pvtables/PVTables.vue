@@ -481,7 +481,7 @@ onMounted(async () => {
       let actions0 = response.data.actions;
 
       for (let action in props.actions) {
-        actions0[action] = props.actions[action];
+        actions0[action] = props.actions[props.table][action];
       }
       for (let action in actions0) {
         let tmp = { ...actions0[action] };
