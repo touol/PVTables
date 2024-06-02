@@ -1,38 +1,46 @@
-import { fileURLToPath } from 'url';
+
+const libs = {
+    api:{
+        path:'../api/main_api.js',
+    },
+    pvtables:{
+        path:'../pvtables/index.js',
+        entry:'../pvtables/index.js',
+    },
+    pvtable:{
+        path:'../pvtable/PVTable.vue',
+        entry:'../pvtable/pvtable_main.js',
+    },
+    pvtabs:{
+        path:'../pvtabs/PVTabs.vue',
+        entry:'../pvtabs/index.js',
+    },
+    pvtab:{
+        path:'../pvtab/PVTab.vue',
+        entry:'../pvtab/pvtab_main.js',
+    },
+    gtsautocomplete:{
+        path:'../gtsautocomplete/gtsAutoComplete.vue'
+    },
+    gtsselect:{
+        path:'../gtsselect/gtsSelect.vue'
+    },
+    gtsdate:{
+        path:'../gtsdate/GTSDate.vue'
+    },
+    notify:{
+        path:'../notify/useNotifications.js'
+    },
+}
 import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default {
-    api:{
-        path:resolve(__dirname, '../api/main_api.js'),
-    },
-    pvtables:{
-        path:resolve(__dirname, '../pvtables/index.js'),
-        entry:resolve(__dirname, '../pvtables/index.js'),
-    },
-    pvtable:{
-        path:resolve(__dirname, '../pvtable/PVTable.vue'),
-        entry:resolve(__dirname, '../pvtable/pvtable_main.js'),
-    },
-    pvtabs:{
-        path:resolve(__dirname, '../pvtabs/PVTabs.vue'),
-        entry:resolve(__dirname, '../pvtabs/index.js'),
-    },
-    pvtab:{
-        path:resolve(__dirname, '../pvtab/PVTab.vue'),
-        entry:resolve(__dirname, '../pvtab/pvtab_main.js'),
-    },
-    gtsautocomplete:{
-        path:resolve(__dirname, '../gtsautocomplete/gtsAutoComplete.vue')
-    },
-    gtsselect:{
-        path:resolve(__dirname, '../gtsselect/gtsSelect.vue')
-    },
-    gtsdate:{
-        path:resolve(__dirname, '../gtsdate/GTSDate.vue')
-    },
-    notify:{
-        path:resolve(__dirname, '../notify/useNotifications.js')
-    },
+let libraries = {}
+for(let key in libs){
+    libraries[key] = {}
+    libraries[key].path = resolve(__dirname, libs[key].path)
+    if(libs[key].entry)  libraries[key].entry = resolve(__dirname, libs[key].entry)
 }
+export default libraries

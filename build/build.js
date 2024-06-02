@@ -3,6 +3,12 @@ import libraries from './libraries.js'
 import external_packages from './external_packages.json' assert { type: "json" };
 import fs from 'fs';
 
+import { resolve, dirname } from 'path'
+// import { fileURLToPath } from 'url';
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+
 let libraries0 = []
 let external_pvtables = []
 for(let key in libraries){

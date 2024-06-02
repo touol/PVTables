@@ -2,9 +2,11 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import PrimeVue from 'primevue/config';
+
+import ToastService from 'primevue/toastservice';
+
 import 'primevue/resources/themes/aura-light-green/theme.css'
 import 'primeicons/primeicons.css'
-import ToastService from 'primevue/toastservice';
 
 const app = createApp(App)
 

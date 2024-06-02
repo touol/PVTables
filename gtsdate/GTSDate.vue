@@ -23,10 +23,12 @@ const emit = defineEmits(['update:modelValue'])
 
 const computedDate = computed({
   get() {
+    if(!props.modelValue) return '';
     return props.modelValue.split('-').reverse().join('.')
   },
   set(value) {
-    const formattedDate = value.toLocaleDateString('ru-RU').split('.').reverse().join('-')
+    let formattedDate = ''
+    if(value) formattedDate = value.toLocaleDateString('ru-RU').split('.').reverse().join('-')
     emit('update:modelValue', formattedDate)
   }
 });
