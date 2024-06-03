@@ -5,3 +5,4 @@ Changelog for PVTables.
 - subtabs.
 - subfilters и рекурсивная childComponentRefs.
 - build_css.
+- Ширина колонок.

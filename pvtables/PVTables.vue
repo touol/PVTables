@@ -31,6 +31,8 @@
       :first="first"
       :rows="10"
       :rowsPerPageOptions="[10, 60, 30, 10]"
+      paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+      currentPageReportTemplate="{first} to {last} of {totalRecords}"
 
       ref="dt"
       dataKey="id"
@@ -57,6 +59,8 @@
       showGridlines
       scrollable scrollHeight="45rem"
       resizableColumns columnResizeMode="expand"
+
+      size="small"
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <template
@@ -67,7 +71,7 @@
           v-if="col.field == 'id'"
           field="id"
           header="id"
-          style="padding: 1rem 10px 1rem 10px"
+
           sortable
         >
           <template #body="{ data, field }">
@@ -79,7 +83,6 @@
           :field="col.field"
           :header="col.label"
           :class="getClass(col)"
-          style="min-width:350px"
           sortable
         >
           <template #body="{ data, field }">
@@ -107,7 +110,6 @@
           :field="col.field"
           :header="col.label"
           :class="getClass(col)"
-          style="min-width:350px"
           sortable
         >
           <template #body="{ data, field }">
@@ -134,7 +136,7 @@
           :field="col.field"
           :header="col.label"
           :class="getClass(col)"
-          style="min-width:350px"
+
           sortable
         >
           <template #body="{ data, field }">
@@ -758,7 +760,7 @@ const onSort = async (event) => {
   await loadLazyData(event);
 };
 const replace_point = (text) => {
-  return text.toString().replace(".", ",");
+  return parseFloat(text).toFixed(2).toString().replace(".", ",");
 };
 
 const lineItem = ref({});
@@ -884,8 +886,9 @@ const onRowUnselect = () => {
 };
 const getClass = (col) => {
   if(col.readonly){
-    return 'readonly'
+    return 'readonly ' + col.type
   }
+  return col.type
 };
 </script>
 
@@ -893,4 +896,22 @@ const getClass = (col) => {
   td.readonly{
     background-color:#b9b9b9
   }
+  /* th.autocomplete,td.autocomplete{
+    width: 250px !important;
+  }
+ */
+  th.date,td.date{
+    min-width: 150px;
+  }
+  html {
+    font-size: 14px;
+  }
+  .p-datatable-resizable-table > .p-datatable-thead > tr > th, .p-datatable-resizable-table > .p-datatable-tfoot > tr > td, .p-datatable-resizable-table > .p-datatable-tbody > tr > td {
+    white-space: break-spaces;
+  }
+  .p-datatable textarea{
+    width:136px;
+  }
+
+
 </style>
