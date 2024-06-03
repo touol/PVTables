@@ -4,3 +4,4 @@ Changelog for PVTables.
 - PVTabs.
 - subtabs.
 - subfilters и рекурсивная childComponentRefs.
+- build_css.

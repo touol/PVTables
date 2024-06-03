@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node ./build/build.js && node ./build/copy.js",
-    "copy_in_gtsapi":"node ./build/copy_in_gtsapi.js",
+    "copy_in_gtsapi":"node ./build/build_css.js && node ./build/copy_in_gtsapi.js",
     "build_vite": "vite build",
     "preview": "vite preview"
   },

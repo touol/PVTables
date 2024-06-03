@@ -6,6 +6,7 @@ const libs = {
     pvtables:{
         path:'../pvtables/index.js',
         entry:'../pvtables/index.js',
+        css:'../pvtables/style.css',
     },
     pvtable:{
         path:'../pvtable/PVTable.vue',
@@ -20,7 +21,8 @@ const libs = {
         entry:'../pvtab/pvtab_main.js',
     },
     gtsautocomplete:{
-        path:'../gtsautocomplete/gtsAutoComplete.vue'
+        path:'../gtsautocomplete/gtsAutoComplete.vue',
+        css:'../gtsautocomplete/style.css',
     },
     gtsselect:{
         path:'../gtsselect/gtsSelect.vue'
@@ -41,6 +43,7 @@ let libraries = {}
 for(let key in libs){
     libraries[key] = {}
     libraries[key].path = resolve(__dirname, libs[key].path)
-    if(libs[key].entry)  libraries[key].entry = resolve(__dirname, libs[key].entry)
+    if(libs[key].entry)  libraries[key].entry = resolve(__dirname, libs[key].entry);
+    if(libs[key].css)  libraries[key].css = resolve(__dirname, libs[key].css);
 }
 export default libraries
