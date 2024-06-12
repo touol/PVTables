@@ -7,3 +7,4 @@ Changelog for PVTables.
 - build_css.
 - Ширина колонок.
 - row_setting цвета строк.
+- filtres в топе таблицы.

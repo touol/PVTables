@@ -10,6 +10,21 @@
           @click="action.head_click"
         />
       </template>
+      <template #center>
+        <template
+          v-for="filter of topFilters"
+          :key="filter.field"
+        >
+          <GTSAutocomplete v-if="filter.type=='autocomplete'"
+            :table="filter.table"
+            v-model:id="filter.default"
+            :options="filter.rows"
+            @set-value="
+              onSetTopFilter(filter)
+            "
+          />
+        </template>
+      </template>
       <template #end>
         <Button
           icon="pi pi-refresh"
@@ -424,6 +439,20 @@ const initFilters = () => {
       filters0[field] = props.filters[field];
     }
   }
+  for(let field in topFilters0){
+    switch (topFilters0[field].type) {
+        default:
+          const value = topFilters0[field].default?topFilters0[field].default:null
+          filters0[field] = {
+            operator: FilterOperator.AND,
+            constraints: [
+              { value: value, matchMode: FilterMatchMode.EQUALS },
+            ],
+          };
+      }
+  }
+
+  topFilters.value = JSON.parse(JSON.stringify(topFilters0))
   filters.value = filters0;
   // filters.value = {
   //   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -437,13 +466,17 @@ const initFilters = () => {
   //   // verified: { value: null, matchMode: FilterMatchMode.EQUALS }
   // };
 };
+const onSetTopFilter = async (filter) => {
+  filters.value[filter.field].constraints[0].value = filter.default;
+  await loadLazyData();
+};
 const onFilter = async (event) => {
-  lazyParams.value.filters = filters.value;
+  // lazyParams.value.filters = filters.value;
   await loadLazyData(event);
 };
 const clearFilter = async () => {
   initFilters();
-  lazyParams.value.filters = filters.value;
+  // lazyParams.value.filters = filters.value;
   await loadLazyData();
 };
 const filterPlaceholder = (col) => {
@@ -464,6 +497,8 @@ const actions_row = ref(false);
 // const actions_head = ref(false);
 const globalFilterFields = ref([]);
 const selectSettings = ref({});
+const topFilters = ref({})
+let topFilters0 = {}
 
 onMounted(async () => {
   loading.value = true;
@@ -497,7 +532,17 @@ onMounted(async () => {
         cols.push(fields[field]);
         filter_fields.push(field);
       }
-
+      if (response.data.hasOwnProperty("filters")) {
+        topFilters0 = response.data.filters
+        for(let field in topFilters0){
+          topFilters0[field].field = field;
+          topFilters0[field].default = topFilters0[field].default.toString()
+          if (!topFilters0[field].hasOwnProperty("label")) {
+            topFilters0[field].label = field;
+          }
+          if (!topFilters0[field].hasOwnProperty("type")) topFilters0[field].type = "text";
+        }
+      }
       globalFilterFields.value = filter_fields;
       initFilters();
 

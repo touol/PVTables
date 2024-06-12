@@ -1,5 +1,5 @@
 <script setup>
-import PVTabs from 'pvtables/pvtabs'
+import { PVTabs } from 'pvtables/pvtabs'
 import Toast from 'primevue/toast';
 import { computed, ref } from 'vue';
 

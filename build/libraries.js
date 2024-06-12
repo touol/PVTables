@@ -13,7 +13,7 @@ const libs = {
         entry:'../pvtable/pvtable_main.js',
     },
     pvtabs:{
-        path:'../pvtabs/PVTabs.vue',
+        path:'../pvtabs/index.js',
         entry:'../pvtabs/index.js',
     },
     pvtab:{
