@@ -50,12 +50,27 @@ const { notify } = useNotifications()
 
 const selectedItem = ref({});
 
-watchEffect(() => {
-  const [ option ] = props.options.filter((option) => model.value === option.id)
-  if (option) {
-    selectedItem.value = option
-  } else {
-    selectedItem.value = {}
+watchEffect(async () => {
+  if (Array.isArray(props.options) && props.options.length) {
+    const [ option ] = props.options.filter((option) => model.value === option.id)
+    if (option) {
+      selectedItem.value = option
+    } else {
+      selectedItem.value = {}
+    }
+  }else if(Number(model.value) > 0){
+    try {
+      const option = await getOptionById(model.value);
+
+      if (!option) {
+        notify('error', { detail: 'Отсутствует такой ID' })
+        return
+      }
+
+      selectedItem.value = option
+    } catch (error) {
+      notify('error', { detail: error.message })
+    }
   }
 })
 

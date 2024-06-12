@@ -9,3 +9,4 @@ Changelog for PVTables.
 - row_setting цвета строк.
 - filtres в топе таблицы.
 - Параметры head_click.
+- Подгрузка в gtsAutoComplete.
