@@ -8,3 +8,4 @@ Changelog for PVTables.
 - Ширина колонок.
 - row_setting цвета строк.
 - filtres в топе таблицы.
+- Параметры head_click.

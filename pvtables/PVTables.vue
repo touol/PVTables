@@ -7,7 +7,7 @@
           :icon="action.icon"
           :label="action.label"
           :class="action.class"
-          @click="action.head_click"
+          @click="action.head_click($event,table,filters,selectedlineItems)"
         />
       </template>
       <template #center>
