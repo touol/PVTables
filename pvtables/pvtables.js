@@ -1,70 +1,70 @@
-import { onMounted as Pe, reactive as ye, defineComponent as Be, ref as d, resolveComponent as Ge, openBlock as n, createElementBlock as P, createVNode as f, unref as o, withCtx as b, Fragment as D, renderList as Y, createBlock as m, normalizeClass as $, createCommentVNode as K, createTextVNode as ne, toDisplayString as B, createSlots as je, withKeys as He, withModifiers as Qe, createElementVNode as j } from "vue";
-import qe from "primevue/datatable";
+import { onMounted as Oe, reactive as we, defineComponent as He, ref as d, resolveComponent as Qe, openBlock as n, createElementBlock as V, createVNode as m, unref as o, withCtx as v, Fragment as C, renderList as B, createBlock as c, normalizeClass as G, createCommentVNode as A, createTextVNode as ue, toDisplayString as j, createSlots as Je, withKeys as qe, withModifiers as We, createElementVNode as Q } from "vue";
+import Ye from "primevue/datatable";
 import I from "primevue/column";
-import C from "primevue/button";
-import We from "primevue/toolbar";
-import re from "primevue/dialog";
-import G from "primevue/inputtext";
-import be from "primevue/textarea";
+import S from "primevue/button";
+import Ze from "primevue/toolbar";
+import pe from "primevue/dialog";
+import H from "primevue/inputtext";
+import Ve from "primevue/textarea";
 import Z from "primevue/inputnumber";
-import he from "primevue/inputswitch";
-import { FilterOperator as de, FilterMatchMode as ue } from "primevue/api";
-import we from "pvtables/gtsdate";
-import Ve from "pvtables/gtsautocomplete";
-import ke from "pvtables/gtsselect";
-import { useNotifications as Ye } from "pvtables/notify";
-import { PVTabs as Ze } from "pvtables/pvtabs";
-import Je from "pvtables/api";
-const Xe = 3, el = () => {
-  Pe(() => {
-    document.addEventListener("keydown", (V) => {
-      V.code === "KeyZ" && V.ctrlKey && v(), V.code === "KeyY" && V.ctrlKey && c();
+import ke from "primevue/inputswitch";
+import { FilterOperator as X, FilterMatchMode as ee } from "primevue/api";
+import ge from "pvtables/gtsdate";
+import ce from "pvtables/gtsautocomplete";
+import Pe from "pvtables/gtsselect";
+import { useNotifications as Xe } from "pvtables/notify";
+import { PVTabs as el } from "pvtables/pvtabs";
+import ll from "pvtables/api";
+const tl = 3, al = () => {
+  Oe(() => {
+    document.addEventListener("keydown", (P) => {
+      P.code === "KeyZ" && P.ctrlKey && y(), P.code === "KeyY" && P.ctrlKey && f();
     });
   });
-  const y = ye({
+  const b = we({
     undo: [],
     redo: []
-  }), g = ye({
+  }), g = we({
     name: "",
     details: {}
-  }), h = (V) => {
-    y.undo.length === Xe && y.undo.shift(), y.undo.push(V);
+  }), h = (P) => {
+    b.undo.length === tl && b.undo.shift(), b.undo.push(P);
   };
-  function v() {
-    y.undo.length !== 0 && (g.details = y.undo.pop(), g.name = "undo", g.details.isNew, y.redo.push(g.details));
+  function y() {
+    b.undo.length !== 0 && (g.details = b.undo.pop(), g.name = "undo", g.details.isNew, b.redo.push(g.details));
   }
-  function c() {
-    y.redo.length !== 0 && (g.details = y.redo.pop(), g.name = "redo", g.details.isNew, y.undo.push(g.details));
+  function f() {
+    b.redo.length !== 0 && (g.details = b.redo.pop(), g.name = "redo", g.details.isNew, b.undo.push(g.details));
   }
-  return { undo: v, redo: c, cacheAction: h, cache: y };
-}, ll = (y, g) => {
+  return { undo: y, redo: f, cacheAction: h, cache: b };
+}, il = (b, g) => {
   let h = [];
-  return y.length && y.forEach(function(v) {
-    for (let c in g)
-      switch (c == "id" && (v[c] = Number(v[c])), g[c].type) {
+  return b.length && b.forEach(function(y) {
+    for (let f in g)
+      switch (f == "id" && (y[f] = Number(y[f])), g[f].type) {
         case "boolean":
-          v.hasOwnProperty(c) && (v[c] === "0" ? v[c] = !1 : v[c] = !0);
+          y.hasOwnProperty(f) && (y[f] === "0" ? y[f] = !1 : y[f] = !0);
           break;
         case "number":
         case "decimal":
-          v[c] = Number(v[c]);
+          y[f] = Number(y[f]);
           break;
       }
-    h.push(v);
+    h.push(y);
   }), h;
-}, al = { class: "card" }, tl = {
+}, ol = { class: "card" }, sl = {
   key: 0,
   class: "p-3"
-}, il = {
+}, nl = {
   key: 1,
   class: "p-3"
-}, ol = { class: "p-field" }, sl = ["for"], nl = ["id"], rl = { class: "confirmation-content" }, dl = /* @__PURE__ */ j("i", {
+}, rl = { class: "p-field" }, dl = ["for"], ul = ["id"], pl = { class: "confirmation-content" }, cl = /* @__PURE__ */ Q("i", {
   class: "pi pi-exclamation-triangle p-mr-3",
   style: { "font-size": "2rem" }
-}, null, -1), ul = { key: 0 }, pl = { class: "confirmation-content" }, cl = /* @__PURE__ */ j("i", {
+}, null, -1), fl = { key: 0 }, ml = { class: "confirmation-content" }, yl = /* @__PURE__ */ Q("i", {
   class: "pi pi-exclamation-triangle p-mr-3",
   style: { "font-size": "2rem" }
-}, null, -1), fl = { key: 0 }, ge = {
+}, null, -1), vl = { key: 0 }, Ue = {
   __name: "PVTables",
   props: {
     table: {
@@ -83,11 +83,11 @@ const Xe = 3, el = () => {
       default: {}
     }
   },
-  setup(y, { expose: g }) {
-    Be({
+  setup(b, { expose: g }) {
+    He({
       name: "PVTables"
     });
-    const h = y, v = Je(h.table), { notify: c } = Ye(), V = d(), pe = () => {
+    const h = b, y = ll(h.table), { notify: f } = Xe(), P = d(), fe = () => {
       let t = {};
       for (let i in w)
         if (h.filters.hasOwnProperty(i))
@@ -96,40 +96,59 @@ const Xe = 3, el = () => {
           switch (w[i].type) {
             default:
               t[i] = {
-                operator: de.AND,
+                operator: X.AND,
                 constraints: [
-                  { value: null, matchMode: ue.STARTS_WITH }
+                  { value: null, matchMode: ee.STARTS_WITH }
                 ]
               };
           }
       for (let i in h.filters)
         t.hasOwnProperty(i) || (t[i] = h.filters[i]);
-      V.value = t;
-    }, Ue = async (t) => {
-      U.value.filters = V.value, await R(t);
-    }, xe = async () => {
-      pe(), U.value.filters = V.value, await R();
-    }, J = (t) => "Поиск по " + t.label, X = d(), H = d(!0), ee = d(0), ce = d(0), U = d({}), Q = d([{ field: "id", label: "ID" }]);
+      for (let i in U)
+        switch (U[i].type) {
+          default:
+            const u = U[i].default ? U[i].default : null;
+            t[i] = {
+              operator: X.AND,
+              constraints: [
+                { value: u, matchMode: ee.EQUALS }
+              ]
+            };
+        }
+      ve.value = JSON.parse(JSON.stringify(U)), P.value = t;
+    }, xe = async (t) => {
+      P.value[t.field].constraints[0].value = t.default, await D();
+    }, Se = async (t) => {
+      await D(t);
+    }, Ce = async () => {
+      fe(), await D();
+    }, le = (t) => "Поиск по " + t.label, te = d(), J = d(!0), ae = d(0), me = d(0), F = d({}), q = d([{ field: "id", label: "ID" }]);
     let w = {};
-    const x = d();
+    const O = d();
     let L = d([]);
-    const q = d(!1), fe = d([]), le = d({});
-    Pe(async () => {
-      H.value = !0, U.value = {
-        first: X.value.first,
-        rows: X.value.rows,
+    const W = d(!1), ye = d([]), ie = d({}), ve = d({});
+    let U = {};
+    Oe(async () => {
+      J.value = !0, F.value = {
+        first: te.value.first,
+        rows: te.value.rows,
         sortField: null,
         sortOrder: null
         // filters: filters.value
       };
       try {
-        const t = await v.options();
+        const t = await y.options();
         if (t.data.hasOwnProperty("fields")) {
           w = t.data.fields;
           let i = [], u = [];
           for (let l in w)
             w[l].field = l, w[l].hasOwnProperty("label") || (w[l].label = l), w[l].hasOwnProperty("type") || (w[l].type = "text"), w[l].hasOwnProperty("readonly") && (w[l].readonly === !0 || w[l].readonly == 1 ? w[l].readonly = !0 : w[l].readonly = !1), u.push(w[l]), i.push(l);
-          fe.value = i, pe();
+          if (t.data.hasOwnProperty("filters")) {
+            U = t.data.filters;
+            for (let l in U)
+              U[l].field = l, U[l].default = U[l].default.toString(), U[l].hasOwnProperty("label") || (U[l].label = l), U[l].hasOwnProperty("type") || (U[l].type = "text");
+          }
+          ye.value = i, fe();
           let e = t.data.actions;
           if (h.actions.hasOwnProperty(h.table))
             for (let l in h.actions[h.table])
@@ -138,72 +157,72 @@ const Xe = 3, el = () => {
             let a = { ...e[l] }, s = !0;
             switch (a.action = l, l) {
               case "update":
-                a.hasOwnProperty("row") || (a.row = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-pencil"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-success"), a.hasOwnProperty("click") || (a.click = (k) => De(k));
+                a.hasOwnProperty("row") || (a.row = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-pencil"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-success"), a.hasOwnProperty("click") || (a.click = (k) => Ne(k));
                 break;
               case "delete":
-                a.hasOwnProperty("row") || (a.row = !0), a.hasOwnProperty("head") || (a.head = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-trash"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-danger"), a.hasOwnProperty("click") || (a.click = (k) => Le(k)), a.hasOwnProperty("head_click") || (a.head_click = () => Ne()), a.hasOwnProperty("label") || (a.label = "Удалить");
+                a.hasOwnProperty("row") || (a.row = !0), a.hasOwnProperty("head") || (a.head = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-trash"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-danger"), a.hasOwnProperty("click") || (a.click = (k) => Me(k)), a.hasOwnProperty("head_click") || (a.head_click = () => ze()), a.hasOwnProperty("label") || (a.label = "Удалить");
                 break;
               case "create":
-                a.hasOwnProperty("head") || (a.head = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-plus"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-success"), a.hasOwnProperty("head_click") || (a.head_click = () => Ie()), a.hasOwnProperty("label") || (a.label = "Создать");
+                a.hasOwnProperty("head") || (a.head = !0), a.hasOwnProperty("icon") || (a.icon = "pi pi-plus"), a.hasOwnProperty("class") || (a.class = "p-button-rounded p-button-success"), a.hasOwnProperty("head_click") || (a.head_click = () => Le()), a.hasOwnProperty("label") || (a.label = "Создать");
                 break;
               case "subtables":
                 s = !1;
                 for (let k in e[l]) {
                   let p = { action: l, ...e[l][k] };
-                  p.table = k, p.hasOwnProperty("row") || (p.row = !0), p.hasOwnProperty("icon") || (p.icon = "pi pi-angle-right"), p.hasOwnProperty("class") || (p.class = "p-button-rounded p-button-success"), p.hasOwnProperty("click") || (p.click = (se) => ve(se, p)), q.value = !0, L.value.push(p);
+                  p.table = k, p.hasOwnProperty("row") || (p.row = !0), p.hasOwnProperty("icon") || (p.icon = "pi pi-angle-right"), p.hasOwnProperty("class") || (p.class = "p-button-rounded p-button-success"), p.hasOwnProperty("click") || (p.click = (de) => he(de, p)), W.value = !0, L.value.push(p);
                 }
                 break;
               case "subtabs":
                 s = !1;
                 for (let k in e[l]) {
                   let p = { action: l, tabs: { ...e[l][k] } };
-                  p.table = k, p.hasOwnProperty("row") || (p.row = !0), p.hasOwnProperty("icon") || (p.icon = "pi pi-angle-right"), p.hasOwnProperty("class") || (p.class = "p-button-rounded p-button-success"), p.hasOwnProperty("click") || (p.click = (se) => ve(se, p)), q.value = !0, L.value.push(p);
+                  p.table = k, p.hasOwnProperty("row") || (p.row = !0), p.hasOwnProperty("icon") || (p.icon = "pi pi-angle-right"), p.hasOwnProperty("class") || (p.class = "p-button-rounded p-button-success"), p.hasOwnProperty("click") || (p.click = (de) => he(de, p)), W.value = !0, L.value.push(p);
                 }
                 break;
             }
-            s && (a.hasOwnProperty("row") && (q.value = !0), L.value.push(a));
+            s && (a.hasOwnProperty("row") && (W.value = !0), L.value.push(a));
           }
-          t.data.selects && (le.value = t.data.selects), Q.value = u;
+          t.data.selects && (ie.value = t.data.selects), q.value = u;
         }
-        await R();
+        await D();
       } catch (t) {
-        c("error", { detail: t.message }, !0);
+        f("error", { detail: t.message }, !0);
       }
     });
-    const A = d({}), _ = d({}), N = d({}), ae = (t) => {
+    const M = d({}), N = d({}), E = d({}), oe = (t) => {
       if (!t || t == h.table)
-        R();
-      else if (t && N.value)
-        for (let i in N.value)
-          N.value[i].refresh(t);
+        D();
+      else if (t && E.value)
+        for (let i in E.value)
+          E.value[i].refresh(t);
     };
-    g({ refresh: ae });
-    const T = d({}), me = async (t) => {
-      A.value = { ...t };
-    }, ve = async (t, i) => {
-      let u = { ...A.value };
+    g({ refresh: oe });
+    const R = d({}), be = async (t) => {
+      M.value = { ...t };
+    }, he = async (t, i) => {
+      let u = { ...M.value };
       if (u.hasOwnProperty(t.id))
-        if (_.value[t.id].table == i.table) {
-          delete u[t.id], await me(u);
+        if (N.value[t.id].table == i.table) {
+          delete u[t.id], await be(u);
           return;
         } else
-          delete u[t.id], await me(u), u[t.id] = !0;
+          delete u[t.id], await be(u), u[t.id] = !0;
       else
         u[t.id] = !0;
-      if (_.value[t.id] = i, i.action == "subtables") {
+      if (N.value[t.id] = i, i.action == "subtables") {
         if (i.hasOwnProperty("where")) {
           let e = {};
           for (let l in i.where)
             e[l] = {
-              operator: de.AND,
+              operator: X.AND,
               constraints: [
                 {
                   value: t[i.where[l]],
-                  matchMode: ue.EQUALS
+                  matchMode: ee.EQUALS
                 }
               ]
             };
-          T.value[t.id] = e;
+          R.value[t.id] = e;
         }
       } else if (i.action == "subtabs") {
         for (let e in i.tabs)
@@ -211,340 +230,354 @@ const Xe = 3, el = () => {
             let l = {};
             for (let a in i.tabs[e].where)
               l[a] = {
-                operator: de.AND,
+                operator: X.AND,
                 constraints: [
                   {
                     value: t[i.tabs[e].where[a]] ? t[i.tabs[e].where[a]] : i.tabs[e].where[a],
-                    matchMode: ue.EQUALS
+                    matchMode: ee.EQUALS
                   }
                 ]
               };
-            T.value.hasOwnProperty(t.id) || (T.value[t.id] = {}), T.value[t.id][e] = l;
+            R.value.hasOwnProperty(t.id) || (R.value[t.id] = {}), R.value[t.id][e] = l;
           }
       }
-      A.value = { ...u };
-    }, te = d({}), W = d({}), R = async (t) => {
-      H.value = !0, U.value = {
-        ...U.value,
-        first: (t == null ? void 0 : t.first) || ce.value
+      M.value = { ...u };
+    }, se = d({}), Y = d({}), D = async (t) => {
+      J.value = !0, F.value = {
+        ...F.value,
+        first: (t == null ? void 0 : t.first) || me.value
       };
       let i = {};
-      for (let e in V.value)
-        V.value[e].constraints[0].value !== null && (i[e] = V.value[e]);
+      for (let e in P.value)
+        P.value[e].constraints[0].value !== null && (i[e] = P.value[e]);
       let u = {
-        limit: U.value.rows,
+        limit: F.value.rows,
         setTotal: 1,
-        offset: U.value.first,
+        offset: F.value.first,
         // sortField:lazyParams.value.sortField,
         // sortOrder:lazyParams.value.sortOrder,
-        multiSortMeta: U.value.multiSortMeta,
+        multiSortMeta: F.value.multiSortMeta,
         filters: i
       };
       try {
-        const e = await v.read(u);
-        if (x.value = ll(e.data.rows, w), e.data.autocomplete)
+        const e = await y.read(u);
+        if (O.value = il(e.data.rows, w), e.data.autocomplete)
           for (let l in e.data.autocomplete)
-            te.value[l] = e.data.autocomplete[l];
-        e.data.row_setting && (W.value = e.data.row_setting), ee.value = e.data.total, H.value = !1;
+            se.value[l] = e.data.autocomplete[l];
+        e.data.row_setting && (Y.value = e.data.row_setting), ae.value = e.data.total, J.value = !1;
       } catch (e) {
-        c("error", { detail: e.message });
+        f("error", { detail: e.message });
       }
-    }, { cacheAction: Oe, cache: ml } = el(), M = async (t) => {
+    }, { cacheAction: Fe, cache: bl } = al(), z = async (t) => {
       let { data: i, newValue: u, field: e } = t;
       const l = {
         id: i.id,
         [e]: u
       };
-      Oe({ type: "update", payload: l });
+      Fe({ type: "update", payload: l });
       try {
-        (await v.update(l)).success && (i[e] = u);
+        (await y.update(l)).success && (i[e] = u);
       } catch (a) {
-        c("error", { detail: a.message }, !0);
+        f("error", { detail: a.message }, !0);
       }
-    }, Ce = async (t) => {
-      U.value = t, await R(t);
-    }, Se = async (t) => {
-      U.value = t, await R(t);
-    }, Fe = (t) => parseFloat(t).toFixed(2).toString().replace(".", ","), r = d({}), ie = d(!1), S = d(!1), De = (t) => {
-      r.value = { ...t }, S.value = !0;
-    }, _e = () => {
-      S.value = !1, ie.value = !1;
-    }, Te = async () => {
-      if (ie.value = !0, r.value.id)
+    }, De = async (t) => {
+      F.value = t, await D(t);
+    }, _e = async (t) => {
+      F.value = t, await D(t);
+    }, Te = (t) => parseFloat(t).toFixed(2).toString().replace(".", ","), r = d({}), ne = d(!1), _ = d(!1), Ne = (t) => {
+      r.value = { ...t }, _.value = !0;
+    }, Re = () => {
+      _.value = !1, ne.value = !1;
+    }, Ae = async () => {
+      if (ne.value = !0, r.value.id)
         try {
-          await v.update(r.value), x.value[Re(Number(r.value.id))] = r.value, S.value = !1, r.value = {};
+          await y.update(r.value), O.value[Ie(Number(r.value.id))] = r.value, _.value = !1, r.value = {};
         } catch (t) {
-          c("error", { detail: t.message });
+          f("error", { detail: t.message });
         }
       else
         try {
-          await v.create(r.value), ae(), S.value = !1, r.value = {};
+          await y.create(r.value), oe(), _.value = !1, r.value = {};
         } catch (t) {
-          c("error", { detail: t.message });
+          f("error", { detail: t.message });
         }
-    }, Re = (t) => {
+    }, Ie = (t) => {
       let i = -1;
-      for (let u = 0; u < x.value.length; u++)
-        if (x.value[u].id === t) {
+      for (let u = 0; u < O.value.length; u++)
+        if (O.value[u].id === t) {
           i = u;
           break;
         }
       return i;
-    }, Ie = () => {
-      r.value = {}, ie.value = !1, S.value = !0;
-    }, E = d(!1), z = d(!1), Le = (t) => {
-      r.value = t, E.value = !0;
-    }, Ae = async () => {
+    }, Le = () => {
+      r.value = {}, ne.value = !1, _.value = !0;
+    }, $ = d(!1), K = d(!1), Me = (t) => {
+      r.value = t, $.value = !0;
+    }, Ee = async () => {
       try {
-        await v.delete({ ids: r.value.id }), x.value = x.value.filter(
+        await y.delete({ ids: r.value.id }), O.value = O.value.filter(
           (t) => t.id !== r.value.id
-        ), E.value = !1, r.value = {};
+        ), $.value = !1, r.value = {};
       } catch (t) {
-        c("error", { detail: t.message });
+        f("error", { detail: t.message });
       }
-    }, Ne = () => {
-      O.value && O.value.length && (z.value = !0);
-    }, Me = async () => {
-      const t = O.value.map((i) => i.id).join(",");
-      try {
-        await v.delete({ ids: t }), x.value = x.value.filter(
-          (i) => !O.value.includes(i)
-        ), z.value = !1, O.value = null;
-      } catch (i) {
-        c("error", { detail: i.message });
-      }
-    }, O = d(), F = d(!1), Ee = (t) => {
-      F.value = t.checked, F.value ? (F.value = !0, O.value = x.value) : (F.value = !1, O.value = []);
     }, ze = () => {
-      F.value = O.value.length === ee.value;
-    }, $e = () => {
-      F.value = !1;
-    }, oe = (t) => t.readonly ? "readonly " + t.type : t.type, Ke = (t) => {
-      if (W.value[t.id] && W.value[t.id].class)
-        return W.value[t.id].class;
+      x.value && x.value.length && (K.value = !0);
+    }, $e = async () => {
+      const t = x.value.map((i) => i.id).join(",");
+      try {
+        await y.delete({ ids: t }), O.value = O.value.filter(
+          (i) => !x.value.includes(i)
+        ), K.value = !1, x.value = null;
+      } catch (i) {
+        f("error", { detail: i.message });
+      }
+    }, x = d(), T = d(!1), Ke = (t) => {
+      T.value = t.checked, T.value ? (T.value = !0, x.value = O.value) : (T.value = !1, x.value = []);
+    }, Be = () => {
+      T.value = x.value.length === ae.value;
+    }, Ge = () => {
+      T.value = !1;
+    }, re = (t) => t.readonly ? "readonly " + t.type : t.type, je = (t) => {
+      if (Y.value[t.id] && Y.value[t.id].class)
+        return Y.value[t.id].class;
     };
     return (t, i) => {
-      const u = Ge("PVTables", !0);
-      return n(), P("div", al, [
-        f(o(We), { class: "p-mb-4" }, {
-          start: b(() => [
-            (n(!0), P(D, null, Y(o(L).filter((e) => e.head), (e) => (n(), m(o(C), {
+      const u = Qe("PVTables", !0);
+      return n(), V("div", ol, [
+        m(o(Ze), { class: "p-mb-4" }, {
+          start: v(() => [
+            (n(!0), V(C, null, B(o(L).filter((e) => e.head), (e) => (n(), c(o(S), {
               icon: e.icon,
               label: e.label,
-              class: $(e.class),
+              class: G(e.class),
               onClick: e.head_click
             }, null, 8, ["icon", "label", "class", "onClick"]))), 256))
           ]),
-          end: b(() => [
-            f(o(C), {
+          center: v(() => [
+            (n(!0), V(C, null, B(ve.value, (e) => (n(), V(C, {
+              key: e.field
+            }, [
+              e.type == "autocomplete" ? (n(), c(o(ce), {
+                key: 0,
+                table: e.table,
+                id: e.default,
+                "onUpdate:id": (l) => e.default = l,
+                options: e.rows,
+                onSetValue: (l) => xe(e)
+              }, null, 8, ["table", "id", "onUpdate:id", "options", "onSetValue"])) : A("", !0)
+            ], 64))), 128))
+          ]),
+          end: v(() => [
+            m(o(S), {
               icon: "pi pi-refresh",
               class: "p-button-rounded p-button-success",
-              onClick: i[0] || (i[0] = (e) => ae())
+              onClick: i[0] || (i[0] = (e) => oe())
             }),
-            f(o(C), {
+            m(o(S), {
               type: "button",
               icon: "pi pi-filter-slash",
-              onClick: i[1] || (i[1] = (e) => xe())
+              onClick: i[1] || (i[1] = (e) => Ce())
             })
           ]),
           _: 1
         }),
-        f(o(qe), {
-          value: x.value,
+        m(o(Ye), {
+          value: O.value,
           lazy: "",
           paginator: "",
-          first: ce.value,
+          first: me.value,
           rows: 10,
           rowsPerPageOptions: [10, 60, 30, 10],
           paginatorTemplate: "RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink",
           currentPageReportTemplate: "{first} to {last} of {totalRecords}",
           ref_key: "dt",
-          ref: X,
+          ref: te,
           dataKey: "id",
-          totalRecords: ee.value,
-          loading: H.value,
-          onPage: i[3] || (i[3] = (e) => Ce(e)),
-          onSort: i[4] || (i[4] = (e) => Se(e)),
+          totalRecords: ae.value,
+          loading: J.value,
+          onPage: i[3] || (i[3] = (e) => De(e)),
+          onSort: i[4] || (i[4] = (e) => _e(e)),
           sortMode: "multiple",
           editMode: "cell",
-          onCellEditComplete: M,
-          selection: O.value,
-          "onUpdate:selection": i[5] || (i[5] = (e) => O.value = e),
-          selectAll: F.value,
-          onSelectAllChange: Ee,
-          onRowSelect: ze,
-          onRowUnselect: $e,
-          filters: V.value,
-          "onUpdate:filters": i[6] || (i[6] = (e) => V.value = e),
+          onCellEditComplete: z,
+          selection: x.value,
+          "onUpdate:selection": i[5] || (i[5] = (e) => x.value = e),
+          selectAll: T.value,
+          onSelectAllChange: Ke,
+          onRowSelect: Be,
+          onRowUnselect: Ge,
+          filters: P.value,
+          "onUpdate:filters": i[6] || (i[6] = (e) => P.value = e),
           filterDisplay: "menu",
-          globalFilterFields: fe.value,
-          onFilter: i[7] || (i[7] = (e) => Ue(e)),
-          expandedRows: A.value,
-          "onUpdate:expandedRows": i[8] || (i[8] = (e) => A.value = e),
+          globalFilterFields: ye.value,
+          onFilter: i[7] || (i[7] = (e) => Se(e)),
+          expandedRows: M.value,
+          "onUpdate:expandedRows": i[8] || (i[8] = (e) => M.value = e),
           showGridlines: "",
           scrollable: "",
           scrollHeight: "45rem",
           resizableColumns: "",
           columnResizeMode: "expand",
           size: "small",
-          rowClass: Ke
+          rowClass: je
         }, {
-          expansion: b((e) => [
-            _.value[e.data.id].action == "subtables" ? (n(), P("div", tl, [
-              f(u, {
-                table: _.value[e.data.id].table,
-                actions: y.actions,
-                filters: T.value[e.data.id],
+          expansion: v((e) => [
+            N.value[e.data.id].action == "subtables" ? (n(), V("div", sl, [
+              m(u, {
+                table: N.value[e.data.id].table,
+                actions: b.actions,
+                filters: R.value[e.data.id],
                 ref: (l) => {
-                  l && (N.value[e.data.id] = l);
+                  l && (E.value[e.data.id] = l);
                 }
               }, null, 8, ["table", "actions", "filters"])
-            ])) : K("", !0),
-            _.value[e.data.id].action == "subtabs" ? (n(), P("div", il, [
-              f(o(Ze), {
-                tabs: _.value[e.data.id].tabs,
-                actions: y.actions,
-                filters: T.value[e.data.id],
+            ])) : A("", !0),
+            N.value[e.data.id].action == "subtabs" ? (n(), V("div", nl, [
+              m(o(el), {
+                tabs: N.value[e.data.id].tabs,
+                actions: b.actions,
+                filters: R.value[e.data.id],
                 ref: (l) => {
-                  l && (N.value[e.data.id] = l);
+                  l && (E.value[e.data.id] = l);
                 }
               }, null, 8, ["tabs", "actions", "filters"])
-            ])) : K("", !0)
+            ])) : A("", !0)
           ]),
-          default: b(() => [
-            f(o(I), {
+          default: v(() => [
+            m(o(I), {
               selectionMode: "multiple",
               headerStyle: "width: 3rem"
             }),
-            (n(!0), P(D, null, Y(Q.value.filter((e) => e.modal_only != !0), (e) => (n(), P(D, {
+            (n(!0), V(C, null, B(q.value.filter((e) => e.modal_only != !0), (e) => (n(), V(C, {
               key: e.field
             }, [
-              e.field == "id" ? (n(), m(o(I), {
+              e.field == "id" ? (n(), c(o(I), {
                 key: 0,
                 field: "id",
                 header: "id",
                 sortable: ""
               }, {
-                body: b(({ data: l, field: a }) => [
-                  ne(B(l[a]), 1)
+                body: v(({ data: l, field: a }) => [
+                  ue(j(l[a]), 1)
                 ]),
                 _: 1
-              })) : e.type == "autocomplete" ? (n(), m(o(I), {
+              })) : e.type == "autocomplete" ? (n(), c(o(I), {
                 key: 1,
                 field: e.field,
                 header: e.label,
-                class: $(oe(e)),
+                class: G(re(e)),
                 sortable: ""
               }, {
-                body: b(({ data: l, field: a }) => {
+                body: v(({ data: l, field: a }) => {
                   var s;
                   return [
-                    f(o(Ve), {
+                    m(o(ce), {
                       table: e.table,
                       id: l[a],
                       "onUpdate:id": (k) => l[a] = k,
-                      options: (s = te.value[a]) == null ? void 0 : s.rows,
-                      onSetValue: (k) => M({ data: l, field: a, newValue: l[a] }),
+                      options: (s = se.value[a]) == null ? void 0 : s.rows,
+                      onSetValue: (k) => z({ data: l, field: a, newValue: l[a] }),
                       disabled: e.readonly
                     }, null, 8, ["table", "id", "onUpdate:id", "options", "onSetValue", "disabled"])
                   ];
                 }),
-                filter: b(({ filterModel: l }) => [
-                  f(o(G), {
+                filter: v(({ filterModel: l }) => [
+                  m(o(H), {
                     modelValue: l.value,
                     "onUpdate:modelValue": (a) => l.value = a,
                     type: "text",
                     class: "p-column-filter",
-                    placeholder: J(e)
+                    placeholder: le(e)
                   }, null, 8, ["modelValue", "onUpdate:modelValue", "placeholder"])
                 ]),
                 _: 2
-              }, 1032, ["field", "header", "class"])) : e.type == "select" ? (n(), m(o(I), {
+              }, 1032, ["field", "header", "class"])) : e.type == "select" ? (n(), c(o(I), {
                 key: 2,
                 field: e.field,
                 header: e.label,
-                class: $(oe(e)),
+                class: G(re(e)),
                 sortable: ""
               }, {
-                body: b(({ data: l, field: a }) => {
+                body: v(({ data: l, field: a }) => {
                   var s;
                   return [
-                    f(o(ke), {
+                    m(o(Pe), {
                       id: l[a],
                       "onUpdate:id": (k) => l[a] = k,
-                      options: (s = le.value[a]) == null ? void 0 : s.rows,
-                      onSetValue: (k) => M({ data: l, field: a, newValue: l[a] }),
+                      options: (s = ie.value[a]) == null ? void 0 : s.rows,
+                      onSetValue: (k) => z({ data: l, field: a, newValue: l[a] }),
                       disabled: e.readonly
                     }, null, 8, ["id", "onUpdate:id", "options", "onSetValue", "disabled"])
                   ];
                 }),
-                filter: b(({ filterModel: l }) => [
-                  f(o(G), {
+                filter: v(({ filterModel: l }) => [
+                  m(o(H), {
                     modelValue: l.value,
                     "onUpdate:modelValue": (a) => l.value = a,
                     type: "text",
                     class: "p-column-filter",
-                    placeholder: J(e)
+                    placeholder: le(e)
                   }, null, 8, ["modelValue", "onUpdate:modelValue", "placeholder"])
                 ]),
                 _: 2
-              }, 1032, ["field", "header", "class"])) : (n(), m(o(I), {
+              }, 1032, ["field", "header", "class"])) : (n(), c(o(I), {
                 key: 3,
                 field: e.field,
                 header: e.label,
-                class: $(oe(e)),
+                class: G(re(e)),
                 sortable: ""
-              }, je({
-                body: b(({ data: l, field: a }) => [
-                  e.type == "decimal" ? (n(), P(D, { key: 0 }, [
-                    ne(B(Fe(l[a])), 1)
-                  ], 64)) : e.type == "boolean" ? (n(), m(o(he), {
+              }, Je({
+                body: v(({ data: l, field: a }) => [
+                  e.type == "decimal" ? (n(), V(C, { key: 0 }, [
+                    ue(j(Te(l[a])), 1)
+                  ], 64)) : e.type == "boolean" ? (n(), c(o(ke), {
                     key: 1,
                     modelValue: l[a],
                     "onUpdate:modelValue": (s) => l[a] = s,
-                    onKeydown: i[2] || (i[2] = He(Qe(() => {
+                    onKeydown: i[2] || (i[2] = qe(We(() => {
                     }, ["stop"]), ["tab"])),
-                    onChange: (s) => M({ data: l, field: a, newValue: l[a] }),
+                    onChange: (s) => z({ data: l, field: a, newValue: l[a] }),
                     disabled: e.readonly
-                  }, null, 8, ["modelValue", "onUpdate:modelValue", "onChange", "disabled"])) : e.type === "date" ? (n(), m(o(we), {
+                  }, null, 8, ["modelValue", "onUpdate:modelValue", "onChange", "disabled"])) : e.type === "date" ? (n(), c(o(ge), {
                     key: 2,
                     "model-value": l[a],
-                    "onUpdate:modelValue": (s) => M({ data: l, field: a, newValue: s }),
+                    "onUpdate:modelValue": (s) => z({ data: l, field: a, newValue: s }),
                     disabled: e.readonly
-                  }, null, 8, ["model-value", "onUpdate:modelValue", "disabled"])) : (n(), P(D, { key: 3 }, [
-                    ne(B(l[a]), 1)
+                  }, null, 8, ["model-value", "onUpdate:modelValue", "disabled"])) : (n(), V(C, { key: 3 }, [
+                    ue(j(l[a]), 1)
                   ], 64))
                 ]),
-                filter: b(({ filterModel: l }) => [
-                  f(o(G), {
+                filter: v(({ filterModel: l }) => [
+                  m(o(H), {
                     modelValue: l.value,
                     "onUpdate:modelValue": (a) => l.value = a,
                     type: "text",
                     class: "p-column-filter",
-                    placeholder: J(e)
+                    placeholder: le(e)
                   }, null, 8, ["modelValue", "onUpdate:modelValue", "placeholder"])
                 ]),
                 _: 2
               }, [
                 !["boolean", "date"].includes(e.type) && !e.readonly ? {
                   name: "editor",
-                  fn: b(({ data: l, field: a }) => [
-                    e.type == "textarea" ? (n(), m(o(be), {
+                  fn: v(({ data: l, field: a }) => [
+                    e.type == "textarea" ? (n(), c(o(Ve), {
                       key: 0,
                       modelValue: l[a],
                       "onUpdate:modelValue": (s) => l[a] = s,
                       rows: "1"
-                    }, null, 8, ["modelValue", "onUpdate:modelValue"])) : e.type == "number" ? (n(), m(o(Z), {
+                    }, null, 8, ["modelValue", "onUpdate:modelValue"])) : e.type == "number" ? (n(), c(o(Z), {
                       key: 1,
                       modelValue: l[a],
                       "onUpdate:modelValue": (s) => l[a] = s
-                    }, null, 8, ["modelValue", "onUpdate:modelValue"])) : e.type == "decimal" ? (n(), m(o(Z), {
+                    }, null, 8, ["modelValue", "onUpdate:modelValue"])) : e.type == "decimal" ? (n(), c(o(Z), {
                       key: 2,
                       modelValue: l[a],
                       "onUpdate:modelValue": (s) => l[a] = s,
                       minFractionDigits: e.FractionDigits,
                       maxFractionDigits: e.FractionDigits
-                    }, null, 8, ["modelValue", "onUpdate:modelValue", "minFractionDigits", "maxFractionDigits"])) : (n(), m(o(G), {
+                    }, null, 8, ["modelValue", "onUpdate:modelValue", "minFractionDigits", "maxFractionDigits"])) : (n(), c(o(H), {
                       key: 3,
                       modelValue: l[a],
                       "onUpdate:modelValue": (s) => l[a] = s
@@ -554,82 +587,82 @@ const Xe = 3, el = () => {
                 } : void 0
               ]), 1032, ["field", "header", "class"]))
             ], 64))), 128)),
-            q.value ? (n(), m(o(I), {
+            W.value ? (n(), c(o(I), {
               key: 0,
               exportable: !1,
               style: { "white-space": "nowrap" }
             }, {
-              body: b((e) => [
-                (n(!0), P(D, null, Y(o(L).filter((l) => l.row), (l) => (n(), m(o(C), {
+              body: v((e) => [
+                (n(!0), V(C, null, B(o(L).filter((l) => l.row), (l) => (n(), c(o(S), {
                   icon: l.icon,
-                  class: $(l.class),
-                  onClick: (a) => l.click(e.data, Q.value)
+                  class: G(l.class),
+                  onClick: (a) => l.click(e.data, q.value)
                 }, null, 8, ["icon", "class", "onClick"]))), 256))
               ]),
               _: 1
-            })) : K("", !0)
+            })) : A("", !0)
           ]),
           _: 1
         }, 8, ["value", "first", "totalRecords", "loading", "selection", "selectAll", "filters", "globalFilterFields", "expandedRows"]),
-        f(o(re), {
-          visible: S.value,
-          "onUpdate:visible": i[9] || (i[9] = (e) => S.value = e),
+        m(o(pe), {
+          visible: _.value,
+          "onUpdate:visible": i[9] || (i[9] = (e) => _.value = e),
           style: { width: "450px" },
           header: "Редактировать",
           modal: !0,
           class: "p-fluid"
         }, {
-          footer: b(() => [
-            f(o(C), {
+          footer: v(() => [
+            m(o(S), {
               label: "Отмена",
               icon: "pi pi-times",
               class: "p-button-text",
-              onClick: _e
+              onClick: Re
             }),
-            f(o(C), {
+            m(o(S), {
               label: "Сохранить",
               icon: "pi pi-check",
               class: "p-button-text",
-              onClick: Te
+              onClick: Ae
             })
           ]),
-          default: b(() => [
-            (n(!0), P(D, null, Y(Q.value.filter((e) => e.table_only != !0), (e) => {
+          default: v(() => [
+            (n(!0), V(C, null, B(q.value.filter((e) => e.table_only != !0), (e) => {
               var l, a;
-              return n(), P("div", ol, [
-                j("label", {
+              return n(), V("div", rl, [
+                Q("label", {
                   for: e.field
-                }, B(e.label), 9, sl),
-                e.field == "id" ? (n(), P("p", {
+                }, j(e.label), 9, dl),
+                e.field == "id" ? (n(), V("p", {
                   key: 0,
                   id: e.field
-                }, B(r.value[e.field]), 9, nl)) : e.type == "textarea" ? (n(), m(o(be), {
+                }, j(r.value[e.field]), 9, ul)) : e.type == "textarea" ? (n(), c(o(Ve), {
                   key: 1,
                   id: e.field,
                   modelValue: r.value[e.field],
                   "onUpdate:modelValue": (s) => r.value[e.field] = s,
                   modelModifiers: { trim: !0 },
                   disabled: e.readonly
-                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type == "number" ? (n(), m(o(Z), {
+                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type == "number" ? (n(), c(o(Z), {
                   key: 2,
                   id: e.field,
                   modelValue: r.value[e.field],
                   "onUpdate:modelValue": (s) => r.value[e.field] = s,
                   disabled: e.readonly
-                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type == "autocomplete" ? (n(), m(o(Ve), {
+                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type == "autocomplete" ? (n(), c(o(ce), {
                   key: 3,
                   id: r.value[e.field],
                   "onUpdate:id": (s) => r.value[e.field] = s,
                   table: e.table,
-                  options: (l = te.value[e.field]) == null ? void 0 : l.rows,
+                  options: (l = se.value[e.field]) == null ? void 0 : l.rows,
                   disabled: e.readonly
-                }, null, 8, ["id", "onUpdate:id", "table", "options", "disabled"])) : e.type == "select" ? (n(), m(o(ke), {
+                }, null, 8, ["id", "onUpdate:id", "table", "options", "disabled"])) : e.type == "select" ? (n(), c(o(Pe), {
                   key: 4,
                   id: r.value[e.field],
                   "onUpdate:id": (s) => r.value[e.field] = s,
-                  options: (a = le.value[e.field]) == null ? void 0 : a.rows,
+                  options: (a = ie.value[e.field]) == null ? void 0 : a.rows,
                   disabled: e.readonly
-                }, null, 8, ["id", "onUpdate:id", "options", "disabled"])) : e.type == "decimal" ? (n(), m(o(Z), {
+                }, null, 8, ["id", "onUpdate:id", "options", "disabled"])) : e.type == "decimal" ? (n(), c(o(Z), {
                   key: 5,
                   id: e.field,
                   modelValue: r.value[e.field],
@@ -637,18 +670,18 @@ const Xe = 3, el = () => {
                   minFractionDigits: e.FractionDigits,
                   maxFractionDigits: e.FractionDigits,
                   disabled: e.readonly
-                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "minFractionDigits", "maxFractionDigits", "disabled"])) : e.type == "boolean" ? (n(), m(o(he), {
+                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "minFractionDigits", "maxFractionDigits", "disabled"])) : e.type == "boolean" ? (n(), c(o(ke), {
                   key: 6,
                   id: e.field,
                   modelValue: r.value[e.field],
                   "onUpdate:modelValue": (s) => r.value[e.field] = s,
                   disabled: e.readonly
-                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type === "date" ? (n(), m(o(we), {
+                }, null, 8, ["id", "modelValue", "onUpdate:modelValue", "disabled"])) : e.type === "date" ? (n(), c(o(ge), {
                   key: 7,
                   modelValue: r.value[e.field],
                   "onUpdate:modelValue": (s) => r.value[e.field] = s,
                   disabled: e.readonly
-                }, null, 8, ["modelValue", "onUpdate:modelValue", "disabled"])) : (n(), m(o(G), {
+                }, null, 8, ["modelValue", "onUpdate:modelValue", "disabled"])) : (n(), c(o(H), {
                   key: 8,
                   id: e.field,
                   modelValue: r.value[e.field],
@@ -661,60 +694,60 @@ const Xe = 3, el = () => {
           ]),
           _: 1
         }, 8, ["visible"]),
-        f(o(re), {
-          visible: E.value,
-          "onUpdate:visible": i[11] || (i[11] = (e) => E.value = e),
+        m(o(pe), {
+          visible: $.value,
+          "onUpdate:visible": i[11] || (i[11] = (e) => $.value = e),
           style: { width: "450px" },
           header: "Confirm",
           modal: !0
         }, {
-          footer: b(() => [
-            f(o(C), {
+          footer: v(() => [
+            m(o(S), {
               label: "Нет",
               icon: "pi pi-times",
               class: "p-button-text",
-              onClick: i[10] || (i[10] = (e) => E.value = !1)
+              onClick: i[10] || (i[10] = (e) => $.value = !1)
             }),
-            f(o(C), {
+            m(o(S), {
               label: "Да",
               icon: "pi pi-check",
               class: "p-button-text",
-              onClick: Ae
+              onClick: Ee
             })
           ]),
-          default: b(() => [
-            j("div", rl, [
-              dl,
-              r.value ? (n(), P("span", ul, "Вы хотите удалить эту запись?")) : K("", !0)
+          default: v(() => [
+            Q("div", pl, [
+              cl,
+              r.value ? (n(), V("span", fl, "Вы хотите удалить эту запись?")) : A("", !0)
             ])
           ]),
           _: 1
         }, 8, ["visible"]),
-        f(o(re), {
-          visible: z.value,
-          "onUpdate:visible": i[13] || (i[13] = (e) => z.value = e),
+        m(o(pe), {
+          visible: K.value,
+          "onUpdate:visible": i[13] || (i[13] = (e) => K.value = e),
           style: { width: "450px" },
           header: "Confirm",
           modal: !0
         }, {
-          footer: b(() => [
-            f(o(C), {
+          footer: v(() => [
+            m(o(S), {
               label: "Нет",
               icon: "pi pi-times",
               class: "p-button-text",
-              onClick: i[12] || (i[12] = (e) => z.value = !1)
+              onClick: i[12] || (i[12] = (e) => K.value = !1)
             }),
-            f(o(C), {
+            m(o(S), {
               label: "Да",
               icon: "pi pi-check",
               class: "p-button-text",
-              onClick: Me
+              onClick: $e
             })
           ]),
-          default: b(() => [
-            j("div", pl, [
-              cl,
-              r.value ? (n(), P("span", fl, "Вы хотите удалить отмеченные записи?")) : K("", !0)
+          default: v(() => [
+            Q("div", ml, [
+              yl,
+              r.value ? (n(), V("span", vl, "Вы хотите удалить отмеченные записи?")) : A("", !0)
             ])
           ]),
           _: 1
@@ -722,12 +755,12 @@ const Xe = 3, el = () => {
       ]);
     };
   }
-}, Tl = {
-  install: (y, g) => {
-    y.component(ge.name, ge);
+}, Al = {
+  install: (b, g) => {
+    b.component(Ue.name, Ue);
   }
 };
 export {
-  ge as PVTables,
-  Tl as default
+  Ue as PVTables,
+  Al as default
 };
