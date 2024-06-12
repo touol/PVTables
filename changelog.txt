@@ -6,3 +6,4 @@ Changelog for PVTables.
 - subfilters и рекурсивная childComponentRefs.
 - build_css.
 - Ширина колонок.
+- row_setting цвета строк.

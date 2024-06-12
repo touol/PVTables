@@ -61,6 +61,8 @@
       resizableColumns columnResizeMode="expand"
 
       size="small"
+
+      :rowClass="rowClass"
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <template
@@ -368,7 +370,7 @@ import GTSAutocomplete from "pvtables/gtsautocomplete";
 import GTSSelect from "pvtables/gtsselect";
 import { useNotifications } from "pvtables/notify";
 
-import PVTabs from 'pvtables/pvtabs'
+import { PVTabs } from 'pvtables/pvtabs'
 
 import { useActionsCaching } from "./composables/useActionsCaching";
 import apiCtor from 'pvtables/api'
@@ -415,6 +417,11 @@ const initFilters = () => {
             ],
           };
       }
+    }
+  }
+  for (let field in props.filters) {
+    if (!filters0.hasOwnProperty(field)) {
+      filters0[field] = props.filters[field];
     }
   }
   filters.value = filters0;
@@ -658,17 +665,20 @@ const setExpandedRow = async (event, tmpt) => {
             operator: FilterOperator.AND,
             constraints: [
               {
-                value: event[tmpt.tabs[key].where[field]],
+                value: event[tmpt.tabs[key].where[field]]?event[tmpt.tabs[key].where[field]]:tmpt.tabs[key].where[field],
                 matchMode: FilterMatchMode.EQUALS,
               },
             ],
           };
         }
-        subfilters.value[event.id] = {}
+        // console.log('tmpfilters',tmpfilters)
+        if(!subfilters.value.hasOwnProperty(event.id)) subfilters.value[event.id] = {}
         subfilters.value[event.id][key] = tmpfilters;
+        
       }
     }
   }
+  // console.log('subfilters.value',subfilters.value)
   expandedRows.value = { ...tmp };
   // console.log('expandedRows.value',expandedRows.value)
 };
@@ -684,6 +694,7 @@ const setExpandedRow = async (event, tmpt) => {
 //   }
 // }
 const autocompleteSettings = ref({});
+const row_setting = ref({});
 
 const loadLazyData = async (event) => {
   loading.value = true;
@@ -693,6 +704,13 @@ const loadLazyData = async (event) => {
   };
   // console.log('lazyParams.value',lazyParams.value)
   // console.log('event',event)
+  // console.log('filters.value',filters.value)
+  let filters0 = {}
+  for(let field in filters.value){
+    if(filters.value[field].constraints[0].value !== null){
+      filters0[field] = filters.value[field]
+    }
+  }
   let params = {
     limit: lazyParams.value.rows,
     setTotal: 1,
@@ -700,7 +718,7 @@ const loadLazyData = async (event) => {
     // sortField:lazyParams.value.sortField,
     // sortOrder:lazyParams.value.sortOrder,
     multiSortMeta: lazyParams.value.multiSortMeta,
-    filters: filters.value,
+    filters: filters0,
   };
  
   try {
@@ -716,7 +734,10 @@ const loadLazyData = async (event) => {
       for(let af in response.data.autocomplete){
         autocompleteSettings.value[af] = response.data.autocomplete[af];
       }
-    }  
+    }
+    if(response.data.row_setting){
+        row_setting.value = response.data.row_setting
+    }   
 
     //
 
@@ -890,7 +911,14 @@ const getClass = (col) => {
   }
   return col.type
 };
+const rowClass = (data) => {
+  if(row_setting.value[data.id] && row_setting.value[data.id].class){
+    return row_setting.value[data.id].class;
+  }
+  return
+};
 </script>
+
 
 <style>
   td.readonly{
@@ -913,5 +941,25 @@ const getClass = (col) => {
     width:136px;
   }
 
-
+  .p-datatable tr.hit{
+    background-color: #60cc2fe6;
+  }
+  .p-datatable tr.attention{
+    background-color: rgba(252, 3, 3, 0.8);
+  }
+  .p-datatable tr.work{
+    background-color: #89d7f1;
+  }
+  .p-datatable tr.outwork{
+    background-color: #eff189;
+  }
+  .p-datatable tr.onsklad{
+    background-color: #f19989;
+  }
+  .p-datatable tr.canceled{
+    background-color: #ff684c;
+  }
+  .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding: 0.375rem 0.5rem;
+  }
 </style>
