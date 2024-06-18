@@ -40,6 +40,10 @@ const props = defineProps({
   options: {
     type: Object,
     default: () => []
+  },
+  parent: {
+    type: Object,
+    default: () => {}
   }
 });
 
@@ -79,7 +83,7 @@ const items = ref([]);
 
 const search = async ({ query }) => {
   try {
-    const response = await api.autocomplete({query})
+    const response = await api.autocomplete({query:query,parent:props.parent})
     items.value = response.data.rows;
   } catch (error) {
     notify('error', { detail: error.message });
@@ -87,7 +91,7 @@ const search = async ({ query }) => {
 };
 
 async function getOptionById(id) {
-  const response = await api.autocomplete({id})
+  const response = await api.autocomplete({id:id,parent:props.parent})
   return response.data.rows[0] || null;
 }
 

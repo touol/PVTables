@@ -10,3 +10,4 @@ Changelog for PVTables.
 - filtres в топе таблицы.
 - Параметры head_click.
 - Подгрузка в gtsAutoComplete.
+- service action.

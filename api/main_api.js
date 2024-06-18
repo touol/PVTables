@@ -14,6 +14,7 @@ export default (tableName) => {
   instance.interceptors.request.use(
     (config) => config,
     (error) => {
+      // console.log('notify1')
       notify('error', { detail: error.message })
       Promise.reject(error)
     }
@@ -22,12 +23,13 @@ export default (tableName) => {
   instance.interceptors.response.use(
     ({data}) => {
       if (!data.success) {
-        throw new Error(response.message);
+        throw new Error(data.message);
       }
 
       return data
     },
     ({message, response}) => {
+      // console.log('notify2')
       notify('error', { detail: message })
     }
   )
@@ -37,6 +39,19 @@ export default (tableName) => {
     create: async (data = null, params = {}) => {
       const response = await instance.put('/', data, { params })
       return response
+    },
+
+    get: async (id) => {
+      let params = {
+        limit: 1,
+        setTotal: 0,
+        filters: {id:{value:id,matchMode:"equals"}},
+      };
+      const response = await instance.get('/', { params })
+      // console.log('response',response)
+      if(response.data.rows.length == 1)
+        return response.data.rows[0]
+      throw new Error(response.message);
     },
 
     read: async (params = {}) => {
@@ -67,6 +82,15 @@ export default (tableName) => {
     autocomplete: async (params = {}) => {
       const query = {
         api_action: 'autocomplete',
+        ...params
+      }
+
+      const response = await instance.post('/', null, { params: query})
+      return response
+    },
+    action: async (action, params = {}) => {
+      const query = {
+        api_action: action,
         ...params
       }
 
