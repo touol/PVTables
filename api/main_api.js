@@ -3,10 +3,10 @@ import { useNotifications } from "pvtables/notify";
 
 // console.log(import.meta.env)
 
-export default (tableName) => {  
+export default (tableName, timeout = 10000) => {  
   const instance = axios.create({
     baseURL: `${import.meta.env.VITE_API_BASE_URL}api/${tableName}`,
-    timeout: 10000
+    timeout: timeout
   })
 
   const { notify } = useNotifications()

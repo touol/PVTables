@@ -2,7 +2,7 @@
   <div class="p-field">
     <label for="doc_id">База 1с</label>
     <GTSAutocomplete
-      v-model:id="data.base_index"
+      v-model:id="data.base_id"
       table="doc1cBase"
     />
     <!-- <span  class="p-error">Это поле требуется.</span> -->
@@ -32,7 +32,7 @@
   import GTSAutocomplete from "pvtables/gtsautocomplete";
 
   import apiCtor from 'pvtables/api'
-  const api_sraschet = apiCtor('sraschet')
+  const api_sraschet = apiCtor('sraschet',600000)
   import { useNotifications } from "pvtables/notify";
   const { notify } = useNotifications();
 
@@ -45,13 +45,19 @@
   const data = ref({
     raschet_id:props.raschet_id,
     sokrashen:false,
-    base_index:'1',
+    base_id:'1',
   })
-
+  const emit = defineEmits(['acc-create-on']);
   const saveItem = async () => {
     try {
-      await api_sraschet.action('ExcelRaschet/createAccountIn1c',data.value)
-
+      if(data.value.sokrashen){
+        data.value.sokrashen = 1
+      }else{
+        data.value.sokrashen = 0
+      }
+      const resp = await api_sraschet.action('ExcelRaschet/createAccountIn1c',data.value)
+      // console.log('resp',resp)
+      emit('acc-create-on',resp)
     } catch (error) {
       // console.log('notify3',error)
       notify('error', { detail: error.message });

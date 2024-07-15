@@ -72,7 +72,8 @@
       
       v-model:expandedRows="expandedRows"
       showGridlines
-      scrollable scrollHeight="45rem"
+
+      scrollable scrollHeight="85vh"
       resizableColumns columnResizeMode="expand"
 
       size="small"
@@ -173,6 +174,9 @@
               @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
               :disabled="col.readonly"
             />
+            <template v-else-if="col.type == 'html'" >
+              <span v-html="data[field]"></span>
+            </template>
             <template v-else>
               {{ data[field] }}
             </template>
@@ -209,7 +213,7 @@
             v-for="action in cur_actions.filter((x) => x.row)"
             :icon="action.icon"
             :class="action.class"
-            @click="action.click(slotProps.data, columns)"
+            @click="action.click(slotProps.data, columns,table,filters)"
           />
         </template>
       </Column>
