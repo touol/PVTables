@@ -11,3 +11,4 @@ Changelog for PVTables.
 - Параметры head_click.
 - Подгрузка в gtsAutoComplete.
 - service action.
+- Update primevue 4.

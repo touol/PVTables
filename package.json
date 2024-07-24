@@ -9,14 +9,14 @@
   "scripts": {
     "dev": "vite",
     "build": "node ./build/build.js && node ./build/copy.js",
-    "copy_in_gtsapi":"node ./build/build_css.js && node ./build/copy_in_gtsapi.js",
+    "copy_in_gtsapi": "node ./build/build_css.js && node ./build/copy_in_gtsapi.js",
     "build_vite": "vite build",
     "preview": "vite preview"
   },
   "peerDependencies": {
     "axios": "^1.6.8",
     "primeicons": "^7.0.0",
-    "primevue": "^3.51.0",
+    "primevue": "^4.0.1",
     "vue": "^3.4.21"
   },
   "devDependencies": {
