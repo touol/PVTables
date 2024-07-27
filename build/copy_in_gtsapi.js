@@ -18,5 +18,5 @@ const emptyFolderRecursive = function (directoryPath) {
   };
 emptyFolderRecursive('../gtsAPI/assets/components/gtsapi/js/web/pvtables')
 
-fs.cpSync('./dist/pvtables', '../gtsAPI/assets/components/gtsapi/js/web/pvtables', {recursive: true});
+fs.cpSync('./dist', '../gtsAPI/assets/components/gtsapi/js/web/pvtables', {recursive: true});
    

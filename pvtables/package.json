@@ -1,7 +1,0 @@
-{
-    "main": "./pvtables.cjs",
-    "module": "./pvtables.js",
-    "browser": {
-        "./sfc": "./PVTables.vue"
-    }
-}

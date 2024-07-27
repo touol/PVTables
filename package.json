@@ -1,26 +1,32 @@
 {
   "name": "pvtables",
   "private": false,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Table for MODX on PrimeVue",
   "author": "Alexandr Tuniekov",
   "type": "module",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "node ./build/build.js && node ./build/copy.js",
-    "copy_in_gtsapi": "node ./build/build_css.js && node ./build/copy_in_gtsapi.js",
-    "build_vite": "vite build",
+    "build": "vite build",
+    "copy_in_gtsapi": "node ./build/copy_in_gtsapi.js",
     "preview": "vite preview"
   },
-  "peerDependencies": {
+  "main": "../dist/pvtables.cjs",
+  "module": "../dist/index.js",
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.2.0"
+  },
+  "dependencies": {
+    "@primevue/themes": "^4.0.1",
     "axios": "^1.6.8",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.1",
+    "tailwindcss-primeui": "^0.3.4",
     "vue": "^3.4.21"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.2.0"
   }
 }

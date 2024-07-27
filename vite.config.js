@@ -1,21 +1,28 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import external_packages from './build/external_packages.json'
-import libraries from './build/libraries.js'
+import tailwindcss from 'tailwindcss'
 
-
-// console.log(resolve(__dirname, './pvtables/pvtables.vue'))
-// https://vitejs.dev/config/
-let aliases = {}
-for(let key in libraries){
-  aliases['pvtables/' + key] = libraries[key].path
-  external_packages.push('pvtables/' + key)
-}
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
   return {
-    plugins: [vue()],
+    build: {
+      outDir: "./dist",
+      lib: {
+        entry:'./src/index.js',
+        formats: ["es", "cjs"],
+      },
+      emptyOutDir: true,
+      rollupOptions: {
+        external: ['vue'],
+        output: {
+            globals: {
+                vue: 'Vue'
+            }
+        }
+      }
+    },
+    plugins: [vue(),tailwindcss()],
     server: {
       // dev api access
       // proxy: {
@@ -26,8 +33,8 @@ export default defineConfig(({ mode }) => {
       //   }
       // }
     },
-    resolve: {
-      alias: aliases
-    }
+      // resolve: {
+      //   alias: aliases
+      // }
   }
 })

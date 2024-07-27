@@ -1,4 +1,0 @@
-{
-    "main": "./notify.cjs",
-    "module": "./notify.js"
-}
