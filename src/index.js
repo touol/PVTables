@@ -5,6 +5,7 @@ import gtsAutoComplete from './components/gtsAutoComplete.vue'
 import gtsDate from './components/gtsDate.vue'
 import gtsSelect from './components/gtsSelect.vue'
 import PVTable from './components/PVTable.vue'
+import PVForm from './components/PVForm.vue'
 import { useNotifications } from './components/useNotifications.js'
 
 import 'primeicons/primeicons.css'
@@ -50,6 +51,7 @@ export default {
         app.component('gtsDate', gtsDate)
         app.component('gtsSelect', gtsSelect)
         app.component('PVTable', PVTable)
+        app.component('PVForm', PVForm)
         app.component('useNotifications', useNotifications)
     }
 }
@@ -60,6 +62,7 @@ export {
     gtsAutoComplete as gtsAutoComplete,
     gtsDate as gtsDate,
     PVTable as PVTable,
+    PVForm as PVForm,
     useNotifications as useNotifications,
 
     Button as Button,

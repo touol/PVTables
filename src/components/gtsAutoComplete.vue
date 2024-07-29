@@ -55,8 +55,11 @@ const { notify } = useNotifications()
 const selectedItem = ref({});
 
 watchEffect(async () => {
-  if (Array.isArray(props.options) && props.options.length) {
-    const [ option ] = props.options.filter((option) => model.value === option.id)
+  if (Number(model.value) == 0 && Number(props.options.default) > 0){
+    model.value = props.options.default
+  }
+  if (props.options && Array.isArray(props.options.rows) && props.options.length) {
+    const [ option ] = props.options.rows.filter((option) => model.value === option.id)
     if (option) {
       selectedItem.value = option
     } else {

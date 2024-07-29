@@ -12,3 +12,4 @@ Changelog for PVTables.
 - Подгрузка в gtsAutoComplete.
 - service action.
 - Update primevue 4.
+- PVForm.

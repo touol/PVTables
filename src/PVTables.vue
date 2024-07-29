@@ -110,7 +110,7 @@
             <GTSAutocomplete
               :table="col.table"
               v-model:id="data[field]"
-              :options="autocompleteSettings[field]?.rows"
+              :options="autocompleteSettings[field]"
               @set-value="
                 onCellEditComplete({ data, field, newValue: data[field] })
               "
@@ -245,55 +245,8 @@
       header="Редактировать"
       modal
     >
-      <template v-for="col of columns.filter((x) => x.table_only != true)">
-        <div class="flex items-center gap-4 mb-4">
-          <label :for="col.field" class="font-semibold w-24">{{ col.label }}</label>
-          <template v-if="col.field == 'id'">
-            <span :id="col.field" class="flex-auto" autocomplete="off">{{ lineItem[col.field] }}</span>
-          </template>
-          <template v-else-if="col.type == 'textarea'">
-            <Textarea :id="col.field" v-model.trim="lineItem[col.field]" :disabled="col.readonly" class="flex-auto" autocomplete="off"/>
-          </template>
-          <template v-else-if="col.type == 'number'">
-            <InputNumber :id="col.field" v-model="lineItem[col.field]" :disabled="col.readonly" class="flex-auto" autocomplete="off"/>
-          </template>
-          <template v-else-if="col.type == 'autocomplete'">
-            <GTSAutocomplete
-              v-model:id="lineItem[col.field]"
-              :table="col.table"
-              :options="autocompleteSettings[col.field]?.rows"
-              :disabled="col.readonly"
-               class="flex-auto" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'select'">
-            <GTSSelect
-              v-model:id="lineItem[col.field]"
-              :options="selectSettings[col.field]?.rows"
-              :disabled="col.readonly"
-               class="flex-auto" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'decimal'">
-            <InputNumber
-              :id="col.field"
-              v-model="lineItem[col.field]"
-              :minFractionDigits="col.FractionDigits"
-              :maxFractionDigits="col.FractionDigits"
-              :disabled="col.readonly"
-               class="flex-auto" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'boolean'">
-            <ToggleSwitch :id="col.field" v-model="lineItem[col.field]" :disabled="col.readonly"/>
-          </template>
-          <GTSDate v-else-if="col.type === 'date'" v-model="lineItem[col.field]" :disabled="col.readonly" class="flex-auto" autocomplete="off"/>
-          <template v-else>
-            <InputText :id="col.field" v-model.trim="lineItem[col.field]" :disabled="col.readonly" class="flex-auto" autocomplete="off"/>
-          </template>
-        </div>
-      </template>
-
+      
+      <PVForm v-model="lineItem" :columns="columns" :autocompleteSettings="autocompleteSettings"/>
       <template #footer>
         <Button
           label="Отмена"
@@ -380,13 +333,12 @@ import Dialog from "primevue/dialog";
 // import axios from "axios";
 
 //import fields component
+import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
+
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
 import ToggleSwitch from 'primevue/toggleswitch';
-// import ToggleButton from 'primevue/togglebutton';
-import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
-
 
 import GTSDate from "./components/gtsDate.vue";
 import GTSAutocomplete from "./components/gtsAutoComplete.vue";
@@ -394,6 +346,7 @@ import GTSSelect from "./components/gtsSelect.vue";
 import { useNotifications } from "./components/useNotifications";
 
 import PVTabs from './components/PVTabs.vue'
+import PVForm from "./components/PVForm.vue";
 
 import { useActionsCaching } from "./composables/useActionsCaching";
 import apiCtor from './components/api'
