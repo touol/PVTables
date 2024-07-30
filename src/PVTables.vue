@@ -958,7 +958,11 @@ const rowClass = (data) => {
   html {
     font-size: 14px;
   }
-  .p-datatable-resizable-table > .p-datatable-thead > tr > th, .p-datatable-resizable-table > .p-datatable-tbody > tr > td.text, .p-datatable-resizable-table > .p-datatable-tbody > tr > td.textarea {
+  .p-datatable-resizable-table > .p-datatable-thead > tr > th,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.text,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.textarea,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.html 
+  {
     white-space: break-spaces !important;
   }
   .p-datatable textarea{
