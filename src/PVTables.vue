@@ -92,11 +92,19 @@
           v-if="col.field == 'id'"
           field="id"
           header="id"
-
+          dataType="numeric"
           sortable
         >
           <template #body="{ data, field }">
             {{ data[field] }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText
+              v-model="filterModel.value"
+              type="text"
+              class="p-column-filter"
+              :placeholder="filterPlaceholder(col)"
+            />
           </template>
         </Column>
         <Column
@@ -105,6 +113,7 @@
           :header="col.label"
           :class="getClass(col)"
           sortable
+          dataType="numeric"
         >
           <template #body="{ data, field }">
             <GTSAutocomplete
@@ -118,11 +127,11 @@
             />
           </template>
           <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
+            <GTSAutocomplete
+              :table="col.table"
+              v-model:id="filterModel.value"
+              :options="autocompleteSettings[field]"
               class="p-column-filter"
-              :placeholder="filterPlaceholder(col)"
             />
           </template>
         </Column>
@@ -132,6 +141,7 @@
           :header="col.label"
           :class="getClass(col)"
           sortable
+          dataType="numeric"
         >
           <template #body="{ data, field }">
             <GTSSelect
@@ -144,12 +154,106 @@
             />
           </template>
           <template #filter="{ filterModel }">
-            <InputText
+            <GTSSelect
+              v-model:id="filterModel.value"
+              :options="selectSettings[field]?.rows"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'decimal'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            {{ format_decimal(data[field],col.FractionDigits) }}
+          </template>
+          <template v-if="!col.readonly" #editor="{ data, field }">
+            <InputNumber
+              v-model="data[field]"
+              :minFractionDigits="col.FractionDigits"
+              :maxFractionDigits="col.FractionDigits"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputNumber
               v-model="filterModel.value"
+              :minFractionDigits="col.FractionDigits"
+              :maxFractionDigits="col.FractionDigits"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'number'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            {{ data[field] }}
+          </template>
+          <template v-if="!col.readonly" #editor="{ data, field }">
+            <InputNumber
+              v-model="data[field]"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputNumber
+              v-model="filterModel.value"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'date'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="date"
+        >
+          <template #body="{ data, field }">
+            <GTSDate 
+              :model-value="data[field]"
+              @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <GTSDate
+              :model-value="filterModel.value"
+              @update:modelValue="filterModel.value = $event"
               type="text"
               class="p-column-filter"
-              :placeholder="filterPlaceholder(col)"
             />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'boolean'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="boolean"
+        >
+          <template #body="{ data, field }">
+            <ToggleSwitch 
+              v-if="col.type == 'boolean'" 
+              v-model="data[field]" 
+              @keydown.tab.stop
+              @change="onCellEditComplete({ data, field, newValue: data[field] })"
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <Checkbox v-model="filterModel.value" :indeterminate="filterModel.value === null" binary/>
           </template>
         </Column>
         <Column
@@ -161,23 +265,7 @@
           sortable
         >
           <template #body="{ data, field }">
-            <template v-if="col.type == 'decimal'" >
-              {{ format_decimal(data[field],col.FractionDigits) }}
-            </template>
-            <ToggleSwitch 
-              v-else-if="col.type == 'boolean'" 
-              v-model="data[field]" 
-              @keydown.tab.stop
-              @change="onCellEditComplete({ data, field, newValue: data[field] })"
-              :disabled="col.readonly"
-            />
-            <GTSDate 
-              v-else-if="col.type === 'date'" 
-              :model-value="data[field]"
-              @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
-              :disabled="col.readonly"
-            />
-            <template v-else-if="col.type == 'html'" >
+            <template v-if="col.type == 'html'" >
               <span v-html="data[field]"></span>
             </template>
             <template v-else>
@@ -186,16 +274,8 @@
           </template>
           <template v-if="!['boolean', 'date'].includes(col.type) && !col.readonly" #editor="{ data, field }">
             <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
-            <InputNumber v-else-if="col.type == 'number'" v-model="data[field]" />
-            <InputNumber
-              v-else-if="col.type == 'decimal'"
-              v-model="data[field]"
-              :minFractionDigits="col.FractionDigits"
-              :maxFractionDigits="col.FractionDigits"
-            />
             <InputText v-else v-model="data[field]" />
           </template>
-
           <template #filter="{ filterModel }">
             <InputText
               v-model="filterModel.value"
@@ -339,6 +419,7 @@ import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
 import ToggleSwitch from 'primevue/toggleswitch';
+import Checkbox from 'primevue/checkbox';
 
 import GTSDate from "./components/gtsDate.vue";
 import GTSAutocomplete from "./components/gtsAutoComplete.vue";
@@ -396,6 +477,28 @@ const initFilters = () => {
       filters0[field] = props.filters[field];
     } else {
       switch (fields[field].type) {
+        case 'autocomplete': case 'select': case 'decimal': case 'number': case 'view':
+          filters0[field] = {
+              operator: FilterOperator.AND,
+              constraints: [
+                { value: null, matchMode: FilterMatchMode.EQUALS },
+              ],
+            };
+        break
+        case 'boolean':
+          filters0[field] = {
+            value: null, matchMode: FilterMatchMode.EQUALS
+            };
+        break
+        case 'date':
+          filters0[field] = {
+              operator: FilterOperator.AND,
+              constraints: [
+                { value: null, matchMode: FilterMatchMode.DATE_AFTER },
+                { value: null, matchMode: FilterMatchMode.DATE_BEFORE },
+              ],
+            };
+        break
         default:
           filters0[field] = {
             operator: FilterOperator.AND,
@@ -725,8 +828,14 @@ const loadLazyData = async (event) => {
   // console.log('filters.value',filters.value)
   let filters0 = {}
   for(let field in filters.value){
-    if(filters.value[field].constraints[0].value !== null){
-      filters0[field] = filters.value[field]
+    if(filters.value[field].hasOwnProperty('constraints')){
+      if(filters.value[field].constraints[0].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }else{
+      if(filters.value[field].value !== null){
+        filters0[field] = filters.value[field]
+      }
     }
   }
   let params = {

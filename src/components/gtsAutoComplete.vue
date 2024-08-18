@@ -58,7 +58,8 @@ watchEffect(async () => {
   if (Number(model.value) == 0 && Number(props.options.default) > 0){
     model.value = props.options.default
   }
-  if (props.options && Array.isArray(props.options.rows) && props.options.length) {
+  
+  if (props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
     const [ option ] = props.options.rows.filter((option) => model.value === option.id)
     if (option) {
       selectedItem.value = option
