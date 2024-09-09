@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-// import { ref } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
@@ -70,9 +70,19 @@ const props = defineProps({
   autocompleteSettings: {
     type: Object,
     default: {}
+  },
+  selectSettings: {
+    type: Object,
+    default: {}
   }
 });
-
+watchEffect(async () => {
+  for(let col in props.columns){
+    if(props.columns[col].hasOwnProperty('default')){
+      if(!model.value.hasOwnProperty(props.columns[col].field)) model.value[props.columns[col].field] = props.columns[col].default
+    }
+  }
+})
 </script>
 
 

@@ -6,6 +6,7 @@ import gtsDate from './components/gtsDate.vue'
 import gtsSelect from './components/gtsSelect.vue'
 import PVTable from './components/PVTable.vue'
 import PVForm from './components/PVForm.vue'
+import PVTableModel from './components/PVTableModel.vue'
 import { useNotifications } from './components/useNotifications.js'
 
 import 'primeicons/primeicons.css'
@@ -24,6 +25,7 @@ import TabList from 'primevue/tablist';
 import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
+import Toast from 'primevue/toast'
 
 import localeRu from './locale/ru.json';
 
@@ -52,6 +54,7 @@ export default {
         app.component('gtsSelect', gtsSelect)
         app.component('PVTable', PVTable)
         app.component('PVForm', PVForm)
+        app.component('PVTableModel', PVTableModel)
         app.component('useNotifications', useNotifications)
     }
 }
@@ -63,6 +66,7 @@ export {
     gtsDate as gtsDate,
     PVTable as PVTable,
     PVForm as PVForm,
+    PVTableModel as PVTableModel,
     useNotifications as useNotifications,
 
     Button as Button,
@@ -76,4 +80,5 @@ export {
     Tab as Tab,
     TabPanels as TabPanels,
     TabPanel as TabPanel,
+    Toast as Toast,
 }
