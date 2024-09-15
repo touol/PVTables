@@ -83,91 +83,209 @@
 
       :rowClass="rowClass"
     >
-      <Column v-if="table_tree" headerStyle="width: 3rem">
-        <template #body="{ data }">
-          <template v-if="data['gtsapi_children_count'] > 0">
-            <Button v-if="expandedTableTreeRows[data.id]" icon="pi pi-angle-down" class="p-button-text" @click="toogleExpandRow(data)"/>
-            <Button v-else icon="pi pi-angle-right" class="p-button-text" @click="toogleExpandRow(data)"/>
-          </template>
-        </template>
-      </Column>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-      <Column
+      <template
         v-for="col of columns.filter((x) => x.modal_only != true)"
-        :field="col.field"
-        :header="col.label"
-        sortable
-        :dataType="col.dataType"
+        :key="col.field"
       >
-        <template #body="{ data, field }">
-          <div :class="getClassBody(col,data)">
-            <Field
-              :field="col"
-              :data="data[field]"
-              :use_data="true"
-              :autocompleteSettings="autocompleteSettings[field]"
-              :selectSettings="selectSettings[field]"
-              @set-value="
-                onCellEditComplete({ data, field, newValue: $event })
-              "
-              :customFields="customFields[data.id]"
-            />
-          </div>
-        </template>
-        <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(col.type) && !col.readonly" #editor="{ data, field }">
-          <Field
-            v-if="customFields[data.id][field] && ['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(customFields[data.id][field].type)"
-            :field="col"
-            :data="data[field]"
-            :use_data="true"
-            :autocompleteSettings="autocompleteSettings[field]"
-            :selectSettings="selectSettings[field]"
-            @set-value="
-              onCellEditComplete({ data, field, newValue: $event })
-            "
-            :customFields="customFields[data.id]"
-            />
-          <InputNumber 
-            v-else-if="col.type == 'number'" 
-            v-model="data[field]"
-            :disabled="disableField(data,field)"
-          />
-          <InputNumber 
-            v-else-if="col.type == 'decimal'" 
-            v-model="data[field]" 
-            :minFractionDigits="col.FractionDigits" 
-            :maxFractionDigits="col.FractionDigits" 
-            :disabled="disableField(data,field)"
-          />
-          <Textarea 
-            v-else-if="col.type == 'textarea'" 
-            v-model="data[field]" rows="1" 
-            :disabled="disableField(data,field)"
-            />
-          <InputText 
-            v-else 
-            v-model="data[field]" 
-            :disabled="disableField(data,field)"
-            />
-        </template>
-        <template #filter="{ filterModel }">
-          <template v-if="['autocomplete', 'select', 'boolean', 'date' , 'datetime'].includes(col.type)">
-            <Field
-              :field="col"
+        <Column
+          v-if="col.field == 'id'"
+          field="id"
+          header="id"
+          dataType="numeric"
+          sortable
+        >
+          <template #body="{ data, field }">
+            {{ data[field] }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText
               v-model="filterModel.value"
-              :autocompleteSettings="autocompleteSettings[col.field]"
-              :selectSettings="selectSettings[col.field]"
+              type="text"
+              class="p-column-filter"
+              :placeholder="filterPlaceholder(col)"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'autocomplete'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            <GTSAutocomplete
+              :table="col.table"
+              v-model:id="data[field]"
+              :options="autocompleteSettings[field]"
+              @set-value="
+                onCellEditComplete({ data, field, newValue: data[field] })
+              "
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <GTSAutocomplete
+              :table="col.table"
+              v-model:id="filterModel.value"
+              :options="autocompleteSettings[field]"
               class="p-column-filter"
             />
           </template>
-          <template v-else>
-            <InputNumber v-if="col.type == 'number'" v-model="filterModel.value"/>
-            <InputNumber v-else-if="col.type == 'decimal'" v-model="filterModel.value" :minFractionDigits="col.FractionDigits" :maxFractionDigits="col.FractionDigits" />
-            <Textarea v-else-if="col.type == 'textarea'" v-model="filterModel.value" rows="1" />
-            <InputText v-else v-model="filterModel.value" />
+        </Column>
+        <Column
+          v-else-if="col.type == 'select'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            <GTSSelect
+              v-model:id="data[field]"
+              :options="selectSettings[field]?.rows"
+              @set-value="
+                onCellEditComplete({ data, field, newValue: data[field] })
+              "
+              :disabled="col.readonly"
+            />
           </template>
-        </template>
-      </Column>
+          <template #filter="{ filterModel }">
+            <GTSSelect
+              v-model:id="filterModel.value"
+              :options="selectSettings[field]?.rows"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'decimal'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            {{ format_decimal(data[field],col.FractionDigits) }}
+          </template>
+          <template v-if="!col.readonly" #editor="{ data, field }">
+            <InputNumber
+              v-model="data[field]"
+              :minFractionDigits="col.FractionDigits"
+              :maxFractionDigits="col.FractionDigits"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputNumber
+              v-model="filterModel.value"
+              :minFractionDigits="col.FractionDigits"
+              :maxFractionDigits="col.FractionDigits"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'number'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="numeric"
+        >
+          <template #body="{ data, field }">
+            {{ data[field] }}
+          </template>
+          <template v-if="!col.readonly" #editor="{ data, field }">
+            <InputNumber
+              v-model="data[field]"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputNumber
+              v-model="filterModel.value"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'date'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="date"
+        >
+          <template #body="{ data, field }">
+            <GTSDate 
+              :model-value="data[field]"
+              @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <GTSDate
+              :model-value="filterModel.value"
+              @update:modelValue="filterModel.value = $event"
+              type="text"
+              class="p-column-filter"
+            />
+          </template>
+        </Column>
+        <Column
+          v-else-if="col.type == 'boolean'"
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+          sortable
+          dataType="boolean"
+        >
+          <template #body="{ data, field }">
+            <ToggleSwitch 
+              v-if="col.type == 'boolean'" 
+              v-model="data[field]" 
+              @keydown.tab.stop
+              @change="onCellEditComplete({ data, field, newValue: data[field] })"
+              :disabled="col.readonly"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <Checkbox v-model="filterModel.value" :indeterminate="filterModel.value === null" binary/>
+          </template>
+        </Column>
+        <Column
+          v-else
+          :field="col.field"
+          :header="col.label"
+          :class="getClass(col)"
+
+          sortable
+        >
+          <template #body="{ data, field }">
+            <template v-if="col.type == 'html'" >
+              <span v-html="data[field]"></span>
+            </template>
+            <template v-else>
+              {{ data[field] }}
+            </template>
+          </template>
+          <template v-if="!['boolean', 'date'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+            <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
+            <InputText v-else v-model="data[field]" />
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText
+              v-model="filterModel.value"
+              type="text"
+              class="p-column-filter"
+              :placeholder="filterPlaceholder(col)"
+            />
+          </template>
+        </Column>
+      </template>
       <Column
         v-if="actions_row"
         :exportable="false"
@@ -208,7 +326,7 @@
       modal
     >
       
-      <PVForm v-model="lineItem" :columns="columns" :autocompleteSettings="autocompleteSettings" :selectSettings="selectSettings"/>
+      <PVForm v-model="lineItem" :columns="columns" :autocompleteSettings="autocompleteSettings"/>
       <template #footer>
         <Button
           label="Отмена"
@@ -300,13 +418,12 @@ import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
-// import ToggleSwitch from 'primevue/toggleswitch';
-// import Checkbox from 'primevue/checkbox';
+import ToggleSwitch from 'primevue/toggleswitch';
+import Checkbox from 'primevue/checkbox';
 
-// import GTSDate from "./components/gtsDate.vue";
-// import GTSSelect from "./components/gtsSelect.vue";
+import GTSDate from "./components/gtsDate.vue";
 import GTSAutocomplete from "./components/gtsAutoComplete.vue";
-import Field from "./components/Field.vue";
+import GTSSelect from "./components/gtsSelect.vue";
 import { useNotifications } from "./components/useNotifications";
 
 import PVTabs from './components/PVTabs.vue'
@@ -457,8 +574,6 @@ const globalFilterFields = ref([]);
 const selectSettings = ref({});
 const topFilters = ref({})
 let topFilters0 = {}
-const row_class_trigger = ref({})
-const table_tree = ref()
 
 onMounted(async () => {
   loading.value = true;
@@ -495,28 +610,9 @@ onMounted(async () => {
         if(fields[field].select_data){ 
           if(!selectSettings.value[field]) selectSettings.value[field] = {}
           selectSettings.value[field].rows = fields[field].select_data
-        }
-        switch(fields[field].type){
-          case "view":case "number":case "decimal":case "autocomplete":
-            fields[field].dataType = "numeric"
-          break
-          case "date":
-            fields[field].dataType = "date"
-          break
-          case "boolean":
-            fields[field].dataType = "boolean"
-          break
-          default:
-            fields[field].dataType = "text"
         } 
         cols.push(fields[field]);
         filter_fields.push(field);
-      }
-      if (response.data.hasOwnProperty("row_class_trigger")) {
-        row_class_trigger.value = response.data.row_class_trigger
-      }
-      if (response.data.hasOwnProperty("table_tree")) {
-        table_tree.value = response.data.table_tree
       }
       if (response.data.hasOwnProperty("filters")) {
         topFilters0 = response.data.filters
@@ -580,40 +676,6 @@ onMounted(async () => {
             // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
             if (!tmp.hasOwnProperty("label")) tmp.label = "Создать";
             break;
-          case "insert":
-            if (!tmp.hasOwnProperty("head")) tmp.head = true;
-            if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
-            if (!tmp.hasOwnProperty("class"))
-              tmp.class = "p-button-rounded p-button-success";
-            if (!tmp.hasOwnProperty("head_click"))
-              tmp.head_click = () => Insert();
-            // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
-            if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
-            document.addEventListener('keyup', function(e){
-              if(!e.ctrlKey) return;
-                if(!e.shiftKey) return;
-                if(e.code == 'KeyZ'){
-                  Insert()
-                }
-            }, true);
-            break;
-            case "insert_child":
-            if (!tmp.hasOwnProperty("row")) tmp.row = true;
-            if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
-            if (!tmp.hasOwnProperty("class"))
-              tmp.class = "p-button-rounded p-button-success";
-            if (!tmp.hasOwnProperty("head_click"))
-              tmp.click = (data) => Insert_child(data);
-            // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
-            if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
-            document.addEventListener('keyup', function(e){
-              if(!e.ctrlKey) return;
-                if(!e.shiftKey) return;
-                if(e.code == 'KeyZ'){
-                  Insert()
-                }
-            }, true);
-            break;
           case "subtables":
             addtmp = false;
             for (let tmptable in actions0[action]) {
@@ -666,7 +728,6 @@ onMounted(async () => {
 
 //expand row
 const expandedRows = ref({});
-const expandedTableTreeRows = ref({});
 const subs = ref({});
 const childComponentRefs = ref({})
 const refresh = (table) => {
@@ -682,40 +743,7 @@ const refresh = (table) => {
   }
 };
 defineExpose({ refresh });
-//expand
 
-const toogleExpandRow = async (data) => {
-  let tmp = { ...expandedRows.value };
-  if(expandedTableTreeRows.value[data.id]){
-    delete expandedTableTreeRows.value[data.id]
-    delete tmp[data.id];
-    await delExpand(tmp);
-    delete subs.value[data.id]
-
-  }else{
-    let tmpfilters = {};
-    delete tmp[data.id];
-    await delExpand(tmp);
-
-    tmpfilters[table_tree.value.parentIdField] = {
-      operator: FilterOperator.AND,
-      constraints: [
-        {
-          value: data[table_tree.value.idField],
-          matchMode: FilterMatchMode.EQUALS,
-        },
-      ],
-    };
-    subfilters.value[data.id] = tmpfilters;
-    subs.value[data.id] = {
-      action:'subtables',
-      table:props.table,
-    }
-    tmp[data.id] = true;
-    expandedTableTreeRows.value[data.id] = true
-    expandedRows.value = { ...tmp };
-  }
-};
 const subfilters = ref({});
 const delExpand = async (tmp) => {
   expandedRows.value = { ...tmp };
@@ -793,7 +821,6 @@ const setExpandedRow = async (event, tmpt) => {
 // }
 const autocompleteSettings = ref({});
 const row_setting = ref({});
-const customFields = ref({});
 
 const loadLazyData = async (event) => {
   loading.value = true;
@@ -843,9 +870,7 @@ const loadLazyData = async (event) => {
     if(response.data.row_setting){
         row_setting.value = response.data.row_setting
     }   
-    if(response.data.customFields){
-      customFields.value = response.data.customFields
-    }
+
     //
 
     totalRecords.value = response.data.total;
@@ -860,9 +885,6 @@ const { cacheAction, cache } = useActionsCaching()
 
 const onCellEditComplete = async (event) => {
   let { data, newValue, field } = event;
-  // console.log('field',field)
-  // console.log('newValue',newValue)
-  if(data[field] == newValue) return
 
   const payload = {
     id: data.id,
@@ -873,26 +895,10 @@ const onCellEditComplete = async (event) => {
   
   try {
     const response = await api.update(payload)
-    data[field] = newValue
+    
     if (response.success) {
-      if(response.data.refresh_table == 1) refresh()
-    }else{
-      notify('error', { detail: response.message }, true);
+      data[field] = newValue;
     }
-    if(response.data.customFields){
-      customFields.value[data.id] = response.data.customFields[data.id]
-    }
-    if(response.data.refresh_row == 1){
-      lineItems.value[findIndexById(Number(response.data.object.id))] = response.data.object
-    }
-    if(expandedTableTreeRows.value[data.id]){
-      if(data['gtsapi_children_count'] == 0){
-        toogleExpandRow(data)
-      }else{
-        childComponentRefs.value[data.id].refresh();
-      }
-      
-    } 
   } catch (error) {
     // event.preventDefault(); // При ошибке на gtsAutoComplete не срабатывает. Не понятно что делать???
     notify('error', { detail: error.message }, true);
@@ -906,7 +912,12 @@ const onSort = async (event) => {
   lazyParams.value = event;
   await loadLazyData(event);
 };
-
+const format_decimal = (text,FractionDigits) => {
+  var parts = parseFloat(text).toFixed(FractionDigits).toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.join(",");
+  //return parseFloat(text).toFixed(2).toString().replace(".", ",");
+};
 
 const lineItem = ref({});
 const submitted = ref(false);
@@ -923,90 +934,28 @@ const hideDialog = () => {
 };
 const saveLineItem = async () => {
   submitted.value = true;
-  
+
   if (lineItem.value.id) {
 
     try {
-      const response = await api.update(lineItem.value)
-      // refresh_table
-      
-      if(response.data.customFields){
-        customFields.value[data.id] = response.data.customFields[data.id]
-      }
-      if(response.data.refresh_row == 1) lineItem.value = response.data.object
-      if(response.data.refresh_table == 1) refresh()
-
-      lineItems.value[findIndexById(Number(lineItem.value.id))] = lineItem.value;
+      await api.update(lineItem.value)
+  
+      lineItems.value[findIndexById(Number(lineItem.value.id))] =
+      lineItem.value;
       lineItemDialog.value = false;
       lineItem.value = {};
     } catch (error) {
       notify('error', { detail: error.message });
     }
   } else {
-    let filters0 = {}
-    for(let field in filters.value){
-      if(filters.value[field].hasOwnProperty('constraints')){
-        if(filters.value[field].constraints[0].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }else{
-        if(filters.value[field].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }
-    }
-    let params = {
-      filters: filters0,
-    };
     try {
-      await api.create(lineItem.value,params)
+      await api.create(lineItem.value)
       refresh()
       lineItemDialog.value = false;
       lineItem.value = {};
     } catch (error) {
       notify('error', { detail: error.message });
     }
-  }
-};
-const Insert_child = async (data) => {
-  let filters0 = {}
-  for(let field in filters.value){
-    if(filters.value[field].hasOwnProperty('constraints')){
-      if(filters.value[field].constraints[0].value !== null){
-        filters0[field] = filters.value[field]
-      }
-    }else{
-      if(filters.value[field].value !== null){
-        filters0[field] = filters.value[field]
-      }
-    }
-  }
-  
-  try {
-    await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
-    refresh()
-  } catch (error) {
-    notify('error', { detail: error.message });
-  }
-};
-const Insert = async () => {
-  let filters0 = {}
-  for(let field in filters.value){
-    if(filters.value[field].hasOwnProperty('constraints')){
-      if(filters.value[field].constraints[0].value !== null){
-        filters0[field] = filters.value[field]
-      }
-    }else{
-      if(filters.value[field].value !== null){
-        filters0[field] = filters.value[field]
-      }
-    }
-  }
-  try {
-    await api.action('insert',{filters: filters0})
-    refresh()
-  } catch (error) {
-    notify('error', { detail: error.message });
   }
 };
 const findIndexById = (id) => {
@@ -1091,44 +1040,24 @@ const onRowSelect = () => {
 const onRowUnselect = () => {
   selectAll.value = false;
 };
-
-const getClassBody = (col, data) => {
-  let class1 = 'td-body '  + col.type
-  let customReadonly = false
-  if(customFields.value[data.id]){
-    if(customFields.value[data.id][col.field]){
-      if(customFields.value[data.id][col.field].readonly == 1) customReadonly = true
-    }
+const getClass = (col) => {
+  if(col.readonly){
+    return 'readonly ' + col.type
   }
-  if(col.readonly || customReadonly){
-    return class1 + ' readonly'
-  }
-  return class1
+  return col.type
 };
 const rowClass = (data) => {
   if(row_setting.value[data.id] && row_setting.value[data.id].class){
     return row_setting.value[data.id].class;
   }
-  if(row_class_trigger.value.field){
-    if(data[row_class_trigger.value.field]) return row_class_trigger.value.class
-  }
   return
 };
-const disableField = (data,field) =>{
-  if(customFields.value[data.id]){
-    if(customFields.value[data.id][field] && customFields.value[data.id][field].readonly == 1) return true
-  }
-  return false
-}
 </script>
 
 
 <style>
-  .td-body{
-    min-width: 100%;
-    min-height: 20px;
-  }
-  .td-body.readonly {
+
+  td.readonly {
       background-blend-mode: multiply;
       background: rgb(0,0,0,0.1);
   }
@@ -1137,9 +1066,9 @@ const disableField = (data,field) =>{
     width: 250px !important;
   }
  */
-  /* th.date,td.date{
+  th.date,td.date{
     min-width: 150px;
-  } */
+  }
   html {
     font-size: 14px;
   }

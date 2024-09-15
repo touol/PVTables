@@ -4,6 +4,7 @@ Changelog for PVTables.
 - Версия.
 - Кастомизировать фильтры по типам полей.
 - PVTableModel.
+- insert.
 
 0.0.0
 ==============

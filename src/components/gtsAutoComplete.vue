@@ -63,8 +63,6 @@ watchEffect(async () => {
     const [ option ] = props.options.rows.filter((option) => model.value === option.id)
     if (option) {
       selectedItem.value = option
-    } else {
-      selectedItem.value = {}
     }
   }else if(Number(model.value) > 0){
     try {
@@ -128,6 +126,7 @@ const onUserInputEnd = async ($evt) => {
 
 const onAutocompleteItemSelect = ($evt) => {
   model.value = $evt.value.id;
+  // selectedItem.value = $evt.value
   emit('set-value')
 }
 </script>

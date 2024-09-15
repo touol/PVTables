@@ -30,7 +30,7 @@ export default (tableName, timeout = 10000) => {
 
   instance.interceptors.response.use(
     ({data}) => {
-      if (!data.success) {
+      if (!data.success && Object.keys(data.data).length === 0) {
         throw new Error(data.message);
       }
 

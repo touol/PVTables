@@ -29,6 +29,11 @@ import Toast from 'primevue/toast'
 
 import localeRu from './locale/ru.json';
 
+import Drawer from 'primevue/drawer';
+  
+import Splitter from 'primevue/splitter';
+import SplitterPanel from 'primevue/splitterpanel';
+
 export default {
     install: (app, options) => {
         app.use(PrimeVue, {
@@ -81,4 +86,7 @@ export {
     TabPanels as TabPanels,
     TabPanel as TabPanel,
     Toast as Toast,
+    Drawer as Drawer,
+    Splitter as Splitter,
+    SplitterPanel as SplitterPanel,
 }
