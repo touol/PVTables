@@ -98,6 +98,7 @@
         :header="col.label"
         sortable
         :dataType="col.dataType"
+        :class="getClassTD(col)"
       >
         <template #body="{ data, field }">
           <div :class="getClassBody(col,data)">
@@ -1105,6 +1106,9 @@ const getClassBody = (col, data) => {
   }
   return class1
 };
+const getClassTD = (col) => {
+  return col.type
+};
 const rowClass = (data) => {
   if(row_setting.value[data.id] && row_setting.value[data.id].class){
     return row_setting.value[data.id].class;
@@ -1132,6 +1136,19 @@ const disableField = (data,field) =>{
       background-blend-mode: multiply;
       background: rgb(0,0,0,0.1);
   }
+  td.number,td.decimal,td.textarea,td.text{
+    max-width: 100px;
+  }
+  td.number .p-inputtext,td.decimal .p-inputtext,td.textarea textarea,td.text .p-inputtext{
+    width: 100%;
+  }
+  td.autocomplete .p-autocomplete-dropdown, td.autocomplete .p-inputtext
+  ,td.select .p-autocomplete-dropdown, td.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+
   
   /* th.autocomplete,td.autocomplete{
     width: 250px !important;
@@ -1150,9 +1167,9 @@ const disableField = (data,field) =>{
   {
     white-space: break-spaces !important;
   }
-  .p-datatable textarea{
+  /* .p-datatable textarea{
     width:136px;
-  }
+  } */
 
   .p-datatable tr.hit{
     background-color: #60cc2fe6;
