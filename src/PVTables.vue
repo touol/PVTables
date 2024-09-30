@@ -117,7 +117,7 @@
         </template>
         <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(col.type) && !col.readonly" #editor="{ data, field }">
           <Field
-            v-if="customFields[data.id][field] && ['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(customFields[data.id][field].type)"
+            v-if="customFields[data.id] && customFields[data.id][field] && ['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(customFields[data.id][field].type)"
             :field="col"
             :data="data[field]"
             :use_data="true"
@@ -283,7 +283,7 @@
 
 <script setup>
 import Toast from 'primevue/toast';
-import { ref, onMounted, defineComponent } from "vue";
+import { ref, onMounted, defineComponent, watch } from "vue";
 defineComponent({
   name: "PVTables",
 });
@@ -335,6 +335,7 @@ const props = defineProps({
     default: {},
   },
 });
+const emit = defineEmits(['get-response'])
 
 const api = apiCtor(props.table)
 
@@ -357,7 +358,9 @@ const filters = ref();
 const initFilters = () => {
   let filters0 = {};
   for (let field in fields) {
+    // console.log('props.filters',props.filters,field)
     if (props.filters.hasOwnProperty(field)) {
+      // console.log('field',field)
       filters0[field] = props.filters[field];
     } else {
       switch (fields[field].type) {
@@ -425,6 +428,10 @@ const initFilters = () => {
   //   // verified: { value: null, matchMode: FilterMatchMode.EQUALS }
   // };
 };
+watch(() => props.filters, async () => { 
+  initFilters()
+  await loadLazyData();
+})
 const onSetTopFilter = async (filter) => {
   filters.value[filter.field].constraints[0].value = filter.default;
   await loadLazyData();
@@ -438,9 +445,9 @@ const clearFilter = async () => {
   // lazyParams.value.filters = filters.value;
   await loadLazyData();
 };
-const filterPlaceholder = (col) => {
-  return "Поиск по " + col.label;
-};
+// const filterPlaceholder = (col) => {
+//   return "Поиск по " + col.label;
+// };
 
 const dt = ref();
 const loading = ref(true);
@@ -874,6 +881,8 @@ const onCellEditComplete = async (event) => {
   
   try {
     const response = await api.update(payload)
+    emit('get-response', {action:"update",response:response})
+    
     data[field] = newValue
     if (response.success) {
       if(response.data.refresh_table == 1) refresh()
@@ -1124,6 +1133,9 @@ const disableField = (data,field) =>{
   }
   return false
 }
+
+
+
 </script>
 
 

@@ -43,7 +43,6 @@
     </Toolbar>
     <DataTable
       :value="lineItems"
-      lazy
 
       ref="dt"
       dataKey="id"
@@ -60,8 +59,6 @@
 
       v-model:filters="filters"
       filterDisplay="menu"
-      :globalFilterFields="globalFilterFields"
-      @filter="onFilter($event)"
       
       v-model:expandedRows="expandedRows"
       showGridlines
@@ -74,208 +71,83 @@
       :rowClass="rowClass"
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-      <template
+      <Column
         v-for="col of columns.filter((x) => x.modal_only != true)"
-        :key="col.field"
+        :field="col.field"
+        :header="col.label"
+        sortable
+        :dataType="col.dataType"
+        :class="getClassTD(col)"
       >
-        <Column
-          v-if="col.field == 'id'"
-          field="id"
-          header="id"
-          dataType="numeric"
-          sortable
-        >
-          <template #body="{ data, field }">
-            {{ data[field] }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              class="p-column-filter"
-              :placeholder="filterPlaceholder(col)"
-            />
-          </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'autocomplete'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="numeric"
-        >
-          <template #body="{ data, field }">
-            <GTSAutocomplete
-              :table="col.table"
-              v-model:id="data[field]"
-              :options="autocompleteSettings[field]"
+        <template #body="{ data, field }">
+          <div :class="getClassBody(col,data)">
+            <Field
+              :field="col"
+              :data="data[field]"
+              :use_data="true"
+              :autocompleteSettings="autocompleteSettings[field]"
+              :selectSettings="selectSettings[field]"
               @set-value="
-                onCellEditComplete({ data, field, newValue: data[field] })
+                onCellEditComplete({ data, field, newValue: $event })
               "
-              :disabled="col.readonly"
+              :customFields="customFields[data.id]"
             />
-          </template>
-          <template #filter="{ filterModel }">
-            <GTSAutocomplete
-              :table="col.table"
-              v-model:id="filterModel.value"
-              :options="autocompleteSettings[field]"
-              class="p-column-filter"
+          </div>
+        </template>
+        <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+          <Field
+            v-if="customFields[data.id] && customFields[data.id][field] && ['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(customFields[data.id][field].type)"
+            :field="col"
+            :data="data[field]"
+            :use_data="true"
+            :autocompleteSettings="autocompleteSettings[field]"
+            :selectSettings="selectSettings[field]"
+            @set-value="
+              onCellEditComplete({ data, field, newValue: $event })
+            "
+            :customFields="customFields[data.id]"
             />
-          </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'select'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="numeric"
-        >
-          <template #body="{ data, field }">
-            <GTSSelect
-              v-model:id="data[field]"
-              :options="selectSettings[field]?.rows"
-              @set-value="
-                onCellEditComplete({ data, field, newValue: data[field] })
-              "
-              :disabled="col.readonly"
+          <InputNumber 
+            v-else-if="col.type == 'number'" 
+            v-model="data[field]"
+            :disabled="disableField(data,field)"
+          />
+          <InputNumber 
+            v-else-if="col.type == 'decimal'" 
+            v-model="data[field]" 
+            :minFractionDigits="col.FractionDigits" 
+            :maxFractionDigits="col.FractionDigits" 
+            :disabled="disableField(data,field)"
+          />
+          <Textarea 
+            v-else-if="col.type == 'textarea'" 
+            v-model="data[field]" rows="1" 
+            :disabled="disableField(data,field)"
             />
-          </template>
-          <template #filter="{ filterModel }">
-            <GTSSelect
-              v-model:id="filterModel.value"
-              :options="selectSettings[field]?.rows"
-              class="p-column-filter"
+          <InputText 
+            v-else 
+            v-model="data[field]" 
+            :disabled="disableField(data,field)"
             />
-          </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'decimal'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="numeric"
-        >
-          <template #body="{ data, field }">
-            {{ format_decimal(data[field],col.FractionDigits) }}
-          </template>
-          <template v-if="!col.readonly" #editor="{ data, field }">
-            <InputNumber
-              v-model="data[field]"
-              :minFractionDigits="col.FractionDigits"
-              :maxFractionDigits="col.FractionDigits"
-            />
-          </template>
-          <template #filter="{ filterModel }">
-            <InputNumber
+        </template>
+        <template #filter="{ filterModel }">
+          <template v-if="['autocomplete', 'select', 'boolean', 'date' , 'datetime'].includes(col.type)">
+            <Field
+              :field="col"
               v-model="filterModel.value"
-              :minFractionDigits="col.FractionDigits"
-              :maxFractionDigits="col.FractionDigits"
+              :autocompleteSettings="autocompleteSettings[col.field]"
+              :selectSettings="selectSettings[col.field]"
               class="p-column-filter"
             />
           </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'number'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="numeric"
-        >
-          <template #body="{ data, field }">
-            {{ data[field] }}
+          <template v-else>
+            <InputNumber v-if="col.type == 'number'" v-model="filterModel.value"/>
+            <InputNumber v-else-if="col.type == 'decimal'" v-model="filterModel.value" :minFractionDigits="col.FractionDigits" :maxFractionDigits="col.FractionDigits" />
+            <Textarea v-else-if="col.type == 'textarea'" v-model="filterModel.value" rows="1" />
+            <InputText v-else v-model="filterModel.value" />
           </template>
-          <template v-if="!col.readonly" #editor="{ data, field }">
-            <InputNumber
-              v-model="data[field]"
-            />
-          </template>
-          <template #filter="{ filterModel }">
-            <InputNumber
-              v-model="filterModel.value"
-              class="p-column-filter"
-            />
-          </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'date'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="date"
-        >
-          <template #body="{ data, field }">
-            <GTSDate 
-              :model-value="data[field]"
-              @update:modelValue="($event) => onCellEditComplete({ data, field, newValue: $event })"
-              :disabled="col.readonly"
-            />
-          </template>
-          <template #filter="{ filterModel }">
-            <GTSDate
-              :model-value="filterModel.value"
-              @update:modelValue="filterModel.value = $event"
-              type="text"
-              class="p-column-filter"
-            />
-          </template>
-        </Column>
-        <Column
-          v-else-if="col.type == 'boolean'"
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-          sortable
-          dataType="boolean"
-        >
-          <template #body="{ data, field }">
-            <ToggleSwitch 
-              v-if="col.type == 'boolean'" 
-              v-model="data[field]" 
-              @keydown.tab.stop
-              @change="onCellEditComplete({ data, field, newValue: data[field] })"
-              :disabled="col.readonly"
-            />
-          </template>
-          <template #filter="{ filterModel }">
-            <Checkbox v-model="filterModel.value" :indeterminate="filterModel.value === null" binary/>
-          </template>
-        </Column>
-        <Column
-          v-else
-          :field="col.field"
-          :header="col.label"
-          :class="getClass(col)"
-
-          sortable
-        >
-          <template #body="{ data, field }">
-            <template v-if="col.type == 'html'" >
-              <span v-html="data[field]"></span>
-            </template>
-            <template v-else>
-              {{ data[field] }}
-            </template>
-          </template>
-          <template v-if="!['boolean', 'date'].includes(col.type) && !col.readonly" #editor="{ data, field }">
-            <Textarea v-if="col.type == 'textarea'" v-model="data[field]" rows="1" />
-            <InputText v-else v-model="data[field]" />
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              class="p-column-filter"
-              :placeholder="filterPlaceholder(col)"
-            />
-          </template>
-        </Column>
-      </template>
+        </template>
+      </Column>
       <Column
         v-if="actions_row"
         :exportable="false"
@@ -409,9 +281,10 @@ import InputNumber from "primevue/inputnumber";
 import ToggleSwitch from 'primevue/toggleswitch';
 import Checkbox from 'primevue/checkbox';
 
-import GTSDate from "./gtsDate.vue";
+// import GTSDate from "./gtsDate.vue";
+// import GTSSelect from "./gtsSelect.vue";
 import GTSAutocomplete from "./gtsAutoComplete.vue";
-import GTSSelect from "./gtsSelect.vue";
+import Field from "./Field.vue";
 import { useNotifications } from "./useNotifications";
 
 import PVTabs from './PVTabs.vue'
@@ -538,16 +411,16 @@ const initFilters = () => {
 };
 const onSetTopFilter = async (filter) => {
   filters.value[filter.field].constraints[0].value = filter.default;
-  await loadLazyData();
+  // await loadLazyData();
 };
-const onFilter = async (event) => {
-  // lazyParams.value.filters = filters.value;
-  await loadLazyData(event);
-};
+// const onFilter = async (event) => {
+//   // lazyParams.value.filters = filters.value;
+//   // await loadLazyData(event);
+// };
 const clearFilter = async () => {
   initFilters();
   // lazyParams.value.filters = filters.value;
-  await loadLazyData();
+  // await loadLazyData();
 };
 const filterPlaceholder = (col) => {
   return "Поиск по " + col.label;
@@ -570,7 +443,7 @@ const selectSettings = ref({});
 const topFilters = ref({})
 let topFilters0 = {}
 
-onMounted(async () => {
+onMounted(() => {
   loading.value = true;
   lazyParams.value = {
     first: dt.value.first,
@@ -579,6 +452,9 @@ onMounted(async () => {
     sortOrder: null,
     // filters: filters.value
   };
+  for(let key in lineItems.value){
+    if(!lineItems.value[key].id) lineItems.value[key].id = key
+  }
   try {
     // const response = await api.options()
 
@@ -1040,6 +916,29 @@ const rowClass = (data) => {
     return row_setting.value[data.id].class;
   }
   return
+};
+const getClassTD = (col) => {
+  return col.type
+};
+const customFields = ref({});
+const disableField = (data,field) =>{
+  if(customFields.value[data.id]){
+    if(customFields.value[data.id][field] && customFields.value[data.id][field].readonly == 1) return true
+  }
+  return false
+}
+const getClassBody = (col, data) => {
+  let class1 = 'td-body '  + col.type
+  let customReadonly = false
+  if(customFields.value[data.id]){
+    if(customFields.value[data.id][col.field]){
+      if(customFields.value[data.id][col.field].readonly == 1) customReadonly = true
+    }
+  }
+  if(col.readonly || customReadonly){
+    return class1 + ' readonly'
+  }
+  return class1
 };
 </script>
 

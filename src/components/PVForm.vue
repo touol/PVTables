@@ -23,7 +23,7 @@
       <template v-else-if="col.type == 'select'">
         <GTSSelect
           v-model:id="model[col.field]"
-          :options="selectSettings[col.field]?.rows"
+          :options="selectSettings2[col.field]?.rows"
           :disabled="col.readonly"
             class="flex-auto" autocomplete="off"
         />
@@ -76,10 +76,16 @@ const props = defineProps({
     default: {}
   }
 });
+const selectSettings2 = ref({})
 watchEffect(async () => {
+  selectSettings2.value = props.selectSettings
   for(let col in props.columns){
     if(props.columns[col].hasOwnProperty('default')){
       if(!model.value.hasOwnProperty(props.columns[col].field)) model.value[props.columns[col].field] = props.columns[col].default
+    }
+    if(props.columns[col].select_data){
+      if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
+      selectSettings2.value[props.columns[col].field].rows = props.columns[col].select_data
     }
   }
 })

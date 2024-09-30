@@ -6,6 +6,7 @@ Changelog for PVTables.
 - PVTableModel.
 - insert.
 - Убрать прыгание ячеек. Фон автокомплект и селект.
+- PVTableModel filters.
 
 0.0.0
 ==============
