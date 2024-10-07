@@ -555,7 +555,7 @@ onMounted(async () => {
       for (let action in actions0) {
         let tmp = { ...actions0[action] };
         let addtmp = true;
-        tmp.action = action;
+        
         switch (action) {
           case "update":
             if (!tmp.hasOwnProperty("row")) tmp.row = true;
@@ -605,7 +605,7 @@ onMounted(async () => {
                 }
             }, true);
             break;
-            case "insert_child":
+          case "insert_child":
             if (!tmp.hasOwnProperty("row")) tmp.row = true;
             if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
             if (!tmp.hasOwnProperty("class"))
@@ -652,7 +652,21 @@ onMounted(async () => {
               cur_actions.value.push(tmpt);
             }
             break;
+          case "read":
+            break
+          default:
+            if (!tmp.hasOwnProperty("class"))
+              tmp.class = "p-button-rounded p-button-success";
+            if(!(tmp.head_click || tmp.click)){
+              // console.log('tmp.click',tmp.click)
+              if (tmp.head)
+                tmp.head_click = () => defHeadAction(tmp);
+              if (tmp.row)
+                tmp.click = (event) => defRowAction(event, tmp);
+            }
+            
         }
+        if(!tmp.action) tmp.action = action;
         if (addtmp) {
           if (tmp.hasOwnProperty("row")) actions_row.value = true;
           // if (tmp.hasOwnProperty("row")) actions_head.value = true;
@@ -1037,6 +1051,49 @@ const openNew = () => {
   lineItemDialog.value = true;
 };
 
+// default action
+const defHeadAction = async (tmp) => {
+  let filters0 = {}
+  for(let field in filters.value){
+    if(filters.value[field].hasOwnProperty('constraints')){
+      if(filters.value[field].constraints[0].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }else{
+      if(filters.value[field].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }
+  }
+  try {
+    await api.action(tmp.action,{filters: filters0})
+    refresh()
+  } catch (error) {
+    notify('error', { detail: error.message });
+  }
+};
+// defRowAction(event, tmp)
+const defRowAction = async (event, tmp) => {
+  let filters0 = {}
+  for(let field in filters.value){
+    if(filters.value[field].hasOwnProperty('constraints')){
+      if(filters.value[field].constraints[0].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }else{
+      if(filters.value[field].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }
+  }
+  
+  try {
+    await api.action(tmp.action,{...event,filters: filters0})
+    refresh()
+  } catch (error) {
+    notify('error', { detail: error.message });
+  }
+};
 //delete row
 const deleteLineItemDialog = ref(false);
 const deleteLineItemsDialog = ref(false);

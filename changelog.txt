@@ -7,6 +7,7 @@ Changelog for PVTables.
 - insert.
 - Убрать прыгание ячеек. Фон автокомплект и селект.
 - PVTableModel filters.
+- defRowAction. PVForm inline.
 
 0.0.0
 ==============

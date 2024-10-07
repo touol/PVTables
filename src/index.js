@@ -33,6 +33,7 @@ import Drawer from 'primevue/drawer';
   
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
+import Popover from 'primevue/popover';
 
 export default {
     install: (app, options) => {
@@ -89,4 +90,5 @@ export {
     Drawer as Drawer,
     Splitter as Splitter,
     SplitterPanel as SplitterPanel,
+    Popover as Popover,
 }
