@@ -8,14 +8,14 @@
         v-model:id="model"
         :options="autocompleteSettings"
         @set-value="setValue()"
-        :disabled="col.readonly"
+        :disabled="use_readonly && col.readonly"
     />
     <GTSSelect
         v-else-if="col.type == 'select'"
         v-model:id="model"
         :options="selectSettings?.rows"
         @set-value="setValue()"
-        :disabled="col.readonly"
+        :disabled="use_readonly && col.readonly"
     />
     <template v-else-if="col.type == 'decimal'">
         {{ format_decimal(model,col.FractionDigits) }}
@@ -27,14 +27,14 @@
         v-else-if="col.type == 'date'"
         :model-value="model"
         @update:modelValue="($event) => updateValue($event)"
-        :disabled="col.readonly"
+        :disabled="use_readonly && col.readonly"
     />
     <ToggleSwitch 
         v-else-if="col.type == 'boolean'"
         v-model="model" 
         @keydown.tab.stop
         @change="setValue()"
-        :disabled="col.readonly"
+        :disabled="use_readonly && col.readonly"
     />
     <template v-else-if="col.type == 'html'">
         <span v-html="model"></span>
@@ -85,6 +85,10 @@
             type: Object,
             default: {},
         },
+        use_readonly:{
+            type: Boolean,
+            default: true,
+        }
     });
     const col = ref({})
     // const selectSettings = ref({})

@@ -60,7 +60,7 @@ watchEffect(async () => {
   }
   
   if (props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
-    const [ option ] = props.options.rows.filter((option) => model.value === option.id)
+    const [ option ] = props.options.rows.filter((option) => model.value == option.id)
     if (option) {
       selectedItem.value = option
     }

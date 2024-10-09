@@ -68,7 +68,7 @@ export default (tableName, timeout = 10000) => {
     },
 
     update: async (data = null, params = {}) => {
-      const response = await instance.patch('/', data, params)
+      const response = await instance.patch('/', data, { params })
       return response
     },
 

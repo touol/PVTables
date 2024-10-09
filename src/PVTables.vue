@@ -158,6 +158,7 @@
               v-model="filterModel.value"
               :autocompleteSettings="autocompleteSettings[col.field]"
               :selectSettings="selectSettings[col.field]"
+              :use_readonly="false"
               class="p-column-filter"
             />
           </template>
@@ -728,7 +729,7 @@ const toogleExpandRow = async (data) => {
         },
       ],
     };
-    subfilters.value[data.id] = tmpfilters;
+    subfilters.value[data.id] = {...tmpfilters,...filters.value};
     subs.value[data.id] = {
       action:'subtables',
       table:props.table,
@@ -892,9 +893,23 @@ const onCellEditComplete = async (event) => {
   }
 
   cacheAction({type: 'update', payload})
-  
+  let filters0 = {}
+  for(let field in filters.value){
+    if(filters.value[field].hasOwnProperty('constraints')){
+      if(filters.value[field].constraints[0].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }else{
+      if(filters.value[field].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }
+  }
+  let params = {
+    filters: filters0,
+  };
   try {
-    const response = await api.update(payload)
+    const response = await api.update(payload,params)
     emit('get-response', {action:"update",response:response})
     
     data[field] = newValue
@@ -904,10 +919,17 @@ const onCellEditComplete = async (event) => {
       notify('error', { detail: response.message }, true);
     }
     if(response.data.customFields){
-      customFields.value[data.id] = response.data.customFields[data.id]
+      for(let key in response.data.customFields){
+        customFields.value[key] = response.data.customFields[key]
+      }
     }
     if(response.data.refresh_row == 1){
       lineItems.value[findIndexById(Number(response.data.object.id))] = response.data.object
+    }
+    if(response.data.row_setting){
+      for(let key in response.data.row_setting){
+        row_setting.value[key] = response.data.row_setting[key]
+      }
     }
     if(expandedTableTreeRows.value[data.id]){
       if(data['gtsapi_children_count'] == 0){
@@ -947,11 +969,25 @@ const hideDialog = () => {
 };
 const saveLineItem = async () => {
   submitted.value = true;
-  
+  let filters0 = {}
+  for(let field in filters.value){
+    if(filters.value[field].hasOwnProperty('constraints')){
+      if(filters.value[field].constraints[0].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }else{
+      if(filters.value[field].value !== null){
+        filters0[field] = filters.value[field]
+      }
+    }
+  }
+  let params = {
+    filters: filters0,
+  };
   if (lineItem.value.id) {
 
     try {
-      const response = await api.update(lineItem.value)
+      const response = await api.update(lineItem.value,params)
       // refresh_table
       
       if(response.data.customFields){
@@ -967,21 +1003,7 @@ const saveLineItem = async () => {
       notify('error', { detail: error.message });
     }
   } else {
-    let filters0 = {}
-    for(let field in filters.value){
-      if(filters.value[field].hasOwnProperty('constraints')){
-        if(filters.value[field].constraints[0].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }else{
-        if(filters.value[field].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }
-    }
-    let params = {
-      filters: filters0,
-    };
+    
     try {
       await api.create(lineItem.value,params)
       refresh()
@@ -1066,7 +1088,8 @@ const defHeadAction = async (tmp) => {
     }
   }
   try {
-    await api.action(tmp.action,{filters: filters0})
+    const resp = await api.action(tmp.action,{filters: filters0})
+    if(!resp.success) notify('error', { detail: resp.message })
     refresh()
   } catch (error) {
     notify('error', { detail: error.message });
@@ -1088,7 +1111,8 @@ const defRowAction = async (event, tmp) => {
   }
   
   try {
-    await api.action(tmp.action,{...event,filters: filters0})
+    const resp = await api.action(tmp.action,{...event,filters: filters0})
+    if(!resp.success) notify('error', { detail: resp.message });
     refresh()
   } catch (error) {
     notify('error', { detail: error.message });
