@@ -861,9 +861,9 @@
       
       lineItems.value = rowsHandler(response.data.rows, fields)
 
-      // TODO переход на другую страницу не имеет нужных данных, здесь ошибка
-      // нужно или глубоко мёржить данные с имеющимися,
-      // или отдавать полные данные для автокомплита на запрос каждой страницы
+      if(!response.success && response.message){
+        notify('error', { detail: response.message });
+      }
       if(response.data.autocomplete){
         for(let af in response.data.autocomplete){
           autocompleteSettings.value[af] = response.data.autocomplete[af];
