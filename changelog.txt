@@ -9,6 +9,7 @@ Changelog for PVTables.
 - PVTableModel filters.
 - defRowAction. PVForm inline.
 - use_readonly.
+- customFields pvform.
 
 0.0.0
 ==============

@@ -77,6 +77,10 @@ const props = defineProps({
     type: Object,
     default: {}
   },
+  customFields: {
+      type: Object,
+      default: {},
+  },
   inline: {
     type: Boolean,
     default: false
@@ -93,7 +97,16 @@ watchEffect(async () => {
       if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
       selectSettings2.value[props.columns[col].field].rows = props.columns[col].select_data
     }
+    if (props.customFields.hasOwnProperty(props.columns[col].field)){
+      let cf = props.customFields[props.columns[col].field]
+      if(cf.readonly == 1){
+        props.columns[col].readonly = true
+      }else{
+        props.columns[col].readonly = false
+      }
+    }
   }
+  
 })
 </script>
 
