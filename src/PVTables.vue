@@ -1002,7 +1002,7 @@
         // refresh_table
         
         if(response.data.customFields){
-          customFields.value[data.id] = response.data.customFields[data.id]
+          customFields.value[lineItem.value.id] = response.data.customFields[lineItem.value.id]
         }
         if(response.data.refresh_row == 1) lineItem.value = response.data.object
         if(response.data.refresh_table == 1) refresh()
@@ -1123,6 +1123,7 @@
     
     try {
       const resp = await api.action(tmp.action,{...event,filters: filters0})
+      emit('get-response', {action:tmp.action,response:resp})
       if(!resp.success) notify('error', { detail: resp.message });
       refresh()
     } catch (error) {
@@ -1252,7 +1253,9 @@
     background: inherit;
     border: none;
   }
-
+  .p-datatable-column-header-content {
+    flex-wrap: wrap;
+  }
   
   /* th.autocomplete,td.autocomplete{
     width: 250px !important;
