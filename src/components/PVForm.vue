@@ -62,7 +62,7 @@ import GTSDate from "./gtsDate.vue";
 import GTSAutocomplete from "./gtsAutoComplete.vue";
 import GTSSelect from "./gtsSelect.vue";
 
-const model = defineModel();
+const model = defineModel({});
 
 const props = defineProps({
   columns: {
