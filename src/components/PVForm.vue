@@ -104,7 +104,11 @@ watchEffect(async () => {
       }else{
         props.columns[col].readonly = false
       }
-    }
+      if(cf.select_data){
+        if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
+          selectSettings2.value[props.columns[col].field].rows = cf.select_data
+        }
+      }
   }
   
 })

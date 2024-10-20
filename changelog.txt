@@ -11,6 +11,7 @@ Changelog for PVTables.
 - use_readonly.
 - customFields pvform.
 - get-response.
+- select_data PVForm.
 
 0.0.0
 ==============
