@@ -45,7 +45,7 @@
       :value="lineItems"
       lazy
 
-      paginator="true"
+      paginator
       :first="first"
       :rows="rowsPerPage"
       :rowsPerPageOptions="[10, 60, 30, 1000]"
@@ -491,6 +491,7 @@
         fields = response.data.fields;
         if(response.data.limit !== false){
           rowsPerPage.value = response.data.limit
+          lazyParams.value.rows = response.data.limit
         }
         if(response.data.selects){
           selectSettings.value = response.data.selects;
