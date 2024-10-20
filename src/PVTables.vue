@@ -45,10 +45,10 @@
       :value="lineItems"
       lazy
 
-      paginator
+      paginator="true"
       :first="first"
-      :rows="10"
-      :rowsPerPageOptions="[10, 60, 30, 10]"
+      :rows="rowsPerPage"
+      :rowsPerPageOptions="[10, 60, 30, 1000]"
       paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
       currentPageReportTemplate="{first} to {last} of {totalRecords}"
 
@@ -455,7 +455,7 @@
   // const filterPlaceholder = (col) => {
   //   return "Поиск по " + col.label;
   // };
-
+  const rowsPerPage = ref(10);
   const dt = ref();
   const loading = ref(true);
   const totalRecords = ref(0);
@@ -489,6 +489,9 @@
 
       if (response.data.hasOwnProperty("fields")) {
         fields = response.data.fields;
+        if(response.data.limit !== false){
+          rowsPerPage.value = response.data.limit
+        }
         if(response.data.selects){
           selectSettings.value = response.data.selects;
         }
