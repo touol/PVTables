@@ -1004,7 +1004,9 @@
       try {
         const response = await api.update(lineItem.value,params)
         // refresh_table
-        
+        if (!response.success) {
+          notify('error', { detail: response.message }, true);
+        }
         if(response.data.customFields){
           customFields.value[lineItem.value.id] = response.data.customFields[lineItem.value.id]
         }
@@ -1044,7 +1046,10 @@
     }
     
     try {
-      await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
+      response = await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
+      if (!response.success) {
+        notify('error', { detail: response.message }, true);
+      }
       refresh()
     } catch (error) {
       notify('error', { detail: error.message });
@@ -1064,7 +1069,10 @@
       }
     }
     try {
-      await api.action('insert',{filters: filters0})
+      response = await api.action('insert',{filters: filters0})
+      if (!response.success) {
+        notify('error', { detail: response.message }, true);
+      }
       refresh()
     } catch (error) {
       notify('error', { detail: error.message });
