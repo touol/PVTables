@@ -923,11 +923,11 @@
       emit('get-response', {action:"update",response:response})
       
       data[field] = newValue
-      if (response.success) {
-        if(response.data.refresh_table == 1) refresh()
-      }else{
+      if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
+      if(response.data.refresh_table == 1) refresh()
+
       if(response.data.customFields){
         for(let key in response.data.customFields){
           customFields.value[key] = response.data.customFields[key]
