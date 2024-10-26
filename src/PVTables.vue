@@ -1046,7 +1046,7 @@
     }
     
     try {
-      response = await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
+      const response = await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
@@ -1069,7 +1069,7 @@
       }
     }
     try {
-      response = await api.action('insert',{filters: filters0})
+      const response = await api.action('insert',{filters: filters0})
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
