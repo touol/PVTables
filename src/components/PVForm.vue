@@ -90,6 +90,7 @@ const selectSettings2 = ref({})
 watchEffect(async () => {
   selectSettings2.value = props.selectSettings
   for(let col in props.columns){
+    
     if(props.columns[col].hasOwnProperty('default')){
       if(!model.value.hasOwnProperty(props.columns[col].field)) model.value[props.columns[col].field] = props.columns[col].default
     }
@@ -106,9 +107,13 @@ watchEffect(async () => {
       }
       if(cf.select_data){
         if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
-          selectSettings2.value[props.columns[col].field].rows = cf.select_data
-        }
+        selectSettings2.value[props.columns[col].field].rows = cf.select_data
       }
+      
+    }
+    if(props.columns[col].type == 'boolean'){
+      if(model.value[props.columns[col].field] == "1") model.value[props.columns[col].field] = true
+    }
   }
   
 })

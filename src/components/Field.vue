@@ -109,6 +109,9 @@
             col.value = {...props.field}
         }
         if(props.use_data) model.value = props.data
+        if(col.value.type == 'boolean'){
+            if(model.value == "1") model.value = true
+        }
     })
     const emit = defineEmits(['set-value']);
     const setValue = () => {
