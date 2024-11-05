@@ -112,6 +112,8 @@ watchEffect(async () => {
     }
     if (props.customFields.hasOwnProperty(props.columns[col].field)){
       let cf = props.customFields[props.columns[col].field]
+      
+      props.columns[col] = {...props.columns[col],...cf} //cf
       if(cf.readonly == 1){
         props.columns[col].readonly = true
       }else{
