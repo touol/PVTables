@@ -69,7 +69,7 @@
   const selectedItem = ref({});
 
   watchEffect(async () => {
-    if (Number(model.value) == 0 && Number(props.options.default) > 0){
+    if (props.options && Number(model.value) == 0 && Number(props.options.default) > 0){
       model.value = props.options.default
     }
     if(props.field.show_id){

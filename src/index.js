@@ -27,6 +27,7 @@ import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Toast from 'primevue/toast'
+import MultiSelect from 'primevue/multiselect';
 
 import localeRu from './locale/ru.json';
 
@@ -95,4 +96,5 @@ export {
     Splitter as Splitter,
     SplitterPanel as SplitterPanel,
     Popover as Popover,
+    MultiSelect as MultiSelect,
 }

@@ -12,7 +12,8 @@ Changelog for PVTables.
 - customFields pvform.
 - get-response.
 - select_data PVForm.
-- Фильтр ids и show_id в PVAutoComplete. 
+- Фильтр ids и show_id в PVAutoComplete.
+- Выбор столбцов.
 
 0.0.0
 ==============

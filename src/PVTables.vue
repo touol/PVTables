@@ -1,5 +1,10 @@
 <template>
   <div class="card">
+    <Popover ref="op">
+      
+      <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="onToggleColomns"
+        placeholder="Выберете столбцы" />
+    </Popover>
     <Toolbar class="p-mb-4">
       <template #start>
         <Button
@@ -38,6 +43,11 @@
           type="button"
           icon="pi pi-filter-slash"
           @click="clearFilter()"
+        />
+        <Button
+          type="button"
+          icon="pi pi-cog"
+          @click="toggleSettings"
         />
       </template>
     </Toolbar>
@@ -310,6 +320,8 @@
   import InputNumber from "primevue/inputnumber";
   // import ToggleSwitch from 'primevue/toggleswitch';
   // import Checkbox from 'primevue/checkbox';
+  import MultiSelect from 'primevue/multiselect'
+  import Popover from 'primevue/popover';
 
   // import GTSDate from "./components/gtsDate.vue";
   // import GTSSelect from "./components/gtsSelect.vue";
@@ -1238,8 +1250,22 @@
     }
     return false
   }
-
-
+  const op = ref();
+  const toggleSettings = (event) => {
+    selectedColumns.value = columns.value.filter(col => col.modal_only != true);
+    op.value.toggle(event);
+  }
+  const selectedColumns = ref();
+  const onToggleColomns = (val) => {
+    columns.value.forEach(col => {
+      if(val.includes(col)){
+        col.modal_only = false
+      }else{
+        col.modal_only = true
+      }
+    })
+    selectedColumns.value = columns.value.filter(col => col.modal_only != true);
+  }
 
 </script>
 
