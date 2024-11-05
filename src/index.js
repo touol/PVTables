@@ -2,6 +2,7 @@ import PVTables from './PVTables.vue'
 import PVTab from './components/PVTab.vue'
 import apiCtor from './components/api.js'
 import gtsAutoComplete from './components/gtsAutoComplete.vue'
+import PVAutoComplete from './components/PVAutoComplete.vue'
 import gtsDate from './components/gtsDate.vue'
 import gtsSelect from './components/gtsSelect.vue'
 import PVTable from './components/PVTable.vue'
@@ -52,6 +53,8 @@ export default {
             locale: localeRu.ru
         })
         app.component('gtsAutoComplete', gtsAutoComplete)
+        app.component('PVAutoComplete', PVAutoComplete)
+        
         app.component('PVTables', PVTables)
         app.component('PVTab', PVTab)
         app.component('apiCtor', apiCtor)
@@ -69,6 +72,7 @@ export {
     PVTab as PVTab,
     apiCtor as apiCtor,
     gtsAutoComplete as gtsAutoComplete,
+    PVAutoComplete as PVAutoComplete,
     gtsDate as gtsDate,
     PVTable as PVTable,
     PVForm as PVForm,

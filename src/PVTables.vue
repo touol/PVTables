@@ -15,9 +15,9 @@
           v-for="filter of topFilters"
           :key="filter.field"
         >
-          <GTSAutocomplete v-if="filter.type=='autocomplete'"
-            :table="filter.table"
-            v-model:id="filter.default"
+          <PVAutoComplete v-if="filter.type=='autocomplete'"
+            :field="filter"
+            v-model="filter.default"
             :options="filter.rows"
             @set-value="
               onSetTopFilter(filter)
@@ -313,7 +313,7 @@
 
   // import GTSDate from "./components/gtsDate.vue";
   // import GTSSelect from "./components/gtsSelect.vue";
-  import GTSAutocomplete from "./components/gtsAutoComplete.vue";
+  import PVAutoComplete from "./components/PVAutoComplete.vue";
   import Field from "./components/Field.vue";
   import { useNotifications } from "./components/useNotifications";
 
@@ -1269,13 +1269,7 @@
     flex-wrap: wrap;
   }
   
-  /* th.autocomplete,td.autocomplete{
-    width: 250px !important;
-  }
- */
-  /* th.date,td.date{
-    min-width: 150px;
-  } */
+  
   html {
     font-size: 14px;
   }

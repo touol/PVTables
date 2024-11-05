@@ -19,9 +19,9 @@
             class="w-full" autocomplete="off"/>
           </template>
           <template v-else-if="col.type == 'autocomplete'">
-            <GTSAutocomplete
-              v-model:id="model[col.field]"
-              :table="col.table"
+            <PVAutoComplete
+              v-model="model[col.field]"
+              :field="col"
               :options="autocompleteSettings[col.field]"
               :disabled="col.readonly"
               class="w-full" autocomplete="off"
@@ -71,7 +71,7 @@ import InputNumber from "primevue/inputnumber";
 import ToggleSwitch from 'primevue/toggleswitch';
 
 import GTSDate from "./gtsDate.vue";
-import GTSAutocomplete from "./gtsAutoComplete.vue";
+import PVAutoComplete from "./PVAutoComplete.vue";
 import GTSSelect from "./gtsSelect.vue";
 
 const model = defineModel({});

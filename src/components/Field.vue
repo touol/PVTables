@@ -2,10 +2,10 @@
     <template v-if="col.field == 'id'">
         {{ model }}
     </template>
-    <GTSAutocomplete
+    <PVAutoComplete
         v-else-if="col.type == 'autocomplete'"
-        :table="col.table"
-        v-model:id="model"
+        :field="col"
+        v-model="model"
         :options="autocompleteSettings"
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
@@ -52,7 +52,7 @@
     // import Checkbox from 'primevue/checkbox';
 
     import GTSDate from "./gtsDate.vue";
-    import GTSAutocomplete from "./gtsAutoComplete.vue";
+    import PVAutoComplete from "./PVAutoComplete.vue";
     import GTSSelect from "./gtsSelect.vue";
 
     const model = defineModel({
