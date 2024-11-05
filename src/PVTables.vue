@@ -1034,7 +1034,10 @@
     } else {
       
       try {
-        await api.create(lineItem.value,params)
+        const response = await api.create(lineItem.value,params)
+        if (!response.success) {
+          notify('error', { detail: response.message }, true);
+        }
         refresh()
         lineItemDialog.value = false;
         lineItem.value = {};
