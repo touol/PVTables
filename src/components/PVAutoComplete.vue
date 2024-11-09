@@ -187,7 +187,7 @@
       }
 
       selectedItem.value = option
-      model.value = userInput
+      model.value = option.id
       if(props.field.show_id){
         if(option[props.field.show_id] > 0){
           show_id.value = option[props.field.show_id]
