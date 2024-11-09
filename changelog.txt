@@ -17,6 +17,7 @@ Changelog for PVTables.
 - customFields in PVForm.
 - PVAutoComplete исправление.
 - update_from_row.
+- Предовратить обновление ссылок columns.
 
 0.0.0
 ==============

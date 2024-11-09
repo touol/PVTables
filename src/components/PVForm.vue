@@ -1,6 +1,6 @@
 <template>
   <div :class="{'flex flex-wrap gap-4':inline}">
-    <template v-for="col of columns.filter((x) => x.table_only != true)">
+    <template v-for="col of columns2.filter((x) => x.table_only != true)">
       <div class="flex flex-wrap items-center gap-4 mb-4">
         <label :for="col.field" class="font-semibold w-24">{{ col.label }}</label>
         <div :style="{ width: inline?'18rem':'24rem' }">
@@ -99,34 +99,36 @@ const props = defineProps({
   }
 });
 const selectSettings2 = ref({})
+const columns2 = ref({})
 watchEffect(async () => {
-  selectSettings2.value = props.selectSettings
-  for(let col in props.columns){
+  selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings
+  columns2.value = JSON.parse(JSON.stringify(props.columns)) //props.columns
+  for(let col in columns2.value){
     
-    if(props.columns[col].hasOwnProperty('default')){
-      if(!model.value.hasOwnProperty(props.columns[col].field)) model.value[props.columns[col].field] = props.columns[col].default
+    if(columns2.value[col].hasOwnProperty('default')){
+      if(!model.value.hasOwnProperty(columns2.value[col].field)) model.value[columns2.value[col].field] = columns2.value[col].default
     }
-    if(props.columns[col].select_data){
-      if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
-      selectSettings2.value[props.columns[col].field].rows = props.columns[col].select_data
+    if(columns2.value[col].select_data){
+      if(!selectSettings2.value[columns2.value[col].field]) selectSettings2.value[columns2.value[col].field] = {}
+      selectSettings2.value[columns2.value[col].field].rows = columns2.value[col].select_data
     }
-    if (props.customFields.hasOwnProperty(props.columns[col].field)){
-      let cf = props.customFields[props.columns[col].field]
+    if (props.customFields.hasOwnProperty(columns2.value[col].field)){
+      let cf = props.customFields[columns2.value[col].field]
       
-      props.columns[col] = {...props.columns[col],...cf} //cf
+      columns2.value[col] = {...columns2.value[col],...cf} //cf
       if(cf.readonly == 1){
-        props.columns[col].readonly = true
+        columns2.value[col].readonly = true
       }else{
-        props.columns[col].readonly = false
+        columns2.value[col].readonly = false
       }
       if(cf.select_data){
-        if(!selectSettings2.value[props.columns[col].field]) selectSettings2.value[props.columns[col].field] = {}
-        selectSettings2.value[props.columns[col].field].rows = cf.select_data
+        if(!selectSettings2.value[columns2.value[col].field]) selectSettings2.value[columns2.value[col].field] = {}
+        selectSettings2.value[columns2.value[col].field].rows = cf.select_data
       }
       
     }
-    if(props.columns[col].type == 'boolean'){
-      if(model.value[props.columns[col].field] == "1") model.value[props.columns[col].field] = true
+    if(columns2.value[col].type == 'boolean'){
+      if(model.value[columns2.value[col].field] == "1") model.value[columns2.value[col].field] = true
     }
   }
   
