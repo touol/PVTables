@@ -37,7 +37,7 @@
         <Button
           icon="pi pi-refresh"
           class="p-button-rounded p-button-success"
-          @click="refresh()"
+          @click="refresh(false)"
         />
         <Button
           type="button"
@@ -200,6 +200,8 @@
             :table="subs[slotProps.data.id].table"
             :actions="actions"
             :filters="subfilters[slotProps.data.id]"
+            @refresh-table="refresh(false)"
+            :child="true"
             :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
             />
         </div>
@@ -208,6 +210,8 @@
             :tabs="subs[slotProps.data.id].tabs"
             :actions="actions"
             :filters="subfilters[slotProps.data.id]"
+            @refresh-table="refresh(false)"
+            :child="true"
             :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
             />
         </div>
@@ -353,8 +357,12 @@
       type: Object,
       default: {},
     },
+    child:{
+      type: Boolean,
+      default: false
+    }
   });
-  const emit = defineEmits(['get-response'])
+  const emit = defineEmits(['get-response','refresh-table'])
 
   const api = apiCtor(props.table)
 
@@ -714,15 +722,16 @@
   const expandedTableTreeRows = ref({});
   const subs = ref({});
   const childComponentRefs = ref({})
-  const refresh = (table) => {
+  const refresh = (from_parent,table) => {
     // console.log('table',table)
     // console.log('props.table',props.table)
     // console.log('childComponentRefs',childComponentRefs)
     if(!table || table == props.table){
       loadLazyData();
+      if(!from_parent) emit('refresh-table')
     }else if(table && childComponentRefs.value){
       for(let id in childComponentRefs.value){
-        childComponentRefs.value[id].refresh(table)
+        childComponentRefs.value[id].refresh(true,table)
       }
     }
   };
@@ -939,7 +948,7 @@
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
-      if(response.data.refresh_table == 1) refresh()
+      if(response.data.refresh_table == 1) refresh(false)
 
       if(response.data.customFields){
         for(let key in response.data.customFields){
@@ -961,7 +970,7 @@
         if(data['gtsapi_children_count'] == 0){
           toogleExpandRow(data)
         }else{
-          childComponentRefs.value[data.id].refresh();
+          childComponentRefs.value[data.id].refresh(true);
         }
         
       } 
@@ -1025,7 +1034,7 @@
           customFields.value[lineItem.value.id] = response.data.customFields[lineItem.value.id]
         }
         if(response.data.refresh_row == 1) lineItem.value = response.data.object
-        if(response.data.refresh_table == 1) refresh()
+        if(response.data.refresh_table == 1) refresh(false)
 
         lineItems.value[findIndexById(Number(lineItem.value.id))] = lineItem.value;
         lineItemDialog.value = false;
@@ -1040,7 +1049,7 @@
         if (!response.success) {
           notify('error', { detail: response.message }, true);
         }
-        refresh()
+        refresh(false)
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (error) {
@@ -1067,7 +1076,7 @@
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
-      refresh()
+      refresh(false)
     } catch (error) {
       notify('error', { detail: error.message });
     }
@@ -1090,7 +1099,7 @@
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
-      refresh()
+      refresh(false)
     } catch (error) {
       notify('error', { detail: error.message });
     }
@@ -1130,7 +1139,7 @@
     try {
       const resp = await api.action(tmp.action,{filters: filters0})
       if(!resp.success) notify('error', { detail: resp.message })
-      refresh()
+      refresh(false)
     } catch (error) {
       notify('error', { detail: error.message });
     }
@@ -1154,7 +1163,7 @@
       const resp = await api.action(tmp.action,{...event,filters: filters0})
       emit('get-response', {action:tmp.action,response:resp})
       if(!resp.success) notify('error', { detail: resp.message });
-      refresh()
+      refresh(false)
     } catch (error) {
       notify('error', { detail: error.message });
     }

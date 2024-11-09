@@ -22,6 +22,10 @@ const props = defineProps({
     type: Object,
     default: {},
   },
+  child:{
+    type: Boolean,
+    default: false
+  }
 });
 const key0 = ref()
 const childComponentRefs = ref({})
@@ -32,16 +36,21 @@ for(let key in props.tabs){
   // childComponentRef.value[key]
 }
 // console.log('props.tabs',props.tabs)
-const refresh = (table) => {
+const emit = defineEmits(['refresh-table'])
+const refresh = (from_parent,table) => {
   // console.log('childComponentRefs',childComponentRefs)
+  if(!from_parent){
+    emit('refresh-table')
+    return
+  }
   if(table){
-    childComponentRefs.value[table].refresh(table);
+    childComponentRefs.value[table].refresh(true,table);
     for(let key in props.tabs){
-      childComponentRefs.value[key].refresh(table);
+      childComponentRefs.value[key].refresh(true,table);
     }
   }else{
     for(let key in props.tabs){
-      childComponentRefs.value[key].refresh();
+      childComponentRefs.value[key].refresh(true);
     }
   }
 };
@@ -61,6 +70,8 @@ defineExpose({ refresh });
           :filters="filters[tab.key]"
           :reload="false"
           :key="tab.key"
+          @refresh-table="refresh(false)"
+          :child="true"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
         />
       </TabPanel>

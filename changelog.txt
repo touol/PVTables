@@ -18,6 +18,7 @@ Changelog for PVTables.
 - PVAutoComplete исправление.
 - update_from_row.
 - Предовратить обновление ссылок columns.
+- emit refresh-table.
 
 0.0.0
 ==============
