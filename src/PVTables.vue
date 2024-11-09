@@ -912,6 +912,7 @@
     const payload = {
       id: data.id,
       [field]: newValue,
+      update_from_row: 1
     }
 
     cacheAction({type: 'update', payload})
@@ -1010,6 +1011,7 @@
     }
     let params = {
       filters: filters0,
+      update_from_modal: 1
     };
     if (lineItem.value.id) {
 
