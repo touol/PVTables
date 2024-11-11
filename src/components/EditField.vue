@@ -52,7 +52,6 @@
         @keydown.tab.stop
         @change="setValue()"
         :disabled="use_readonly && col.readonly"
-        class="w-full" autocomplete="off"
     />
     <Textarea 
         v-else-if="col.type == 'textarea'" 
