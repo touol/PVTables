@@ -19,6 +19,7 @@ Changelog for PVTables.
 - update_from_row.
 - Предовратить обновление ссылок columns.
 - emit refresh-table.
+- Extended fields.
 
 0.0.0
 ==============

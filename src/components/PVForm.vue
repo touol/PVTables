@@ -4,59 +4,14 @@
       <div class="flex flex-wrap items-center gap-4 mb-4">
         <label :for="col.field" class="font-semibold w-24">{{ col.label }}</label>
         <div :style="{ width: inline?'18rem':'24rem' }">
-          <template v-if="col.field == 'id'">
-            <span :id="col.field" 
-            class="w-full" autocomplete="off">
-              {{ model[col.field] }}
-            </span>
-          </template>
-          <template v-else-if="col.type == 'textarea'">
-            <Textarea :id="col.field" v-model.trim="model[col.field]" :disabled="col.readonly" 
-            class="w-full" autocomplete="off"/>
-          </template>
-          <template v-else-if="col.type == 'number'">
-            <InputNumber :id="col.field" v-model="model[col.field]" :disabled="col.readonly" 
-            class="w-full" autocomplete="off"/>
-          </template>
-          <template v-else-if="col.type == 'autocomplete'">
-            <PVAutoComplete
-              v-model="model[col.field]"
-              :field="col"
-              :options="autocompleteSettings[col.field]"
-              :disabled="col.readonly"
-              class="w-full" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'select'">
-            <GTSSelect
-              v-model:id="model[col.field]"
-              :options="selectSettings2[col.field]?.rows"
-              :disabled="col.readonly"
-              class="w-full" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'decimal'">
-            <InputNumber
-              :id="col.field"
-              v-model="model[col.field]"
-              :minFractionDigits="col.FractionDigits"
-              :maxFractionDigits="col.FractionDigits"
-              :disabled="col.readonly"
-              class="w-full" autocomplete="off"
-            />
-          </template>
-          <template v-else-if="col.type == 'boolean'">
-            <ToggleSwitch :id="col.field" v-model="model[col.field]" :disabled="col.readonly"/>
-          </template>
-          <template v-else-if="col.type == 'date'">
-            <GTSDate v-model="model[col.field]" :disabled="col.readonly" 
-            class="w-full" autocomplete="off"/>
-          </template>
-          
-          <template v-else>
-            <InputText :id="col.field" v-model.trim="model[col.field]" :disabled="col.readonly" 
-            class="w-full" autocomplete="off"/>
-          </template>
+          <EditField
+            :field="col"
+            v-model="model[col.field]"
+            :data="model"
+            :use_data="true"
+            :autocompleteSettings="autocompleteSettings[col.field]"
+            :selectSettings="selectSettings2[col.field]"
+          />
         </div>
       </div>
     </template>
@@ -64,15 +19,8 @@
 </template>
 
 <script setup>
-import { ref, watch, watchEffect } from 'vue';
-import InputText from "primevue/inputtext";
-import Textarea from "primevue/textarea";
-import InputNumber from "primevue/inputnumber";
-import ToggleSwitch from 'primevue/toggleswitch';
-
-import GTSDate from "./gtsDate.vue";
-import PVAutoComplete from "./PVAutoComplete.vue";
-import GTSSelect from "./gtsSelect.vue";
+import { ref, watchEffect } from 'vue';
+import EditField from "./EditField.vue";
 
 const model = defineModel({});
 

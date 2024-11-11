@@ -1,6 +1,9 @@
 <template>
     <template v-if="col.field == 'id'">
-        {{ model }}
+        <span 
+            class="w-full" autocomplete="off">
+            {{ model }}
+        </span>
     </template>
     <PVAutoComplete
         v-else-if="col.type == 'autocomplete'"
@@ -9,6 +12,7 @@
         :options="autocompleteSettings"
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
     />
     <GTSSelect
         v-else-if="col.type == 'select'"
@@ -16,18 +20,31 @@
         :options="selectSettings?.rows"
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
     />
-    <template v-else-if="col.type == 'decimal'">
-        {{ format_decimal(model,col.FractionDigits) }}
-    </template>
-    <template v-else-if="col.type == 'number'">
-        {{ model }}
-    </template>
+    <InputNumber
+        v-else-if="col.type == 'decimal'"
+        :id="col.field"
+        v-model="model"
+        @change="setValue()"
+        :minFractionDigits="col.FractionDigits"
+        :maxFractionDigits="col.FractionDigits"
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
+    <InputNumber 
+        v-else-if="col.type == 'number'" 
+        v-model="model"
+        @change="setValue()"
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
     <GTSDate
         v-else-if="col.type == 'date'"
         :model-value="model"
         @update:modelValue="($event) => updateValue($event)"
         :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
     />
     <ToggleSwitch 
         v-else-if="col.type == 'boolean'"
@@ -35,19 +52,32 @@
         @keydown.tab.stop
         @change="setValue()"
         :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
+    <Textarea 
+        v-else-if="col.type == 'textarea'" 
+        v-model="model"
+        @change="setValue()"
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
     />
     <template v-else-if="col.type == 'html'">
-        <span v-html="model"></span>
+        <span v-html="model" class="w-full"></span>
     </template>
-    <template v-else>
-        {{ model }}
-    </template>
+    <InputText 
+        v-else 
+        v-model="model"
+        @change="setValue()" 
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
 </template>
 <script setup>
     import { ref, watchEffect } from "vue";
-    // import InputText from "primevue/inputtext";
-    // import Textarea from "primevue/textarea";
-    // import InputNumber from "primevue/inputnumber";
+    import InputText from "primevue/inputtext";
+    import Textarea from "primevue/textarea";
+    import InputNumber from "primevue/inputnumber";
+
     import ToggleSwitch from 'primevue/toggleswitch';
     // import Checkbox from 'primevue/checkbox';
 
@@ -129,7 +159,6 @@
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
         return parts.join(",");
     }
-
     function getField(obj, field) {
       return field.split('.').reduce((acc, curr) => acc[curr], obj);
     }

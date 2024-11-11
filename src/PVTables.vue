@@ -114,7 +114,7 @@
           <div :class="getClassBody(col,data)">
             <Field
               :field="col"
-              :data="data[field]"
+              :data="data"
               :use_data="true"
               :autocompleteSettings="autocompleteSettings[field]"
               :selectSettings="selectSettings[field]"
@@ -126,58 +126,24 @@
           </div>
         </template>
         <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(col.type) && !col.readonly" #editor="{ data, field }">
-          <Field
-            v-if="customFields[data.id] && customFields[data.id][field] && ['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(customFields[data.id][field].type)"
+          
+          <EditField
             :field="col"
-            :data="data[field]"
+            v-model="data[field]"
+            :data="data"
             :use_data="true"
             :autocompleteSettings="autocompleteSettings[field]"
             :selectSettings="selectSettings[field]"
-            @set-value="
-              onCellEditComplete({ data, field, newValue: $event })
-            "
             :customFields="customFields[data.id]"
-            />
-          <InputNumber 
-            v-else-if="col.type == 'number'" 
-            v-model="data[field]"
-            :disabled="disableField(data,field)"
           />
-          <InputNumber 
-            v-else-if="col.type == 'decimal'" 
-            v-model="data[field]" 
-            :minFractionDigits="col.FractionDigits" 
-            :maxFractionDigits="col.FractionDigits" 
-            :disabled="disableField(data,field)"
-            />
-          <Textarea 
-            v-else-if="col.type == 'textarea'" 
-            v-model="data[field]" rows="1" 
-            :disabled="disableField(data,field)"
-            />
-          <InputText 
-            v-else 
-            v-model="data[field]" 
-            :disabled="disableField(data,field)"
-            />
         </template>
         <template #filter="{ filterModel }">
-          <template v-if="['autocomplete', 'select', 'boolean', 'date' , 'datetime'].includes(col.type)">
-            <Field
-              :field="col"
-              v-model="filterModel.value"
-              :autocompleteSettings="autocompleteSettings[col.field]"
-              :selectSettings="selectSettings[col.field]"
-              :use_readonly="false"
-              class="p-column-filter"
-            />
-          </template>
-          <template v-else>
-            <InputNumber v-if="col.type == 'number'" v-model="filterModel.value"/>
-            <InputNumber v-else-if="col.type == 'decimal'" v-model="filterModel.value" :minFractionDigits="col.FractionDigits" :maxFractionDigits="col.FractionDigits" />
-            <Textarea v-else-if="col.type == 'textarea'" v-model="filterModel.value" rows="1" />
-            <InputText v-else v-model="filterModel.value" />
-          </template>
+          <EditField
+            :field="col"
+            v-model="filterModel.value"
+            :autocompleteSettings="autocompleteSettings[col.field]"
+            :selectSettings="selectSettings[col.field]"
+          />
         </template>
       </Column>
       <Column
@@ -319,9 +285,9 @@
   //import fields component
   import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
 
-  import InputText from "primevue/inputtext";
-  import Textarea from "primevue/textarea";
-  import InputNumber from "primevue/inputnumber";
+  // import InputText from "primevue/inputtext";
+  // import Textarea from "primevue/textarea";
+  // import InputNumber from "primevue/inputnumber";
   // import ToggleSwitch from 'primevue/toggleswitch';
   // import Checkbox from 'primevue/checkbox';
   import MultiSelect from 'primevue/multiselect'
@@ -331,6 +297,7 @@
   // import GTSSelect from "./components/gtsSelect.vue";
   import PVAutoComplete from "./components/PVAutoComplete.vue";
   import Field from "./components/Field.vue";
+  import EditField from "./components/EditField.vue";
   import { useNotifications } from "./components/useNotifications";
 
   import PVTabs from './components/PVTabs.vue'
@@ -916,7 +883,7 @@
     let { data, newValue, field } = event;
     // console.log('field',field)
     // console.log('newValue',newValue)
-    if(data[field] == newValue) return
+    if(getField(data,field) == newValue) return
 
     const payload = {
       id: data.id,
@@ -944,7 +911,9 @@
       const response = await api.update(payload,params)
       emit('get-response', {action:"update",response:response})
       
-      data[field] = newValue
+      console.log('data',data)
+      // data[field] = newValue
+      setField(data,field,newValue)
       if (!response.success) {
         notify('error', { detail: response.message }, true);
       }
@@ -979,6 +948,21 @@
       notify('error', { detail: error.message }, true);
     }
   };
+  function getField(obj, field) {
+    return field.split('.').reduce((acc, curr) => acc[curr], obj);
+  }
+  function setField(obj, field, value) {
+    const fields = field.split('.');
+    const lastField = fields.pop();
+    let target = obj;
+  for (let i = 0; i < fields.length; i++) {
+    if (!target[fields[i]]) {
+      target[fields[i]] = {};
+    }
+    target = target[fields[i]];
+  }
+  target[lastField] = value;
+  }
   const onPage = async (event) => {
     lazyParams.value = event;
     await loadLazyData(event);
@@ -1258,12 +1242,12 @@
     }
     return
   };
-  const disableField = (data,field) =>{
-    if(customFields.value[data.id]){
-      if(customFields.value[data.id][field] && customFields.value[data.id][field].readonly == 1) return true
-    }
-    return false
-  }
+  // const disableField = (data,field) =>{
+  //   if(customFields.value[data.id]){
+  //     if(customFields.value[data.id][field] && customFields.value[data.id][field].readonly == 1) return true
+  //   }
+  //   return false
+  // }
   const op = ref();
   const toggleSettings = (event) => {
     selectedColumns.value = columns.value.filter(col => col.modal_only != true);
@@ -1280,7 +1264,7 @@
     })
     selectedColumns.value = columns.value.filter(col => col.modal_only != true);
   }
-
+  
 </script>
 
 

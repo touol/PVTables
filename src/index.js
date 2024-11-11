@@ -8,6 +8,7 @@ import gtsSelect from './components/gtsSelect.vue'
 import PVTable from './components/PVTable.vue'
 import PVForm from './components/PVForm.vue'
 import PVTableModel from './components/PVTableModel.vue'
+import EditField from "./components/EditField.vue";
 import { useNotifications } from './components/useNotifications.js'
 
 import 'primeicons/primeicons.css'
@@ -65,7 +66,9 @@ export default {
         app.component('PVTable', PVTable)
         app.component('PVForm', PVForm)
         app.component('PVTableModel', PVTableModel)
+        app.component('EditField', EditField)
         app.component('useNotifications', useNotifications)
+        
     }
 }
 export {
@@ -78,6 +81,7 @@ export {
     PVTable as PVTable,
     PVForm as PVForm,
     PVTableModel as PVTableModel,
+    EditField as EditField,
     useNotifications as useNotifications,
 
     Button as Button,
