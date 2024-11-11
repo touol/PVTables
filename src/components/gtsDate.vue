@@ -27,7 +27,6 @@ const computedDate = computed({
     return props.modelValue.split('-').reverse().join('.')
   },
   set(value) {
-    console.log('computedDate', value)
     let formattedDate = ''
     if(value) formattedDate = value.toLocaleDateString('ru-RU').split('.').reverse().join('-')
     emit('update:modelValue', formattedDate)

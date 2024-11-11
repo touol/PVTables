@@ -911,8 +911,6 @@
       const response = await api.update(payload,params)
       emit('get-response', {action:"update",response:response})
       
-      console.log('data',data)
-      // data[field] = newValue
       setField(data,field,newValue)
       if (!response.success) {
         notify('error', { detail: response.message }, true);
