@@ -17,7 +17,7 @@
     <GTSSelect
         v-else-if="col.type == 'select'"
         v-model:id="model"
-        :options="selectSettings?.rows"
+        :options="selectSettings2?.rows"
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
@@ -120,9 +120,9 @@
         }
     });
     const col = ref({})
-    // const selectSettings = ref({})
+    const selectSettings2 = ref({})
     watchEffect(async () => {
-        // selectSettings.value = {...props.selectSettings}
+        selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings
         if (props.customFields.hasOwnProperty(props.field.field)){
             let cf = props.customFields[props.field.field]
             if(cf.readonly == 1){
@@ -131,7 +131,7 @@
                 cf.readonly = false
             }
             if(cf.select_data){
-                props.selectSettings.rows = cf.select_data
+                selectSettings2.rows = cf.select_data
             }
             col.value = {...props.field,...cf}
         }else{
