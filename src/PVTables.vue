@@ -923,10 +923,10 @@
         }
       }
       if(response.data.refresh_row == 1){
-        lineItems.value[findIndexById(Number(response.data.object.id))] = response.data.object
+        lineItems.value[findIndexById(Number(payload.id))] = response.data.object
       }else if(response.data.defvalues){
         // console.log('response.data.defvalues',response.data.defvalues)
-        lineItems.value[findIndexById(Number(response.data.object.id))] = {...lineItems.value[findIndexById(Number(response.data.object.id))],...response.data.defvalues}
+        lineItems.value[findIndexById(Number(payload.id))] = {...lineItems.value[findIndexById(Number(payload.id))],...response.data.defvalues}
       }
       if(response.data.row_setting){
         for(let key in response.data.row_setting){
