@@ -1,11 +1,13 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from 'tailwindcss'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
-
+  // process.env = {...process.env,...loadEnv(mode, './'),...loadEnv(mode, '../')}
   return {
+    // define: {
+    //   'import.meta': 'import.meta'
+    // },
     build: {
       outDir: "./dist",
       lib: {

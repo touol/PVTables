@@ -5,9 +5,10 @@ import { useNotifications } from "./useNotifications";
 
 export default (tableName, timeout = 10000) => {  
   let baseURL = '/'
-  if(import.meta.env.VITE_API_BASE_URL){
-    baseURL = import.meta.env.VITE_API_BASE_URL
-  }
+  // console.log('import.meta.env',import.meta.env)
+  // if(import.meta.env.VITE_API_BASE_URL){
+  //   baseURL = import.meta.env.VITE_API_BASE_URL
+  // }
   const instance = axios.create({
     baseURL: `${baseURL}api/${tableName}`,
     timeout: timeout
@@ -18,7 +19,7 @@ export default (tableName, timeout = 10000) => {
   instance.interceptors.request.use(
     (config) => {
       // console.log('DEV_TOKEN',import.meta.env.VITE_DEV_TOKEN)
-      if(import.meta.env.VITE_DEV_TOKEN) config.headers["Authorization"] = "Bearer " + import.meta.env.VITE_DEV_TOKEN;
+      // if(import.meta.env.VITE_DEV_TOKEN) config.headers["Authorization"] = "Bearer " + import.meta.env.VITE_DEV_TOKEN;
       return config;
     },
     (error) => {
