@@ -1,60 +1,63 @@
 <script setup>
-import PVTables from '../PVTables.vue'
-import Toast from 'primevue/toast';
-import { ref } from 'vue';
-// import TabView from 'primevue/tabview';
-// import TabPanel from 'primevue/tabpanel';
-import Tabs from 'primevue/tabs';
-import TabList from 'primevue/tablist';
-import Tab from 'primevue/tab';
-import TabPanels from 'primevue/tabpanels';
-import TabPanel from 'primevue/tabpanel';
-const props = defineProps({
-  tabs: {
-    type: Object,
-    required: true,
-  },
-  actions: {
-    type: Object,
-    default: {},
-  },
-  filters: {
-    type: Object,
-    default: {},
-  },
-  child:{
-    type: Boolean,
-    default: false
-  }
-});
-const key0 = ref()
-const childComponentRefs = ref({})
-for(let key in props.tabs){
-  props.tabs[key].key = key
-  if(!key0.value) key0.value = key
-  if(props.tabs[key].active) key0.value = key
-  // childComponentRef.value[key]
-}
-// console.log('props.tabs',props.tabs)
-const emit = defineEmits(['refresh-table'])
-const refresh = (from_parent,table) => {
-  // console.log('childComponentRefs',childComponentRefs)
-  if(!from_parent){
-    emit('refresh-table')
-    return
-  }
-  if(table){
-    childComponentRefs.value[table].refresh(true,table);
-    for(let key in props.tabs){
-      childComponentRefs.value[key].refresh(true,table);
+  import PVTables from '../PVTables.vue'
+  import Toast from 'primevue/toast';
+  import { ref } from 'vue';
+  // import TabView from 'primevue/tabview';
+  // import TabPanel from 'primevue/tabpanel';
+  import Tabs from 'primevue/tabs';
+  import TabList from 'primevue/tablist';
+  import Tab from 'primevue/tab';
+  import TabPanels from 'primevue/tabpanels';
+  import TabPanel from 'primevue/tabpanel';
+  const props = defineProps({
+    tabs: {
+      type: Object,
+      required: true,
+    },
+    actions: {
+      type: Object,
+      default: {},
+    },
+    filters: {
+      type: Object,
+      default: {},
+    },
+    child:{
+      type: Boolean,
+      default: false
     }
-  }else{
-    for(let key in props.tabs){
-      childComponentRefs.value[key].refresh(true);
-    }
+  });
+  const key0 = ref()
+  const childComponentRefs = ref({})
+  for(let key in props.tabs){
+    props.tabs[key].key = key
+    if(!key0.value) key0.value = key
+    if(props.tabs[key].active) key0.value = key
+    // childComponentRef.value[key]
   }
-};
-defineExpose({ refresh });
+  // console.log('props.tabs',props.tabs)
+  const emit = defineEmits(['refresh-table','get-response'])
+  const refresh = (from_parent,table) => {
+    // console.log('childComponentRefs',childComponentRefs)
+    if(!from_parent){
+      emit('refresh-table')
+      return
+    }
+    if(table){
+      childComponentRefs.value[table].refresh(true,table);
+      for(let key in props.tabs){
+        childComponentRefs.value[key].refresh(true,table);
+      }
+    }else{
+      for(let key in props.tabs){
+        childComponentRefs.value[key].refresh(true);
+      }
+    }
+  };
+  defineExpose({ refresh });
+  const get_response = (event) => {
+    emit('get-response', event)
+  }
 </script>
 
 <template>
@@ -73,6 +76,7 @@ defineExpose({ refresh });
           @refresh-table="refresh(false)"
           :child="true"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          @get-response="get_response($event)"
         />
       </TabPanel>
     </TabPanels>

@@ -169,6 +169,7 @@
             @refresh-table="refresh(false)"
             :child="true"
             :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
+            @get-response="get_response($event)"
             />
         </div>
         <div v-if="subs[slotProps.data.id].action == 'subtabs'" class="p-3">
@@ -179,6 +180,7 @@
             @refresh-table="refresh(false)"
             :child="true"
             :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
+            @get-response="get_response($event)"
             />
         </div>
       </template>
@@ -909,7 +911,7 @@
     };
     try {
       const response = await api.update(payload,params)
-      emit('get-response', {action:"update",response:response})
+      emit('get-response', {table:props.table,action:"update",response:response})
       
       setField(data,field,newValue)
       if (!response.success) {
@@ -953,13 +955,13 @@
     const fields = field.split('.');
     const lastField = fields.pop();
     let target = obj;
-  for (let i = 0; i < fields.length; i++) {
-    if (!target[fields[i]]) {
-      target[fields[i]] = {};
+    for (let i = 0; i < fields.length; i++) {
+      if (!target[fields[i]]) {
+        target[fields[i]] = {};
+      }
+      target = target[fields[i]];
     }
-    target = target[fields[i]];
-  }
-  target[lastField] = value;
+    target[lastField] = value;
   }
   const onPage = async (event) => {
     lazyParams.value = event;
@@ -1012,6 +1014,7 @@
         if (!response.success) {
           notify('error', { detail: response.message }, true);
         }
+        emit('get-response', {table:props.table,action:"update",response:response})
         if(response.data.customFields){
           customFields.value[lineItem.value.id] = response.data.customFields[lineItem.value.id]
         }
@@ -1028,6 +1031,7 @@
       
       try {
         const response = await api.create(lineItem.value,params)
+        emit('get-response', {table:props.table,action:"create",response:response})
         if (!response.success) {
           notify('error', { detail: response.message }, true);
         }
@@ -1143,7 +1147,7 @@
     
     try {
       const resp = await api.action(tmp.action,{...event,filters: filters0})
-      emit('get-response', {action:tmp.action,response:resp})
+      emit('get-response', {table:props.table,action:tmp.action,response:resp})
       if(!resp.success) notify('error', { detail: resp.message });
       refresh(false)
     } catch (error) {
@@ -1262,7 +1266,9 @@
     })
     selectedColumns.value = columns.value.filter(col => col.modal_only != true);
   }
-  
+  const get_response = (event) => {
+    emit('get-response', event)
+  }
 </script>
 
 
