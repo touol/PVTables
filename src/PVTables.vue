@@ -109,6 +109,7 @@
         sortable
         :dataType="col.dataType"
         :class="getClassTD(col)"
+        :pt="{ bodyCell: { onKeydown: onKeyDown } }"
         >
         <template #body="{ data, field }">
           <div :class="getClassBody(col,data)">
@@ -1269,6 +1270,87 @@
   const get_response = (event) => {
     emit('get-response', event)
   }
+  const findCell = (element) =>{
+    if (element) {
+      var cell = element;
+      // console.log('cell',cell)
+      while (cell && cell.tagName !== "TD") {
+        cell = cell.parentElement;
+      }
+      // console.log('cell2',cell)
+      return cell;
+    } else {
+      return null;
+    }
+  }
+  const findNextEditableColumn = (cell) => {
+    if(!cell) return null;
+    var nextCell = cell.nextElementSibling;
+    if (!nextCell) {
+      var nextRow = cell.parentElement.nextElementSibling;
+      if (nextRow) {
+        nextCell = nextRow.firstElementChild;
+      }
+    }
+    if (nextCell) {
+      // console.log('nextCell1',nextCell)
+      // console.log('nextCell.firstElementChild',nextCell.firstElementChild)  
+      if (nextCell.tagName === "TD" 
+      && !nextCell.firstElementChild.classList.contains('readonly')
+      && nextCell.firstElementChild.classList.contains('td-body')
+      && !nextCell.firstElementChild.classList.contains('view')
+      ){
+        return nextCell;
+      }else{
+        return findNextEditableColumn(nextCell);
+      } 
+    } else {
+      return null;
+    }
+  }
+
+  function invokeElementMethod(element, methodName, args) {
+    element[methodName].apply(element, args);
+  }
+  const onKeyDown = (event) => {
+    // console.log('onTab',event)
+    // if(event.key == 'Tab'){
+    //   console.log('Tab',event)
+    //   event.preventDefault();
+    // }
+    if(event.key == 'Enter'){
+      // console.log('Enter',event)
+      // if(event.target.tagName == 'TEXTAREA') return
+      var currentCell = findCell(event.target);
+      var targetCell = findNextEditableColumn(currentCell);
+      // console.log('targetCell',targetCell)
+      if (targetCell) {
+        
+        if(targetCell.firstElementChild.classList.contains('readonly')){
+          targetCell = findNextEditableColumn(targetCell);
+        }
+        if(targetCell.firstElementChild.classList.contains('boolean')){
+          targetCell = findNextEditableColumn(targetCell);
+        }
+        if(targetCell.classList.contains('autocomplete')
+        // || targetCell.classList.contains('select')
+        || targetCell.classList.contains('date')
+        || targetCell.classList.contains('datetime')
+        ){
+          targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
+          targetCell.focus()
+          // console.log('targetCell2',targetCell)
+        }else if(targetCell.classList.contains('select')){
+          targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild.nextElementSibling
+          invokeElementMethod(targetCell, "click");
+        }else{
+          // console.log('targetCell2',targetCell)
+          invokeElementMethod(targetCell, "click");
+        }
+      }
+      // event.stopImmediatePropagation();
+    }
+  }
 </script>
 
 
@@ -1332,5 +1414,9 @@
   }
   .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
     padding: 0.375rem 0.5rem;
+  }
+  .p-autocomplete-option:not(.p-autocomplete-option-selected):not(.p-disabled).p-focus {
+    background: #9cabbb;
+    color: var(--p-autocomplete-option-focus-color);
   }
 </style>

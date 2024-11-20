@@ -10,15 +10,15 @@ const maxValue = 3
 
 export const useActionsCaching = () => {
   onMounted(() => {
-    document.addEventListener('keydown', (event) => {
-      if (event.code === 'KeyZ' && event.ctrlKey) {
-        undo()
-      }
+    // document.addEventListener('keydown', (event) => {
+    //   if (event.code === 'KeyZ' && event.ctrlKey) {
+    //     undo()
+    //   }
   
-      if (event.code === 'KeyY' && event.ctrlKey) {
-        redo()
-      }
-    })
+    //   if (event.code === 'KeyY' && event.ctrlKey) {
+    //     redo()
+    //   }
+    // })
   })
 
   const cache = reactive({
