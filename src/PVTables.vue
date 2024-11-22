@@ -1221,17 +1221,19 @@
   };
 
   const getClassBody = (col, data) => {
-    let class1 = 'td-body '  + col.type
+    let class1 = 'td-body '
+    let class2 = col.type
     let customReadonly = false
     if(customFields.value[data.id]){
       if(customFields.value[data.id][col.field]){
         if(customFields.value[data.id][col.field].readonly == 1) customReadonly = true
+        if(customFields.value[data.id][col.field].type != class2) class2 = customFields.value[data.id][col.field].type
       }
     }
     if(col.readonly || customReadonly){
-      return class1 + ' readonly'
+      return class1 + class2 + ' readonly'
     }
-    return class1
+    return class1 + class2
   };
   const getClassTD = (col) => {
     return col.type
@@ -1332,15 +1334,15 @@
         if(targetCell.firstElementChild.classList.contains('boolean')){
           targetCell = findNextEditableColumn(targetCell);
         }
-        if(targetCell.classList.contains('autocomplete')
+        if(targetCell.firstElementChild.classList.contains('autocomplete')
         // || targetCell.classList.contains('select')
-        || targetCell.classList.contains('date')
-        || targetCell.classList.contains('datetime')
+        || targetCell.firstElementChild.classList.contains('date')
+        || targetCell.firstElementChild.classList.contains('datetime')
         ){
           targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
           targetCell.focus()
           // console.log('targetCell2',targetCell)
-        }else if(targetCell.classList.contains('select')){
+        }else if(targetCell.firstElementChild.classList.contains('select')){
           targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild.nextElementSibling
           invokeElementMethod(targetCell, "click");
         }else{
@@ -1371,6 +1373,12 @@
   }
   td.autocomplete .p-autocomplete-dropdown, td.autocomplete .p-inputtext
   ,td.select .p-autocomplete-dropdown, td.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+  .td-body.autocomplete .p-autocomplete-dropdown, .td-body.autocomplete .p-inputtext
+  ,.td-body.select .p-autocomplete-dropdown, .td-body.select .p-inputtext
   {
     background: inherit;
     border: none;

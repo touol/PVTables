@@ -16,7 +16,7 @@ import AutoComplete from "primevue/autocomplete";
 import { ref, watchEffect } from "vue";
 
 const model = defineModel("id", {
-  type: String,
+  type: [String,Number],
   default: "",
 });
 
@@ -48,7 +48,7 @@ watchEffect(() => {
 const items = ref([]);
 
 const search = async ({ query }) => {
-  if(query){
+  if(query && query !== 0){
     items.value = props.options.filter((option) => option.content.indexOf(query) !=-1);
   }else{
     items.value = props.options

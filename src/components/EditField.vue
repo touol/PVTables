@@ -131,7 +131,7 @@
                 cf.readonly = false
             }
             if(cf.select_data){
-                selectSettings2.rows = cf.select_data
+                selectSettings2.value.rows = cf.select_data
             }
             col.value = {...props.field,...cf}
         }else{
