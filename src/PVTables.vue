@@ -103,7 +103,7 @@
       </Column>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <Column
-        v-for="col of columns.filter((x) => x.modal_only != true)"
+        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden')"
         :field="col.field"
         :header="col.label"
         sortable
@@ -199,6 +199,7 @@
         :autocompleteSettings="autocompleteSettings" 
         :selectSettings="selectSettings"
         :customFields="customFields[lineItem.id]"
+        :mywatch="mywatch"
       />
       <template #footer>
         <Button
@@ -559,12 +560,13 @@
           
           switch (action) {
             case "update":
+              tmp.action = action;
               if (!tmp.hasOwnProperty("row")) tmp.row = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-pencil";
               if (!tmp.hasOwnProperty("class"))
                 tmp.class = "p-button-rounded p-button-success";
               if (!tmp.hasOwnProperty("click"))
-                tmp.click = (data) => editLineItem(data);
+                tmp.click = (data) => editLineItem(data,tmp);
               break;
             case "delete":
               if (!tmp.hasOwnProperty("row")) tmp.row = true;
@@ -580,12 +582,13 @@
               if (!tmp.hasOwnProperty("label")) tmp.label = "Удалить";
               break;
             case "create":
+              tmp.action = action;
               if (!tmp.hasOwnProperty("head")) tmp.head = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
               if (!tmp.hasOwnProperty("class"))
                 tmp.class = "p-button-rounded p-button-success";
               if (!tmp.hasOwnProperty("head_click"))
-                tmp.head_click = () => openNew();
+                tmp.head_click = () => openNew(tmp);
               // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
               if (!tmp.hasOwnProperty("label")) tmp.label = "Создать";
               break;
@@ -977,9 +980,16 @@
   const lineItem = ref({});
   const submitted = ref(false);
   const lineItemDialog = ref(false);
-
+  const mywatch = ref({
+    enabled: false,
+    fields: [],
+    table: '',
+    action: ''
+  });
+  
   //edit row in dialog
-  const editLineItem = (item) => {
+  const editLineItem = (item,action) => {
+    if(action.watch) mywatch.value = {enabled: true, fields: action.watch, table: props.table, action: action.action, filters: prepFilters()};
     lineItem.value = { ...item };
     lineItemDialog.value = true;
   };
@@ -988,6 +998,7 @@
     lineItemDialog.value = false;
     submitted.value = false;
   };
+
 
   const saveLineItem = async () => {
     submitted.value = true;
@@ -1103,7 +1114,8 @@
   };
 
   //add row
-  const openNew = () => {
+  const openNew = (action) => {
+    if(action.watch) mywatch.value = {enabled: true, fields: action.watch, table: props.table, action: action.action, filters: prepFilters()};
     lineItem.value = {};
     submitted.value = false;
     lineItemDialog.value = true;
@@ -1131,8 +1143,7 @@
       notify('error', { detail: error.message });
     }
   };
-  // defRowAction(event, tmp)
-  const defRowAction = async (event, tmp) => {
+  const prepFilters = () => {
     let filters0 = {}
     for(let field in filters.value){
       if(filters.value[field].hasOwnProperty('constraints')){
@@ -1145,6 +1156,11 @@
         }
       }
     }
+    return filters0
+  }
+  // defRowAction(event, tmp)
+  const defRowAction = async (event, tmp) => {
+    let filters0 = prepFilters()
     
     try {
       const resp = await api.action(tmp.action,{...event,filters: filters0})

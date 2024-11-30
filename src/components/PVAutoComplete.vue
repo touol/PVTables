@@ -54,10 +54,6 @@
     options: {
       type: Object,
       default: () => {}
-    },
-    parent: {
-      type: Object,
-      default: () => {}
     }
   });
 
@@ -120,7 +116,7 @@
       if(!props.field.ids){
         props.field.ids = ''
       }
-      const response = await api.autocomplete({query:query,parent:props.parent,ids:props.field.ids})
+      const response = await api.autocomplete({query:query,parent:props.field.parent,ids:props.field.ids})
       items.value = response.data.rows;
     } catch (error) {
       notify('error', { detail: error.message });
@@ -128,11 +124,11 @@
   };
 
   async function getOptionById(id) {
-    const response = await api.autocomplete({id:id,parent:props.parent})
+    const response = await api.autocomplete({id:id,parent:props.field.parent})
     return response.data.rows[0] || null;
   }
   async function getOptionByShowId(show_id) {
-    const response = await api.autocomplete({show_id:show_id,parent:props.parent})
+    const response = await api.autocomplete({show_id:show_id,parent:props.field.parent})
     return response.data.rows[0] || null;
   }
   const onUserInputEnd = async ($evt) => {

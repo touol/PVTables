@@ -1,6 +1,6 @@
 <template>
   <div :class="{'flex flex-wrap gap-4':inline}">
-    <template v-for="col of columns2.filter((x) => x.table_only != true)">
+    <template v-for="col of columns2.filter((x) => x.table_only != true && x.type != 'hidden')">
       <div class="flex flex-wrap items-center gap-4 mb-4">
         <label :for="col.field" class="font-semibold w-24">{{ col.label }}</label>
         <div :style="{ width: inline?'18rem':'24rem' }">
@@ -19,8 +19,10 @@
 </template>
 
 <script setup>
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, watch } from 'vue';
 import EditField from "./EditField.vue";
+import apiCtor from './api.js'
+import { useNotifications } from "./useNotifications";
 
 const model = defineModel({});
 
@@ -44,11 +46,24 @@ const props = defineProps({
   inline: {
     type: Boolean,
     default: false
+  },
+  mywatch: {
+    type: Object,
+    default: {
+      enabled: false,
+      fields: [],
+      filters: {},
+      table: '',
+      action: ''
+    }
   }
 });
 const selectSettings2 = ref({})
 const columns2 = ref({})
-watchEffect(async () => {
+let stop_watch_props = false
+watch(async () => {
+  if(stop_watch_props) return
+  // console.log('watch1',columns2.value)
   selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings
   columns2.value = JSON.parse(JSON.stringify(props.columns)) //props.columns
   for(let col in columns2.value){
@@ -81,6 +96,74 @@ watchEffect(async () => {
   }
   
 })
+let watchOld = {}
+let watch_first = true
+
+const api = apiCtor(props.mywatch.table)
+const { notify } = useNotifications();
+
+const watch_form = async (values, field, value, oldValue) => {
+  try {
+    // console.log('values',values)
+    const response = await api.action('watch_form', {
+      filters:props.mywatch.filters,
+      watch_action:props.mywatch.action, 
+      values:values, 
+      field:field, 
+      value:value, 
+      oldValue:oldValue
+    })
+    // console.log('response',response)
+    if (!response.success) {
+      notify('error', { detail: response.message }, true);
+      return
+    }
+    if(response.data.fields){
+      stop_watch_props = true
+      let cols = [];
+      let fields = response.data.fields
+      for (let field in fields) {
+        fields[field].field = field;
+        if (!fields[field].hasOwnProperty("label")) {
+          fields[field].label = field;
+        }
+        if (!fields[field].hasOwnProperty("type")) fields[field].type = "text";
+        if (fields[field].hasOwnProperty("readonly")){
+          if(fields[field].readonly === true || fields[field].readonly == 1){
+            fields[field].readonly = true
+          }else{
+            fields[field].readonly = false
+          }
+        }
+        if(fields[field].select_data){ 
+          if(!selectSettings2.value[field]) selectSettings2.value[field] = {}
+          selectSettings2.value[field].rows = fields[field].select_data
+        }
+        cols.push(fields[field]);
+      }
+      columns2.value = cols
+      for(let col in columns2.value){
+        if(columns2.value[col].hasOwnProperty('default')){
+          if(!model.value[columns2.value[col].field]) model.value[columns2.value[col].field] = columns2.value[col].default
+        }
+      }
+    }
+  } catch (error) {
+    notify('error', { detail: error.message }, true);
+  }
+}
+if(props.mywatch.enabled){
+  watch(model, () => {
+    props.mywatch.fields.forEach(field => {
+      if((watch_first && model.value[field]) || model.value[field] != watchOld[field]){
+        watch_form(model.value,field,model.value[field],watchOld[field])
+      }
+
+    })
+    watch_first = false
+    watchOld = JSON.parse(JSON.stringify(model.value))
+  }, {deep: true, immediate: true})
+}
 </script>
 <style>
   .p-inputnumber-input {
