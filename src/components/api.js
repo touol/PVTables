@@ -3,7 +3,7 @@ import { useNotifications } from "./useNotifications";
 
 // console.log(import.meta.env)
 
-export default (tableName, timeout = 10000) => {  
+export default (tableName, timeout = 60000) => {  
   let baseURL = '/'
   // console.log('import.meta.env',import.meta.env)
   // if(import.meta.env.VITE_API_BASE_URL){
@@ -100,10 +100,10 @@ export default (tableName, timeout = 10000) => {
     action: async (action, params = {}) => {
       const query = {
         api_action: action,
-        ...params
+        
       }
 
-      const response = await instance.post('/', null, { params: query})
+      const response = await instance.post('/', params, { params: query})
       return response
     },
   }

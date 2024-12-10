@@ -23235,7 +23235,7 @@ Ve.formToJSON = (t) => Ss(M.isHTMLForm(t) ? new FormData(t) : t);
 Ve.getAdapter = Is.getAdapter;
 Ve.HttpStatusCode = Zr;
 Ve.default = Ve;
-const bo = (t, e = 1e4) => {
+const bo = (t, e = 6e4) => {
   const o = Ve.create({
     baseURL: `/api/${t}`,
     timeout: e
@@ -23286,10 +23286,9 @@ const bo = (t, e = 1e4) => {
     },
     action: async (r, a = {}) => {
       const l = {
-        api_action: r,
-        ...a
+        api_action: r
       };
-      return await o.post("/", null, { params: l });
+      return await o.post("/", a, { params: l });
     }
   };
 }, Qo = {
