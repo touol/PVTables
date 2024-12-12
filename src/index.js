@@ -37,6 +37,7 @@ import Drawer from 'primevue/drawer';
 import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
 import Popover from 'primevue/popover';
+import FileUpload from 'primevue/fileupload';
 
 export default {
     install: (app, options) => {
@@ -101,4 +102,5 @@ export {
     SplitterPanel as SplitterPanel,
     Popover as Popover,
     MultiSelect as MultiSelect,
+    FileUpload as FileUpload,
 }
