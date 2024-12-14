@@ -3,7 +3,7 @@
     <Popover ref="op">
       
       <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="onToggleColomns"
-        placeholder="Выберете столбцы" />
+        placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
     </Popover>
     <Toolbar class="p-mb-4">
       <template #start>
