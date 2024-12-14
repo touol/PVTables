@@ -150,15 +150,25 @@
       <Column
         v-if="actions_row"
         :exportable="false"
-        style="white-space: nowrap"
+        class="td-actions"
         >
         <template #body="slotProps">
           <Button
-            v-for="action in cur_actions.filter((x) => x.row)"
+            v-for="action in cur_actions.filter((x) => x.row && x.menu !== 1)"
             :icon="action.icon"
             :class="action.class"
             @click="action.click(slotProps.data, columns,table,filters)"
           />
+          <SpeedDial v-if="SpeedDialEnabled" :model="speedDialActions" direction="down" >
+            <template #item="{ item, toggleCallback }">
+              <div :class="item.class" @click="item.click(slotProps.data, columns,table,filters);toggleCallback()">
+                <span :class="item.icon" />
+                <span>
+                  {{ item.label }}
+                </span>
+              </div>
+            </template>
+          </SpeedDial>
         </template>
       </Column>
       <template #expansion="slotProps">
@@ -284,6 +294,7 @@
   import Button from "primevue/button";
   import Toolbar from "primevue/toolbar";
   import Dialog from "primevue/dialog";
+  import SpeedDial from 'primevue/speeddial';
   // import axios from "axios";
 
   //import fields component
@@ -465,6 +476,8 @@
   let topFilters0 = {}
   const row_class_trigger = ref({})
   const table_tree = ref()
+  const SpeedDialEnabled = ref(false)
+  const speedDialActions = ref([])
 
   onMounted(async () => {
     loading.value = true;
@@ -671,6 +684,20 @@
               
           }
           if(!tmp.action) tmp.action = action;
+          if(tmp.hasOwnProperty("menu") && tmp.menu == 1){
+            SpeedDialEnabled.value = true
+            speedDialActions.value.push({
+              label: tmp.label,
+              icon: tmp.icon,
+              class: 'flex flex-col items-center justify-between gap-2 p-2 border ' + tmp.class,
+              click: (event, columns,table,filters) => {
+                // console.log('event',event)
+                tmp.click(event, columns,table,filters)
+              },
+              command: () => {
+              }
+            });
+          }
           if (addtmp) {
             if (tmp.hasOwnProperty("row")) actions_row.value = true;
             // if (tmp.hasOwnProperty("row")) actions_head.value = true;
@@ -1442,5 +1469,16 @@
   .p-autocomplete-option:not(.p-autocomplete-option-selected):not(.p-disabled).p-focus {
     background: #9cabbb;
     color: var(--p-autocomplete-option-focus-color);
+  }
+  .td-actions .p-speeddial {
+    display: inline;
+  }
+  .td-actions{
+    white-space: nowrap;
+    align-content: center;
+  }
+  .td-actions .p-speeddial-list {
+    position: absolute;
+    right: 0;
   }
 </style>

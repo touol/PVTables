@@ -38,7 +38,7 @@ import Splitter from 'primevue/splitter';
 import SplitterPanel from 'primevue/splitterpanel';
 import Popover from 'primevue/popover';
 import FileUpload from 'primevue/fileupload';
-
+import SpeedDial from 'primevue/speeddial';
 export default {
     install: (app, options) => {
         app.use(PrimeVue, {
@@ -103,4 +103,5 @@ export {
     Popover as Popover,
     MultiSelect as MultiSelect,
     FileUpload as FileUpload,
+    SpeedDial as SpeedDial,
 }
