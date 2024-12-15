@@ -11,6 +11,7 @@
             :use_data="true"
             :autocompleteSettings="autocompleteSettings[col.field]"
             :selectSettings="selectSettings2[col.field]"
+            @set-value="setValue()"
           />
         </div>
       </div>
@@ -61,6 +62,10 @@ const props = defineProps({
 const selectSettings2 = ref({})
 const columns2 = ref({})
 let stop_watch_props = false
+const emit = defineEmits(['set-value']);
+const setValue = () => {
+  emit('set-value', model.value)
+}
 watch(async () => {
   if(stop_watch_props) return
   // console.log('watch1',columns2.value)
