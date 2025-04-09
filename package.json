@@ -1,7 +1,7 @@
 {
   "name": "pvtables",
   "private": false,
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Table for MODX on PrimeVue",
   "author": "Alexandr Tuniekov",
   "type": "module",
@@ -26,6 +26,7 @@
     "axios": "^1.6.8",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.1",
+    "sl-vue-tree-next": "^0.0.13",
     "tailwindcss-primeui": "^0.3.4",
     "vue": "^3.4.21"
   }

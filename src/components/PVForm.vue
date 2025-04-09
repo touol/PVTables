@@ -66,7 +66,7 @@ const emit = defineEmits(['set-value']);
 const setValue = () => {
   emit('set-value', model.value)
 }
-watch(async () => {
+watchEffect(async () => {
   if(stop_watch_props) return
   // console.log('watch1',columns2.value)
   selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings

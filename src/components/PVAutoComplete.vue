@@ -65,8 +65,21 @@
   const selectedItem = ref({});
 
   watchEffect(async () => {
-    if (props.options && Number(model.value) == 0 && Number(props.options.default) > 0){
-      model.value = props.options.default
+    if (props.options && Number(model.value) == 0){
+      if(Number(props.options.default) > 0){
+        model.value = props.options.default
+      }
+      if(props.field.defaultname){
+        try {
+          if(!props.field.ids){
+            props.field.ids = ''
+          }
+          const response = await api.autocomplete({query:props.field.defaultname,parent:props.field.parent,ids:props.field.ids})
+          model.value = response.data.rows[0]?.id || "";
+        } catch (error) {
+          notify('error', { detail: error.message });
+        }
+      }
     }
     if(props.field.show_id){
       show_id_enable.value = true

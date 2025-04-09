@@ -187,6 +187,7 @@
           <PVTabs 
             :tabs="subs[slotProps.data.id].tabs"
             :actions="actions"
+            :parent_row="parent_row"
             :filters="subfilters[slotProps.data.id]"
             @refresh-table="refresh(false)"
             :child="true"
@@ -340,7 +341,7 @@
       default: {},
     },
     child:{
-      type: Boolean,
+      type: Boolean, //и не понятно зачем это. Вроде нет использования переменной.
       default: false
     }
   });
@@ -737,7 +738,7 @@
   };
   defineExpose({ refresh });
   //expand
-
+  
   const toogleExpandRow = async (data) => {
     let tmp = { ...expandedRows.value };
     if(expandedTableTreeRows.value[data.id]){
@@ -765,14 +766,17 @@
         action:'subtables',
         table:props.table,
       }
+      
       tmp[data.id] = true;
       expandedTableTreeRows.value[data.id] = true
       expandedRows.value = { ...tmp };
     }
   };
   const subfilters = ref({});
+  const parent_row = ref({})
   const delExpand = async (tmp) => {
     expandedRows.value = { ...tmp };
+    parent_row.value = {}
   };
   const setExpandedRow = async (event, tmpt) => {
     // console.log('tmpt',tmpt)
@@ -826,7 +830,8 @@
           // console.log('tmpfilters',tmpfilters)
           if(!subfilters.value.hasOwnProperty(event.id)) subfilters.value[event.id] = {}
           subfilters.value[event.id][key] = tmpfilters;
-          
+          parent_row.value = { ...event }
+          console.log('parent_row.value',parent_row.value)
         }
       }
     }

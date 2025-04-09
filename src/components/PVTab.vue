@@ -1,14 +1,3 @@
-<script setup>
-import PVTabs from './PVTabs.vue'
-import Toast from 'primevue/toast';
-import { ref } from 'vue';
-
-console.log('PVTabsConfigs',PVTabsConfigs)
-const PVTabsConfig = ref(PVTabsConfigs)
-const checkTabs = ref(false)
-checkTabs.value = PVTabsConfig?true:false;
-</script>
-
 <template>
   <div v-if="checkTabs">
     <PVTabs 
@@ -20,3 +9,16 @@ checkTabs.value = PVTabsConfig?true:false;
   <p v-else>Табы не заданы!</p>
   <Toast/>
 </template>
+
+<script setup>
+  import PVTabs from './PVTabs.vue'
+  import Toast from 'primevue/toast';
+  import { ref } from 'vue';
+
+  console.log('PVTabsConfigs',PVTabsConfigs)
+  const PVTabsConfig = ref(PVTabsConfigs)
+  const checkTabs = ref(false)
+  checkTabs.value = PVTabsConfig?true:false;
+</script>
+
+

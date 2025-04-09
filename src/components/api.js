@@ -97,6 +97,15 @@ export default (tableName, timeout = 60000) => {
       const response = await instance.post('/', null, { params: query})
       return response
     },
+    nodedrop: async (params = {}) => {
+      const query = {
+        api_action: 'nodedrop',
+        ...params
+      }
+
+      const response = await instance.post('/', null, { params: query})
+      return response
+    },
     action: async (action, params = {}) => {
       const query = {
         api_action: action,

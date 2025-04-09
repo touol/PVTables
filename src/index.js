@@ -10,6 +10,8 @@ import PVForm from './components/PVForm.vue'
 import PVTableModel from './components/PVTableModel.vue'
 import EditField from "./components/EditField.vue";
 import { useNotifications } from './components/useNotifications.js'
+import UniTree from './components/UniTree.vue'
+import UniTreePanel from './components/UniTreePanel.vue'
 
 import 'primeicons/primeicons.css'
 import './style.css'
@@ -29,6 +31,9 @@ import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Toast from 'primevue/toast'
 import MultiSelect from 'primevue/multiselect';
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import Toolbar from "primevue/toolbar";
 
 import localeRu from './locale/ru.json';
 
@@ -84,6 +89,8 @@ export {
     PVTableModel as PVTableModel,
     EditField as EditField,
     useNotifications as useNotifications,
+    UniTree as UniTree,
+    UniTreePanel as UniTreePanel,
 
     Button as Button,
     Dialog as Dialog,
@@ -104,4 +111,7 @@ export {
     MultiSelect as MultiSelect,
     FileUpload as FileUpload,
     SpeedDial as SpeedDial,
+    DataTable as DataTable,
+    Column as Column,
+    Toolbar as Toolbar,
 }
