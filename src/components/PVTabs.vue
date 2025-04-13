@@ -40,8 +40,7 @@
   import PVTables from '../PVTables.vue'
   import Toast from 'primevue/toast';
   import { ref, watch } from 'vue';
-  // import TabView from 'primevue/tabview';
-  // import TabPanel from 'primevue/tabpanel';
+
   import Tabs from 'primevue/tabs';
   import TabList from 'primevue/tablist';
   import Tab from 'primevue/tab';
@@ -111,7 +110,7 @@
       if(failcheck && key2){
         key0.value = key2
       }
-    },{deep:true}
+    },{deep:true, immediate: true}
   )
   
   

@@ -12,6 +12,7 @@ import EditField from "./components/EditField.vue";
 import { useNotifications } from './components/useNotifications.js'
 import UniTree from './components/UniTree.vue'
 import UniTreePanel from './components/UniTreePanel.vue'
+import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
 
 import 'primeicons/primeicons.css'
 import './style.css'
@@ -44,6 +45,8 @@ import SplitterPanel from 'primevue/splitterpanel';
 import Popover from 'primevue/popover';
 import FileUpload from 'primevue/fileupload';
 import SpeedDial from 'primevue/speeddial';
+import InputGroup from "primevue/inputgroup";
+
 export default {
     install: (app, options) => {
         app.use(PrimeVue, {
@@ -91,7 +94,9 @@ export {
     useNotifications as useNotifications,
     UniTree as UniTree,
     UniTreePanel as UniTreePanel,
+    UniTreeSplitButton as UniTreeSplitButton,
 
+    
     Button as Button,
     Dialog as Dialog,
     ToggleSwitch as ToggleSwitch,
@@ -114,4 +119,5 @@ export {
     DataTable as DataTable,
     Column as Column,
     Toolbar as Toolbar,
+    InputGroup as InputGroup,
 }

@@ -1,13 +1,26 @@
 <template>
     <span v-if="loading">Загрузка</span>
     <div v-else class="uni-tree">
-        <Button
-            label="Обновить"
+        <InputGroup @keydown.tab.stop>
+            <InputText 
+                v-model="searchTitle" 
+                @input="onUserInput"
+                @keydown.enter="onUserInputEndEnter" 
+                placeholder="Поиск..."
+                />
+            <Button
+            icon="pi pi-refresh"
             class="p-button-text"
             @click="loadTree"
             />
+            <UniTreeSplitButton 
+                :node="{data:{class:'root'}}"
+                :actions="actions" 
+                @select-treenode-action="selectTreeNodeAction($event)"
+            />
+        </InputGroup>
         <sl-vue-tree-next 
-            v-model="nodes" 
+            v-model="filteredNodes" 
             ref="slVueTree" 
             @toggle="toggleNode"
             @nodeclick="onNodeclick"
@@ -19,6 +32,9 @@
                 :actions="actions" 
                 @select-treenode-action="selectTreeNodeAction($event)"
                 />
+            </template>
+            <template #title="{ node }">
+                <span v-html="highlightText(node.title, searchTitle)"></span>
             </template>
         </sl-vue-tree-next>
     </div>
@@ -79,6 +95,9 @@
     import Toast from 'primevue/toast';
     import Dialog from "primevue/dialog";
     import Button from "primevue/button";
+    import InputGroup from "primevue/inputgroup";
+    import InputText from "primevue/inputtext";
+
     import UniTreeSplitButton from './UniTreeSplitButton.vue'
     import { SlVueTreeNext } from 'sl-vue-tree-next'
     import { ref, onMounted } from 'vue';
@@ -247,7 +266,8 @@
                     let tmpfilters = {};
                     for (let field in tabs[key].where) {
                         let value = tabs[key].where[field]
-                        if(value == 'current_id') value = node.data.target_id 
+                        if(value == 'current_id') value = node.data.target_id
+                        if(value == 'tree_id') value = node.data.id 
                         tmpfilters[field] = {
                             operator: 'and',
                             constraints: [
@@ -295,7 +315,7 @@
                 let fields0 = {
                     title:{
                         type: "text",
-                        label: "Заголовок"
+                        label: action.title_label || "Заголовок"
                     }
                 }
                 if(action.add_fields && Object.keys(action.add_fields).length > 0) {
@@ -367,6 +387,108 @@
         loadTree()
     };
     defineExpose({ refresh });
+
+    //searchTitle
+    const searchTitle = ref('')
+    const filteredNodes = ref([])
+    
+    // Функция для фильтрации узлов дерева
+    const filterTree = (searchText) => {
+        // Если поисковый запрос пустой, возвращаем исходное дерево
+        if (!searchText) {
+            filteredNodes.value = JSON.parse(JSON.stringify(nodes.value))
+            return
+        }
+        
+        searchText = searchText.toLowerCase()
+        
+        // Функция для раскрытия всех узлов в дереве
+        const expandAllNodes = (nodeList) => {
+            return nodeList.map(node => {
+                const newNode = { ...node, isExpanded: true }
+                
+                if (node.children && node.children.length) {
+                    newNode.children = expandAllNodes(node.children)
+                }
+                
+                return newNode
+            })
+        }
+        
+        // Рекурсивная функция для фильтрации узлов
+        const filterNodes = (nodeList) => {
+            return nodeList.filter(node => {
+                // Проверяем, содержит ли заголовок узла поисковый текст
+                const titleMatch = node.title.toLowerCase().includes(searchText)
+                
+                // Если у узла есть дочерние элементы, фильтруем их
+                let children = []
+                if (node.children && node.children.length) {
+                    children = filterNodes(node.children)
+                }
+                
+                // Если заголовок содержит поисковый текст или есть подходящие дочерние элементы
+                if (titleMatch || children.length > 0) {
+                    // Создаем копию узла с отфильтрованными дочерними элементами
+                    const newNode = { ...node }
+                    
+                    // Устанавливаем isExpanded = true для всех узлов, которые либо сами содержат совпадения,
+                    // либо имеют дочерние элементы с совпадениями
+                    newNode.isExpanded = true
+                    
+                    if (children.length > 0) {
+                        newNode.children = children
+                    }
+                    
+                    return true
+                }
+                
+                return false
+            })
+        }
+        
+        // Создаем глубокую копию узлов и раскрываем все узлы
+        const nodesCopy = expandAllNodes(JSON.parse(JSON.stringify(nodes.value)))
+        
+        // Фильтруем корневые узлы
+        filteredNodes.value = filterNodes(nodesCopy)
+    }
+    
+    // Функция для подсветки найденного текста
+    const highlightText = (text, searchText) => {
+        if (!searchText) {
+            return text
+        }
+        
+        const regex = new RegExp(`(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+        return text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
+    }
+    
+    // Обработчики событий поиска
+    const onUserInput = async ($evt) => {
+        // Поиск в реальном времени при вводе
+        if (searchTitle.value && searchTitle.value.trim().length >= 3) {
+            filterTree(searchTitle.value)
+        } else if (!searchTitle.value || searchTitle.value.trim() === '') {
+            filteredNodes.value = JSON.parse(JSON.stringify(nodes.value))
+        }
+    }
+    
+    const onUserInputEndEnter = async ($evt) => {
+        filterTree(searchTitle.value)
+    }
+    
+    // Инициализация filteredNodes при загрузке дерева
+    import { watch } from 'vue'
+    
+    // Инициализация при загрузке дерева
+    watch(nodes, (newNodes) => {
+        if (searchTitle.value && searchTitle.value.trim().length >= 3) {
+            filterTree(searchTitle.value)
+        } else {
+            filteredNodes.value = newNodes
+        }
+    }, { deep: true, immediate: true })
 </script>
 <style>
     @import 'sl-vue-tree-next/sl-vue-tree-next-minimal.css';

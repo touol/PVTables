@@ -43,16 +43,18 @@
         }else{
             switch(action){
                 case 'delete':
-                    let cls = props.actions[action].cls?props.actions[action].cls:'p-button-rounded p-button-info'
-                    let table = null
-                    speedDialActions.value.push({
-                        label: props.actions[action].label?props.actions[action].label:'Удалить',
-                        icon: props.actions[action].icon?props.actions[action].icon:'pi pi-trash',
-                        class: 'flex flex-col items-center justify-between gap-2 p-2 border ' + cls,
-                        command: () => {
-                            emit('select-treenode-action',{action,table,node})
-                        }
-                    })
+                    if(props.node.data.class != 'root'){
+                        let cls = props.actions[action].cls?props.actions[action].cls:'p-button-rounded p-button-info'
+                        let table = null
+                        speedDialActions.value.push({
+                            label: props.actions[action].label?props.actions[action].label:'Удалить',
+                            icon: props.actions[action].icon?props.actions[action].icon:'pi pi-trash',
+                            class: 'flex flex-col items-center justify-between gap-2 p-2 border ' + cls,
+                            command: () => {
+                                emit('select-treenode-action',{action,table,node})
+                            }
+                        })
+                    }
                 break
             }
         }
