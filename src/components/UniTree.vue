@@ -13,6 +13,13 @@
             class="p-button-text"
             @click="loadTree"
             />
+            <ToggleButton
+                v-model="showInactive"
+                onIcon="pi pi-eye"
+                offIcon="pi pi-eye-slash"
+                class="p-button-sm"
+                @change="applyFilters"
+            />
             <UniTreeSplitButton 
                 :node="{data:{class:'root'}}"
                 :actions="actions" 
@@ -101,6 +108,7 @@
     import Button from "primevue/button";
     import InputGroup from "primevue/inputgroup";
     import InputText from "primevue/inputtext";
+    import ToggleButton from "primevue/togglebutton";
 
     import UniTreeSplitButton from './UniTreeSplitButton.vue'
     import { SlVueTreeNext } from 'sl-vue-tree-next'
@@ -127,6 +135,7 @@
     const gtsAPIUniTreeClass = ref({});
     // const useUniTree = ref(false)
     const current_id = ref(0)
+    const showInactive = ref(false);
 
     let params = new URLSearchParams(document.location.search);
     onMounted(async () => {
@@ -402,9 +411,40 @@
     
     // Функция для фильтрации узлов дерева
     const filterTree = (searchText) => {
-        // Если поисковый запрос пустой, возвращаем исходное дерево
+        // Создаем глубокую копию узлов
+        const nodesCopy = JSON.parse(JSON.stringify(nodes.value))
+        
+        // Если поисковый запрос пустой, применяем только фильтр по активности
         if (!searchText) {
-            filteredNodes.value = JSON.parse(JSON.stringify(nodes.value))
+            if (showInactive.value) {
+                // Если ToggleButton включен (показывать все), возвращаем все узлы
+                filteredNodes.value = nodesCopy
+                setTimeout(() => {
+                    expandTree()
+                }, 0);
+            } else {
+                // Если ToggleButton выключен (показывать только активные), фильтруем неактивные узлы
+                const filterActiveNodes = (nodeList) => {
+                    return nodeList.filter(node => {
+                        // Фильтруем неактивные узлы
+                        if (node.data && node.data.active == 0) {
+                            return false
+                        }
+                        
+                        // Фильтруем дочерние элементы
+                        if (node.children && node.children.length) {
+                            node.children = filterActiveNodes(node.children)
+                        }
+                        
+                        return true
+                    })
+                }
+                
+                filteredNodes.value = filterActiveNodes(nodesCopy)
+                setTimeout(() => {
+                    expandTree()
+                }, 0);
+            }
             return
         }
         
@@ -426,6 +466,11 @@
         // Рекурсивная функция для фильтрации узлов
         const filterNodes = (nodeList) => {
             return nodeList.filter(node => {
+                // Проверяем активность узла, если ToggleButton выключен (показывать только активные)
+                if (!showInactive.value && node.data && node.data.active === 0) {
+                    return false;
+                }
+                
                 // Проверяем, содержит ли заголовок узла поисковый текст
                 const titleMatch = node.title.toLowerCase().includes(searchText)
                 
@@ -455,8 +500,6 @@
             })
         }
         
-        // Создаем глубокую копию узлов и раскрываем все узлы
-        const nodesCopy = expandAllNodes(JSON.parse(JSON.stringify(nodes.value)))
         
         // Фильтруем корневые узлы
         filteredNodes.value = filterNodes(nodesCopy)
@@ -472,13 +515,18 @@
         return text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
     }
     
+    // Функция для применения фильтров при изменении состояния ToggleButton
+    const applyFilters = () => {
+        filterTree(searchTitle.value)
+    }
+    
     // Обработчики событий поиска
     const onUserInput = async ($evt) => {
         // Поиск в реальном времени при вводе
         if (searchTitle.value && searchTitle.value.trim().length >= 3) {
             filterTree(searchTitle.value)
         } else if (!searchTitle.value || searchTitle.value.trim() === '') {
-            filteredNodes.value = JSON.parse(JSON.stringify(nodes.value))
+            filterTree('')
         }
     }
     
@@ -494,7 +542,12 @@
         if (searchTitle.value && searchTitle.value.trim().length >= 3) {
             filterTree(searchTitle.value)
         } else {
-            filteredNodes.value = newNodes
+            // Применяем фильтр по активности при загрузке дерева
+            if (!showInactive.value) {
+                filterTree('')
+            } else {
+                filteredNodes.value = newNodes
+            }
         }
     }, { deep: true, immediate: true })
 </script>
@@ -517,5 +570,8 @@
     .node-icon svg {
         width: 20px;
         height: 20px;
+    }
+    .uni-tree .p-togglebutton-label{
+        display:none;
     }
 </style>
