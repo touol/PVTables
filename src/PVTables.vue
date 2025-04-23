@@ -372,7 +372,9 @@
       if (props.filters.hasOwnProperty(field)) {
         // console.log('field',field)
         filters0[field] = props.filters[field];
-      } else {
+      }else if(fields[field].filter){
+        filters0[field] = fields[field].filter
+      }else {
         switch (fields[field].type) {
           case 'autocomplete': case 'select': case 'decimal': case 'number': case 'view':
             filters0[field] = {

@@ -45,7 +45,7 @@
                       class="node-icon" 
                       v-html="gtsAPIUniTreeClass[node.data.class].svg">
                 </span>
-                <span v-html="highlightText(node.title, searchTitle)"></span>
+                <span v-html="highlightText(node, searchTitle)"></span>
             </template>
         </sl-vue-tree-next>
     </div>
@@ -506,13 +506,16 @@
     }
     
     // Функция для подсветки найденного текста
-    const highlightText = (text, searchText) => {
-        if (!searchText) {
-            return text
+    const highlightText = (node, searchText) => {
+        let text = node.title
+        if (searchText) {
+            const regex = new RegExp(`(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+            let text = text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
         }
-        
-        const regex = new RegExp(`(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-        return text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
+        if(node.data.active != 1){
+            text = '<em>' + text + '</em>'
+        }
+        return text
     }
     
     // Функция для применения фильтров при изменении состояния ToggleButton
