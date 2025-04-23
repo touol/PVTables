@@ -34,6 +34,10 @@
                 />
             </template>
             <template #title="{ node }">
+                <span v-if="gtsAPIUniTreeClass[node.data.class] && gtsAPIUniTreeClass[node.data.class].svg" 
+                      class="node-icon" 
+                      v-html="gtsAPIUniTreeClass[node.data.class].svg">
+                </span>
                 <span v-html="highlightText(node.title, searchTitle)"></span>
             </template>
         </sl-vue-tree-next>
@@ -120,6 +124,7 @@
     const slVueTree = ref();
     const actions = ref({});
     const nodeclick = ref({});
+    const gtsAPIUniTreeClass = ref({});
     // const useUniTree = ref(false)
     const current_id = ref(0)
 
@@ -130,7 +135,7 @@
         await loadTree()
     })
     let fields = {}
-    const loadTree = async () => { /* logic to load tree data */ 
+    const loadTree = async () => { 
         try {
             const response = await api.options()
             // console.log('response.data',response.data)
@@ -140,7 +145,10 @@
             nodeclick.value = response.data.nodeclick
             //set fields
             fields = response.data.fields;
+            gtsAPIUniTreeClass.value = response.data.gtsAPIUniTreeClass || {};
             
+            console.log('gtsAPIUniTreeClass.value',gtsAPIUniTreeClass.value)
+
             setTimeout(() => {
                 if(current_id.value > 0){
                     slVueTree.value.traverse((node, nodeModel, path) => {
@@ -499,5 +507,15 @@
         height: 100%; 
         width: 100%; 
         overflow: auto;
+    }
+    .node-icon {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    .node-icon svg {
+        width: 20px;
+        height: 20px;
     }
 </style>
