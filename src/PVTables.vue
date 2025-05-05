@@ -159,16 +159,12 @@
             :class="action.class"
             @click="action.click(slotProps.data, columns,table,filters)"
           />
-          <SpeedDial v-if="SpeedDialEnabled" :model="speedDialActions" direction="down" >
-            <template #item="{ item, toggleCallback }">
-              <div :class="item.class" @click="item.click(slotProps.data, columns,table,filters);toggleCallback()">
-                <span :class="item.icon" />
-                <span>
-                  {{ item.label }}
-                </span>
-              </div>
-            </template>
-          </SpeedDial>
+          <!-- <SplitButton v-if="SpeedDialEnabled" :model="speedDialActions" class="split-button" /> -->
+          <PVTablesSplitButton 
+            v-if="SpeedDialEnabled"
+            :actions="nemu_actions" 
+            @pvtables-menu-action="PVTablesMenuAction($event,slotProps.data, columns,table,filters)"
+          />
         </template>
       </Column>
       <template #expansion="slotProps">
@@ -295,7 +291,7 @@
   import Button from "primevue/button";
   import Toolbar from "primevue/toolbar";
   import Dialog from "primevue/dialog";
-  import SpeedDial from 'primevue/speeddial';
+  // import SplitButton from 'primevue/splitbutton';
   // import axios from "axios";
 
   //import fields component
@@ -318,6 +314,7 @@
 
   import PVTabs from './components/PVTabs.vue'
   import PVForm from "./components/PVForm.vue";
+  import PVTablesSplitButton from './components/PVTablesSplitButton.vue'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
   import apiCtor from './components/api'
@@ -363,7 +360,7 @@
   // ['pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]
   //filters
   const filters = ref();
-
+  const nemu_actions = ref({});
 
   const initFilters = () => {
     let filters0 = {};
@@ -428,17 +425,7 @@
 
     topFilters.value = JSON.parse(JSON.stringify(topFilters0))
     filters.value = filters0;
-    // filters.value = {
-    //   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    //   // name: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-    //   // 'country.name': { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.STARTS_WITH }] },
-    //   // representative: { value: null, matchMode: FilterMatchMode.IN },
-    //   // date: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
-    //   // balance: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-    //   // status: { operator: FilterOperator.OR, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] },
-    //   // activity: { value: [0, 100], matchMode: FilterMatchMode.BETWEEN },
-    //   // verified: { value: null, matchMode: FilterMatchMode.EQUALS }
-    // };
+
   };
   watch(() => props.filters, async () => { 
     initFilters()
@@ -689,17 +676,8 @@
           if(!tmp.action) tmp.action = action;
           if(tmp.hasOwnProperty("menu") && tmp.menu == 1){
             SpeedDialEnabled.value = true
-            speedDialActions.value.push({
-              label: tmp.label,
-              icon: tmp.icon,
-              class: 'flex flex-col items-center justify-between gap-2 p-2 border ' + tmp.class,
-              click: (event, columns,table,filters) => {
-                // console.log('event',event)
-                tmp.click(event, columns,table,filters)
-              },
-              command: () => {
-              }
-            });
+            nemu_actions.value[action] = tmp
+            
           }
           if (addtmp) {
             if (tmp.hasOwnProperty("row")) actions_row.value = true;
@@ -719,7 +697,13 @@
       notify('error', { detail: error.message }, true);
     }
   });
-
+  const PVTablesMenuAction = (event,data, columns,table,filters) => {
+    if(nemu_actions.value[event.action]){
+      if(nemu_actions.value[event.action].click){
+        nemu_actions.value[event.action].click(data, columns, table, filters)
+      }
+    }
+  }
   //expand row
   const expandedRows = ref({});
   const expandedTableTreeRows = ref({});
@@ -1487,5 +1471,12 @@
   .td-actions .p-speeddial-list {
     position: absolute;
     right: 0;
+  }
+  .split-button .p-splitbutton-button{
+    display: none;
+  }
+  .split-button .p-splitbutton-dropdown {
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
   }
 </style>
