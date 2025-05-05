@@ -1472,11 +1472,5 @@
     position: absolute;
     right: 0;
   }
-  .split-button .p-splitbutton-button{
-    display: none;
-  }
-  .split-button .p-splitbutton-dropdown {
-    border-top-left-radius: inherit;
-    border-bottom-left-radius: inherit;
-  }
+
 </style>
