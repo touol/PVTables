@@ -455,6 +455,7 @@
     const filteredNodes = ref([])
     
     // Функция для фильтрации узлов дерева
+
     const filterTree = (searchText) => {
         // Создаем глубокую копию узлов
         const nodesCopy = JSON.parse(JSON.stringify(nodes.value))
@@ -532,8 +533,9 @@
                     
                     // Устанавливаем isExpanded = true для всех узлов, которые либо сами содержат совпадения,
                     // либо имеют дочерние элементы с совпадениями
-                    newNode.isExpanded = true
-                    
+                    // newNode.isExpanded = true
+                    expanded[newNode.pathStr] = newNode.path
+
                     if (children.length > 0) {
                         newNode.children = children
                     }
@@ -548,6 +550,9 @@
         
         // Фильтруем корневые узлы
         filteredNodes.value = filterNodes(nodesCopy)
+        setTimeout(() => {
+            expandTree()
+        }, 0);
     }
     
     // Функция для подсветки найденного текста
@@ -555,7 +560,7 @@
         let text = node.title
         if (searchText) {
             const regex = new RegExp(`(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-            let text = text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
+            text = text.replace(regex, '<span style="background-color: yellow; color: black;">$1</span>')
         }
         if(node.data.active != 1){
             text = '<em>' + text + '</em>'
