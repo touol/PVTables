@@ -32,6 +32,7 @@
             @toggle="toggleNode"
             @nodeclick="onNodeclick"
             @drop="onDrop"
+            @beforedrop="onBeforeDrop"
             >
             <template #sidebar="{ node }">
                 <UniTreeSplitButton 
@@ -121,6 +122,14 @@
         table: {
             type: String,
             required: true,
+        },
+        dragable:{
+            type:Boolean,
+            default: true
+        },
+        dragcopy:{
+            type:Boolean,
+            default: true
         }
     });
     const loading = ref(true);
@@ -136,6 +145,8 @@
     // const useUniTree = ref(false)
     const current_id = ref(0)
     const showInactive = ref(false);
+    const dragable1 = ref(true);
+    const dragcopy1 = ref(true);
 
     let params = new URLSearchParams(document.location.search);
     onMounted(async () => {
@@ -152,6 +163,22 @@
             actions.value = response.data.actions;
             // useUniTree.value = response.data.useUniTree
             nodeclick.value = response.data.nodeclick
+            dragable1.value = props.dragable
+            if(response.data.dragable){
+                if(response.data.dragable == 1){ 
+                    dragable1.value = true
+                }else{
+                    dragable1.value = false
+                }
+            }
+            dragcopy1.value = props.dragcopy
+            if(response.data.dragcopy){
+                if(response.data.dragcopy == 1){ 
+                    dragcopy1.value = true
+                }else{
+                    dragcopy1.value = false
+                }
+            }
             //set fields
             fields = response.data.fields;
             gtsAPIUniTreeClass.value = response.data.gtsAPIUniTreeClass || {};
@@ -194,8 +221,17 @@
     }
     const emit = defineEmits(['select-treenode']);
 
+    // onBeforeDrop - вызывается перед onDrop и может отменить операцию перетаскивания
+    const onBeforeDrop = (nodes, position, cancelFn) => {
+        // Если dragable1.value = false, отменяем перетаскивание, вызывая функцию отмены
+        if (!dragable1.value) {
+            cancelFn();
+        }
+    }
+
     //onDrop
     const onDrop = async (nodes, position, event) => {
+        
         console.log(`Nodes: ${nodes
             .map((node) => node.title)
             .join(', ')} are dropped ${position.placement} ${position.node.title}`)
@@ -215,8 +251,13 @@
             placement:position.placement,
             node:{id:position.node.data.id,parent_id:position.node.data.parent_id,menuindex:position.node.data.menuindex}
         }
+        
+        // Проверяем, нажата ли клавиша Ctrl и разрешено ли копирование
+        const isCopy = event && event.ctrlKey && dragcopy1.value;
+        
         try {
-            const response = await api.nodedrop({nodes1,position1})
+            const response = await api.nodedrop({nodes1, position1, copy: isCopy})
+            loadTree()
         } catch (error) {
             notify('error', { detail: error.message }, true);
         }

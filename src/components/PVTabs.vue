@@ -7,7 +7,8 @@
       <TabPanel v-for="tab in tabs0" :value="tab.key">
         <UniTree 
           v-if="tab.type=='tree'" 
-          :table="tab.table" 
+          :table="tab.table"
+          :dragable="tab.dragable" 
           @select-treenode="selectTreenode"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
