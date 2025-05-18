@@ -184,7 +184,6 @@
             fields = response.data.fields;
             gtsAPIUniTreeClass.value = response.data.gtsAPIUniTreeClass || {};
             
-            console.log('gtsAPIUniTreeClass.value',gtsAPIUniTreeClass.value)
 
             setTimeout(() => {
                 if(current_id.value > 0){
@@ -233,10 +232,10 @@
     //onDrop
     const onDrop = async (nodes, position, event) => {
         
-        console.log(`Nodes: ${nodes
-            .map((node) => node.title)
-            .join(', ')} are dropped ${position.placement} ${position.node.title}`)
-        console.log('position',position)
+        // console.log(`Nodes: ${nodes
+        //     .map((node) => node.title)
+        //     .join(', ')} are dropped ${position.placement} ${position.node.title}`)
+        // console.log('position',position)
 
         let class_key = ''
         let nodes1 = []
@@ -453,7 +452,7 @@
     //searchTitle
     const searchTitle = ref('')
     const filteredNodes = ref([])
-    
+    const expandedNodes = ref([])
     // Функция для фильтрации узлов дерева
 
     const filterTree = (searchText) => {
@@ -496,18 +495,6 @@
         
         searchText = searchText.toLowerCase()
         
-        // Функция для раскрытия всех узлов в дереве
-        const expandAllNodes = (nodeList) => {
-            return nodeList.map(node => {
-                const newNode = { ...node, isExpanded: true }
-                
-                if (node.children && node.children.length) {
-                    newNode.children = expandAllNodes(node.children)
-                }
-                
-                return newNode
-            })
-        }
         
         // Рекурсивная функция для фильтрации узлов
         const filterNodes = (nodeList) => {
@@ -534,7 +521,8 @@
                     // Устанавливаем isExpanded = true для всех узлов, которые либо сами содержат совпадения,
                     // либо имеют дочерние элементы с совпадениями
                     // newNode.isExpanded = true
-                    expanded[newNode.pathStr] = newNode.path
+                    expandedNodes.value.push(node.data.id)
+                    // expanded[newNode.pathStr] = newNode.path
 
                     if (children.length > 0) {
                         newNode.children = children
@@ -550,6 +538,11 @@
         
         // Фильтруем корневые узлы
         filteredNodes.value = filterNodes(nodesCopy)
+        slVueTree.value.traverse((node, nodeModel, path) => {
+            if(expandedNodes.value.includes(node.data.id)){
+                expanded[node.pathStr] = node.path
+            }
+        })
         setTimeout(() => {
             expandTree()
         }, 0);

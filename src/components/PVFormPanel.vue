@@ -101,6 +101,8 @@
                     let uniTreeTable = response.data.uniTreeTable
                     emit('update-treenode-title',{uniTreeTable})
                 }
+                let uniTreeTable = null
+                emit('update-treenode-title',{uniTreeTable})
                 notify('success', { detail: response.message }, true);
             }
         } catch (error) {
