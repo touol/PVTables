@@ -52,9 +52,9 @@
     const selectTreenode = (event) => {
         paneltabs.value = event.tabs
         current_id.value = event.node.data.target_id
-        title.value = event.node.title
+        title.value = event.label + ': ' + event.node.title
         filters.value = event.subfilters
-        // console.log('filters.value',filters.value)
+        // console.log('event',event)
         // console.log('paneltabs.value',paneltabs.value)
     }
     const updateTreeNodeTitle = (event) => {

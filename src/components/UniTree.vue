@@ -155,6 +155,7 @@
         await loadTree()
     })
     let fields = {}
+
     const loadTree = async () => { 
         try {
             const response = await api.options()
@@ -267,7 +268,9 @@
         // console.log('nodeclick.value.classes',nodeclick.value.classes)
         if(nodeclick.value.classes){
             let tabs
+            let label
             if(nodeclick.value.classes[node.data.class]){
+                if(nodeclick.value.classes[node.data.class].label) label = nodeclick.value.classes[node.data.class].label
                 if(nodeclick.value.classes[node.data.class].tabs){
                     tabs = nodeclick.value.classes[node.data.class].tabs
                 }else if(nodeclick.value.classes[node.data.class].table){
@@ -290,6 +293,7 @@
                 }
             }else if(nodeclick.value.classes.default){
                 // console.log('nodeclick.value.classes.default',nodeclick.value.classes.default)
+                if(nodeclick.value.classes.default.label) label = nodeclick.value.classes.default.label
                 if(nodeclick.value.classes.default.tabs){
                     tabs = nodeclick.value.classes['default'].tabs
                 }else if(nodeclick.value.classes['default'].table){
@@ -339,7 +343,7 @@
                     subfilters[key] = tmpfilters;
                 }
             }
-            emit('select-treenode',{tabs,node,subfilters})
+            emit('select-treenode',{tabs,label,node,subfilters})
         }
         
     }
