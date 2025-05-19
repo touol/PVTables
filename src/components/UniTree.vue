@@ -367,7 +367,7 @@
     }
     const Item = ref({})
     const columns = ref({})
-    
+
     const selectTreeNodeAction = (event) => {
         // console.log('event',event)
         if(actions.value[event.action].tables){
@@ -429,7 +429,7 @@
             }
             Item.value = {};
             deleteDialog.value = false;
-            loadTree()
+            await loadTree()
         } catch (error) {
             notify('error', { detail: error.message });
         }
@@ -463,7 +463,7 @@
         if (!searchText) {
             if (showInactive.value) {
                 // Если ToggleButton включен (показывать все), возвращаем все узлы
-                filteredNodes.value = nodesCopy
+                filteredNodes.value = JSON.parse(JSON.stringify(nodesCopy))
                 setTimeout(() => {
                     expandTree()
                 }, 0);
@@ -585,6 +585,7 @@
     
     // Инициализация при загрузке дерева
     watch(nodes, (newNodes) => {
+        
         if (searchTitle.value && searchTitle.value.trim().length >= 3) {
             filterTree(searchTitle.value)
         } else {
