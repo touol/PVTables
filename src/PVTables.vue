@@ -1410,7 +1410,7 @@
   }
   .td-body.readonly {
       background-blend-mode: multiply;
-      background: #e2e8f0;
+      background: var(--p-inputtext-disabled-background);
   }
   td.number,td.decimal,td.textarea,td.text{
     max-width: 100px;
