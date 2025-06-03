@@ -31,7 +31,7 @@
 <script setup>
   import AutoComplete from "primevue/autocomplete";
   import InputGroup from "primevue/inputgroup";
-  import { ref, watchEffect } from "vue";
+  import { ref, watchEffect, onMounted } from "vue";
   import InputText from "primevue/inputtext";
   import { useNotifications } from "./useNotifications.js";
   import apiCtor from './api.js'
@@ -61,10 +61,29 @@
   const emit = defineEmits(['update:id', 'set-value']);
 
   const { notify } = useNotifications()
-
+  const idCache = ref('')
+  const items = ref([]);
   const selectedItem = ref({});
 
+  const default_row = async () => {
+    if(props.field.default_row){
+      try {
+        
+        const response = await api.autocomplete({query:'',ids:''})
+        items.value = response.data.rows;
+        if(response.data.default) model.value = response.data.default
+      } catch (error) {
+        notify('error', { detail: error.message });
+      }
+    }
+  }
+  onMounted(()=>{
+    default_row()
+  })
+  
+
   watchEffect(async () => {
+    
     if (props.options && Number(model.value) == 0){
       if(Number(props.options.default) > 0){
         model.value = props.options.default
@@ -121,8 +140,7 @@
     }
   })
 
-  const idCache = ref('')
-  const items = ref([]);
+  
 
   const search = async ({ query }) => {
     try {

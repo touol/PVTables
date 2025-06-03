@@ -92,6 +92,9 @@
       size="small"
 
       :rowClass="rowClass"
+
+      :rowGroupMode="rowGroupMode"
+      :groupRowsBy="groupRowsBy"
       >
       <Column v-if="table_tree" headerStyle="width: 3rem">
         <template #body="{ data }">
@@ -141,6 +144,7 @@
         <template #filter="{ filterModel }">
           <EditField
             :field="col"
+            :use_readonly="false"
             v-model="filterModel.value"
             :autocompleteSettings="autocompleteSettings[col.field]"
             :selectSettings="selectSettings[col.field]"
@@ -468,6 +472,10 @@
   const table_tree = ref()
   const SpeedDialEnabled = ref(false)
   const speedDialActions = ref([])
+  // :rowGroupMode="rowGroupMode"
+  //     :groupRowsBy="groupRowsBy"
+  const rowGroupMode = ref(null)
+  const groupRowsBy = ref(null)
 
   onMounted(async () => {
     loading.value = true;
@@ -490,6 +498,11 @@
         if(response.data.selects){
           selectSettings.value = response.data.selects;
         }
+        if (response.data.hasOwnProperty("rowGroupMode")) {
+          rowGroupMode.value = response.data.rowGroupMode
+          groupRowsBy.value = response.data.groupRowsBy
+        }
+
         let filter_fields = [];
         let cols = [];
         for (let field in fields) {
@@ -691,7 +704,7 @@
         
         columns.value = cols;
       }
-
+      
       await loadLazyData();
     } catch (error) {
       notify('error', { detail: error.message }, true);
