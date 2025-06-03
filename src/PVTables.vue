@@ -1405,12 +1405,12 @@
 
 <style>
   .td-body{
-    min-width: 100%;
-    min-height: 20px;
+    width: 100%;
+    height: 100%;
   }
   .td-body.readonly {
       background-blend-mode: multiply;
-      background: rgb(0,0,0,0.1);
+      background: #e2e8f0;
   }
   td.number,td.decimal,td.textarea,td.text{
     max-width: 100px;
