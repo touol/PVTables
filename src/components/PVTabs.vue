@@ -12,6 +12,20 @@
           @select-treenode="selectTreenode"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
+        <FileTree 
+          v-else-if="tab.type=='filetree'" 
+          :mediaSources="tab.mediaSources"
+          @select-file="selectFile"
+          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          />
+        <FileContent 
+          v-else-if="tab.type=='filecontent'" 
+          :file="tab.file"
+          :content="tab.content"
+          :mime="tab.mime"
+          :mediaSources="tab.mediaSources"
+          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          />
         <PVFormPanel 
           v-else-if="tab.type=='form'" 
           :table="tab.table" 
@@ -48,6 +62,8 @@
   import TabPanels from 'primevue/tabpanels';
   import TabPanel from 'primevue/tabpanel';
   import UniTree from './UniTree.vue'
+  import FileTree from './FileTree.vue'
+  import FileContent from './FileContent.vue'
   import PVFormPanel from './PVFormPanel.vue'
 
   const props = defineProps({
@@ -116,7 +132,7 @@
   
   
   // console.log('props.tabs',props.tabs)
-  const emit = defineEmits(['refresh-table','get-response','select-treenode','update-treenode-title'])
+  const emit = defineEmits(['refresh-table','get-response','select-treenode','update-treenode-title','select-file'])
   const refresh = (from_parent,table) => {
     // console.log('childComponentRefs',childComponentRefs)
     if(!from_parent){
@@ -141,9 +157,10 @@
   const selectTreenode = (event) => {
     emit('select-treenode', event)
   }
+  const selectFile = (event) => {
+    emit('select-file', event)
+  }
   const updateTreeNodeTitle = (event) => {
     emit('update-treenode-title', event)
   }
 </script>
-
-

@@ -7,11 +7,12 @@
                     :actions="{}"
                     :filters="{}"
                     @select-treenode="selectTreenode"
+                    @select-file="selectFile"
                     ref="childComponentRefTree"
                 />
             </SplitterPanel>
             <SplitterPanel class="flex" :size="100 - size">
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1" style="width:100%;">
                     <h1>{{ title }} {{ current_id }}</h1>
                     <div class="tree-panel-container">
                         <PVTabs 
@@ -42,11 +43,15 @@
             type: Object,
             required: true,
         },
+        mediaSources: {
+            type: Array,
+            default: () => [],
+        }
     });
     const size = ref(20);
     
     const paneltabs = ref({})
-    const current_id = ref(0)
+    const current_id = ref('')
     const title = ref('')
     const filters = ref({});
     const selectTreenode = (event) => {
@@ -62,6 +67,25 @@
     const updateTreeNodeTitle = (event) => {
         childComponentRefTree.value.refresh(true,event.uniTreeTable)
     }
+    
+    // Обработчик события select-file от FileTree
+    const selectFile = (event) => {
+        // Создаем вкладку для отображения содержимого файла
+        paneltabs.value = {
+            content: {
+                type: 'filecontent',
+                title: 'Содержимое',
+                file: event.file,
+                content: event.content,
+                mime: event.mime,
+                mediaSource: event.mediaSource
+            }
+        }
+        
+        title.value = event.file.path
+        current_id.value = 0
+        filters.value = {}
+    }
 </script>
 <style>
     .sl-vue-tree-next-root{
@@ -70,6 +94,7 @@
     .tree-container .p-tabpanels{
       height: 95%;
       width: 100%;
+      overflow: hidden;
     }
     .tree-container, .tree-container .p-splitter, .tree-container .p-splitterpanel,
     .tree-container .p-tabs, .tree-container .p-tabpanel

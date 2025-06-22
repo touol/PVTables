@@ -306,4 +306,141 @@ export default class FileService {
       return timestamp; // Возвращаем исходное значение в случае ошибки
     }
   }
+  
+  /**
+   * Получение списка доступных медиа-источников
+   * @returns {Promise<Object>} - Список медиа-источников
+   */
+  async getMediaSources() {
+    try {
+      const response = await this.api.get('/files', {
+        params: {
+          action: 'source_list'
+        }
+      });
+      
+      const result = {
+        success: response.data.success,
+        message: response.data.message,
+        sources: response.data.data.sources || []
+      };
+      
+      if (result.success !== 1) {
+        notify('error', { detail: 'Ошибка при получении списка медиа-источников: ' + result.message });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Ошибка при получении списка медиа-источников:', error);
+      notify('error', { detail: error.message });
+      return {
+        success: 0,
+        message: error.message,
+        sources: []
+      };
+    }
+  }
+  
+  /**
+   * Получение содержимого файла
+   * @param {string} path - Путь к файлу
+   * @param {number} source - ID источника медиа
+   * @returns {Promise<Object>} - Содержимое файла и MIME-тип
+   */
+  async getFileContent(path, source = 1) {
+    try {
+      const response = await this.api.get('/files', {
+        params: {
+          action: 'content',
+          path,
+          source
+        }
+      });
+      
+      const result = response.data;
+      
+      if (result.success !== 1) {
+        notify('error', { detail: 'Ошибка при получении содержимого файла: ' + result.message });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Ошибка при получении содержимого файла:', error);
+      notify('error', { detail: error.message });
+      return {
+        success: 0,
+        message: error.message
+      };
+    }
+  }
+  
+  /**
+   * Сохранение содержимого файла
+   * @param {string} path - Путь к файлу
+   * @param {string} content - Новое содержимое файла
+   * @param {number} source - ID источника медиа
+   * @returns {Promise<Object>} - Результат сохранения
+   */
+  async saveFileContent(path, content, source = 1) {
+    try {
+      const response = await this.api.post('/files', {
+        action: 'update_content',
+        path,
+        content,
+        source
+      });
+      
+      const result = response.data;
+      
+      if (result.success !== 1) {
+        notify('error', { detail: 'Ошибка при сохранении файла: ' + result.message });
+      } else {
+        notify('success', { detail: 'Файл успешно сохранен' });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Ошибка при сохранении файла:', error);
+      notify('error', { detail: error.message });
+      return {
+        success: 0,
+        message: error.message
+      };
+    }
+  }
+  
+  /**
+   * Создание файла
+   * @param {string} path - Путь к директории
+   * @param {string} name - Имя нового файла
+   * @param {string} content - Содержимое файла
+   * @param {number} source - ID источника медиа
+   * @returns {Promise<Object>} - Результат создания файла
+   */
+  async createFile(path, name, content = '', source = 1) {
+    try {
+      const response = await this.api.post('/files', {
+        action: 'create_file',
+        path,
+        name,
+        content,
+        source
+      });
+      
+      const result = response.data;
+      
+      if (result.success !== 1) {
+        notify('error', { detail: 'Ошибка при создании файла: ' + result.message });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Ошибка при создании файла:', error);
+      notify('error', { detail: error.message });
+      return {
+        success: 0,
+        message: error.message
+      };
+    }
+  }
 }
