@@ -129,7 +129,7 @@
               />
           </div>
         </template>
-        <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+        <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
           
           <EditField
             :field="col"

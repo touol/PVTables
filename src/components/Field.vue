@@ -36,6 +36,14 @@
         @change="setValue()"
         :disabled="use_readonly && col.readonly"
     />
+    <FileSelector
+        v-else-if="col.type == 'file'"
+        v-model="model"
+        :mediaSource="col.mediaSource"
+        placeholder="Выберите файл"
+        @fileSelected="($event) => updateValue($event)"
+        :disabled="use_readonly && col.readonly"
+    />
     <template v-else-if="col.type == 'html'">
         <span v-html="model"></span>
     </template>
@@ -54,6 +62,7 @@
     import GTSDate from "./gtsDate.vue";
     import PVAutoComplete from "./PVAutoComplete.vue";
     import GTSSelect from "./gtsSelect.vue";
+    import FileSelector from './filebrowser/FileSelector.vue';
 
     const model = defineModel({
         type: [String,Number,Boolean,Date],
