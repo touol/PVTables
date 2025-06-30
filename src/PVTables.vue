@@ -548,7 +548,7 @@
           topFilters0 = response.data.filters
           for(let field in topFilters0){
             topFilters0[field].field = field;
-            topFilters0[field].default = topFilters0[field].default.toString()
+            if(topFilters0[field].default) topFilters0[field].default = topFilters0[field].default.toString()
             if (!topFilters0[field].hasOwnProperty("label")) {
               topFilters0[field].label = field;
             }
@@ -707,6 +707,7 @@
       
       await loadLazyData();
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message }, true);
     }
   });
@@ -909,6 +910,7 @@
       totalRecords.value = response.data.total;
       loading.value = false;
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -980,6 +982,7 @@
       } 
     } catch (error) {
       // event.preventDefault(); // При ошибке на gtsAutoComplete не срабатывает. Не понятно что делать???
+      console.log('error',error)
       notify('error', { detail: error.message }, true);
     }
   };
@@ -1068,6 +1071,7 @@
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (error) {
+        console.log('error',error)
         notify('error', { detail: error.message });
       }
     } else {
@@ -1082,6 +1086,7 @@
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (error) {
+        console.log('error',error)
         notify('error', { detail: error.message });
       }
     }
@@ -1107,6 +1112,7 @@
       }
       refresh(false)
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -1130,6 +1136,7 @@
       }
       refresh(false)
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -1171,6 +1178,7 @@
       if(!resp.success) notify('error', { detail: resp.message })
       refresh(false)
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -1199,6 +1207,7 @@
       if(!resp.success) notify('error', { detail: resp.message });
       refresh(false)
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -1221,6 +1230,7 @@
       deleteLineItemDialog.value = false;
       lineItem.value = {}
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
@@ -1241,6 +1251,7 @@
       deleteLineItemsDialog.value = false;
       selectedlineItems.value = null;
     } catch (error) {
+      console.log('error',error)
       notify('error', { detail: error.message });
     }
   };
