@@ -129,7 +129,7 @@
               />
           </div>
         </template>
-        <template v-if="!['autocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+        <template v-if="!['autocomplete', 'multiautocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
           
           <EditField
             :field="col"
@@ -377,7 +377,7 @@
         filters0[field] = fields[field].filter
       }else {
         switch (fields[field].type) {
-          case 'autocomplete': case 'select': case 'decimal': case 'number': case 'view':
+          case 'autocomplete': case 'multiautocomplete': case 'select': case 'decimal': case 'number': case 'view':
             filters0[field] = {
                 operator: FilterOperator.AND,
                 constraints: [
