@@ -48,6 +48,7 @@ import FileUpload from 'primevue/fileupload';
 import SpeedDial from 'primevue/speeddial';
 import InputGroup from "primevue/inputgroup";
 import Tree from 'primevue/tree';
+import Select from 'primevue/select';
 
 export default {
     install: (app, options) => {
@@ -124,4 +125,5 @@ export {
     Toolbar as Toolbar,
     InputGroup as InputGroup,
     Tree as Tree,
+    Select as Select,
 }

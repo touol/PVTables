@@ -106,7 +106,7 @@
       </Column>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <Column
-        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden')"
+        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && col.field === 'id'))"
         :field="col.field"
         :header="col.label"
         sortable
@@ -476,6 +476,8 @@
   //     :groupRowsBy="groupRowsBy"
   const rowGroupMode = ref(null)
   const groupRowsBy = ref(null)
+  const dataFields = ref([])
+  const hideId = ref(false)
 
   onMounted(async () => {
     loading.value = true;
@@ -497,6 +499,12 @@
         }
         if(response.data.selects){
           selectSettings.value = response.data.selects;
+        }
+        if(response.data.data_fields){
+          dataFields.value = response.data.data_fields;
+        }
+        if(response.data.hide_id == 1){
+          hideId.value = true;
         }
         if (response.data.hasOwnProperty("rowGroupMode")) {
           rowGroupMode.value = response.data.rowGroupMode
@@ -1173,8 +1181,16 @@
         }
       }
     }
+    
+    let requestData = {filters: filters0}
+    
+    // Добавляем data_fields для выбранных строк если они есть
+    if (dataFields.value && dataFields.value.length > 0 && selectedlineItems.value && selectedlineItems.value.length > 0) {
+      requestData.data_fields_values = selectedlineItems.value.map(item => getDataFieldsValues(item))
+    }
+    
     try {
-      const resp = await api.action(tmp.action,{filters: filters0})
+      const resp = await api.action(tmp.action, requestData)
       if(!resp.success) notify('error', { detail: resp.message })
       refresh(false)
     } catch (error) {
@@ -1197,12 +1213,32 @@
     }
     return filters0
   }
+  
+  const getDataFieldsValues = (data) => {
+    if (!dataFields.value || dataFields.value.length === 0) {
+      return {}
+    }
+    let result = {}
+    dataFields.value.forEach(field => {
+      if (data.hasOwnProperty(field)) {
+        result[field] = data[field]
+      }
+    })
+    return result
+  }
   // defRowAction(event, tmp)
   const defRowAction = async (event, tmp) => {
     let filters0 = prepFilters()
     
+    let requestData = {...event, filters: filters0}
+    
+    // Добавляем data_fields для текущей строки если они есть (массив с одним объектом)
+    if (dataFields.value && dataFields.value.length > 0) {
+      requestData.data_fields_values = [getDataFieldsValues(event)]
+    }
+    
     try {
-      const resp = await api.action(tmp.action,{...event,filters: filters0})
+      const resp = await api.action(tmp.action, requestData)
       emit('get-response', {table:props.table,action:tmp.action,response:resp})
       if(!resp.success) notify('error', { detail: resp.message });
       refresh(false)
@@ -1219,8 +1255,15 @@
     deleteLineItemDialog.value = true;
   };
   const deleteLineItem = async () => {
+    let requestData = { ids: lineItem.value.id }
+    
+    // Добавляем data_fields для удаляемой строки если они есть (массив с одним объектом)
+    if (dataFields.value && dataFields.value.length > 0) {
+      requestData.data_fields_values = [getDataFieldsValues(lineItem.value)]
+    }
+    
     try {
-      await api.delete({ ids: lineItem.value.id })
+      await api.delete(requestData)
 
       // TODO желательно рефрешнуть страницу после удаления ряда
       lineItems.value = lineItems.value.filter(
@@ -1240,9 +1283,16 @@
   };
   const deleteSelectedLineItems = async () => {
     const ids = selectedlineItems.value.map((line) => line.id).join(',');
+    
+    let requestData = { ids }
+    
+    // Добавляем data_fields для выбранных строк если они есть
+    if (dataFields.value && dataFields.value.length > 0 && selectedlineItems.value && selectedlineItems.value.length > 0) {
+      requestData.data_fields_values = selectedlineItems.value.map(item => getDataFieldsValues(item))
+    }
 
     try {
-      await api.delete({ ids })
+      await api.delete(requestData)
 
       // TODO желательно рефрешнуть страницу после удаления ряда
       lineItems.value = lineItems.value.filter(
