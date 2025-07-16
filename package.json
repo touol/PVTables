@@ -12,7 +12,7 @@
     "copy_in_gtsapi": "node ./build/copy_in_gtsapi.js",
     "preview": "vite preview"
   },
-  "main": "../dist/pvtables.cjs",
+  "main": "../dist/pvtables.cjs", 
   "module": "../dist/index.js",
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

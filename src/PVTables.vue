@@ -28,6 +28,15 @@
               onSetTopFilter(filter)
             "
           />
+          <PVMultiAutoComplete
+            v-else-if="filter.type == 'multiautocomplete'"
+            :field="filter"
+            v-model="filter.default"
+            :options="filter.rows"
+            @set-value="
+              onSetTopFilter(filter)
+            "
+          />
         </template>
       </template>
       <template #end>
@@ -106,7 +115,7 @@
       </Column>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <Column
-        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && col.field === 'id'))"
+        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && x.field == 'id'))"
         :field="col.field"
         :header="col.label"
         sortable
@@ -312,6 +321,7 @@
   // import GTSDate from "./components/gtsDate.vue";
   // import GTSSelect from "./components/gtsSelect.vue";
   import PVAutoComplete from "./components/PVAutoComplete.vue";
+  import PVMultiAutoComplete from "./components/PVMultiAutoComplete.vue";
   import Field from "./components/Field.vue";
   import EditField from "./components/EditField.vue";
   import { useNotifications } from "./components/useNotifications";

@@ -34,13 +34,13 @@
       <AutoComplete
         v-for="(searchField, key) in searchFields" 
         :key="key"
-        v-model="searchValues[key]"
+        v-model="searchValues[searchField.key]"
         dropdown
         option-label="content"
-        :suggestions="searchSuggestions[key] || []"
+        :suggestions="searchSuggestions[searchField.key] || []"
         class="search-field-autocomplete"
-        @complete="(event) => searchInField(key, event)"
-        @item-select="(event) => onSearchFieldSelect(key, event)"
+        @complete="(event) => searchInField(searchField.key, event)"
+        @item-select="(event) => onSearchFieldSelect(searchField.key, event)"
         :disabled="disabled"
         :placeholder="`${searchField.label || key}`"
       />
@@ -106,6 +106,7 @@
 
   // Инициализация полей поиска
   const initSearchFields = async () => {
+
     for (const searchField of searchFields.value) {
       const key = searchField.key;
       searchValues.value[key] = {};
@@ -139,7 +140,9 @@
 
   // Поиск в конкретном поле
   const searchInField = async (fieldKey, { query }) => {
+
     const searchField = searchFields.value.find(f => f.key === fieldKey);
+
     if (!searchField) return;
 
     try {
@@ -217,11 +220,16 @@
         ids: ''
       };
 
-      // Добавляем фильтры из выбранных значений в полях поиска
+      // Добавляем фильтры из выбранных значений в полях поиска через параметр search
+      const searchFilters = {};
       for (const [fieldKey, value] of Object.entries(searchValues.value)) {
         if (value && value.id) {
-          searchParams[fieldKey] = value.id;
+          searchFilters[fieldKey] = { value: value.id };
         }
+      }
+      
+      if (Object.keys(searchFilters).length > 0) {
+        searchParams.search = searchFilters;
       }
 
       const response = await api.autocomplete(searchParams);
@@ -281,6 +289,9 @@
             show_id.value = model.value
           }
         }
+        
+        // Автоматически заполняем поля поиска на основе выбранного значения
+        await fillSearchFieldsFromOption(option);
       }
     }else if(Number(model.value) > 0){
       try {
@@ -300,8 +311,25 @@
             show_id.value = model.value
           }
         }
+        
+        // Автоматически заполняем поля поиска на основе выбранного значения
+        await fillSearchFieldsFromOption(option);
       } catch (error) {
         notify('error', { detail: error.message })
+      }
+    }
+    
+    // Заполняем поля поиска из данных autocomplete API
+    if (props.options && props.options.searchFields) {
+      for (const [fieldKey, fieldData] of Object.entries(props.options.searchFields)) {
+        if (fieldData.rows && fieldData.rows.length > 0) {
+          searchSuggestions.value[fieldKey] = fieldData.rows;
+          
+          // Если есть только одно значение, автоматически выбираем его
+          if (fieldData.rows.length === 1) {
+            searchValues.value[fieldKey] = fieldData.rows[0];
+          }
+        }
       }
     }
   })
@@ -319,11 +347,16 @@
         ids: props.field.ids
       };
 
-      // Добавляем значения из полей поиска
+      // Добавляем значения из полей поиска через параметр search
+      const searchFilters = {};
       for (const [fieldKey, value] of Object.entries(searchValues.value)) {
         if (value && value.id) {
-          searchParams[fieldKey] = value.id;
+          searchFilters[fieldKey] = { value: value.id };
         }
+      }
+      
+      if (Object.keys(searchFilters).length > 0) {
+        searchParams.search = searchFilters;
       }
 
       const response = await api.autocomplete(searchParams);
@@ -342,6 +375,40 @@
     const response = await api.autocomplete({show_id:show_id,parent:props.field.parent})
     return response.data.rows[0] || null;
   }
+  
+  // Функция для автоматического заполнения полей поиска на основе выбранного значения
+  const fillSearchFieldsFromOption = async (option) => {
+    for (const searchField of searchFields.value) {
+      const fieldKey = searchField.key;
+      
+      // Если в выбранном объекте есть значение для этого поля поиска
+      if (option[fieldKey] && option[fieldKey] !== null && option[fieldKey] !== '') {
+        try {
+          const fieldApi = apiCtor(searchField.table);
+          const response = await fieldApi.autocomplete({
+            id: option[fieldKey]
+          });
+          
+          if (response.data.rows && response.data.rows.length > 0) {
+            const searchFieldOption = response.data.rows[0];
+            searchValues.value[fieldKey] = searchFieldOption;
+            
+            // Добавляем в предложения если его там нет
+            if (!searchSuggestions.value[fieldKey]) {
+              searchSuggestions.value[fieldKey] = [];
+            }
+            
+            const existingIndex = searchSuggestions.value[fieldKey].findIndex(item => item.id === searchFieldOption.id);
+            if (existingIndex === -1) {
+              searchSuggestions.value[fieldKey].push(searchFieldOption);
+            }
+          }
+        } catch (error) {
+          console.error(`Ошибка загрузки данных для поля ${fieldKey}:`, error);
+        }
+      }
+    }
+  };
   
   const onUserInputEnd = async ($evt) => {
     const userInput = $evt.target.value
