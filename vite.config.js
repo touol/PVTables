@@ -24,7 +24,22 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
-    plugins: [vue(),tailwindcss()],
+    plugins: [vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => false
+        }
+      }
+    }),tailwindcss()],
+    define: {
+      __VUE_OPTIONS_API__: true,
+      __VUE_PROD_DEVTOOLS__: false
+    },
+    resolve: {
+      alias: {
+        'vue': 'vue/dist/vue.esm-bundler.js'
+      }
+    },
     server: {
       // dev api access
       // proxy: {

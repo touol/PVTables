@@ -23,15 +23,22 @@
       class="gts-ac__search-field"
       @complete="search"
       @item-select="onAutocompleteItemSelect"
+      @lazy-load="onLazyLoad"
       :disabled="disabled"
-    />
+      :virtualScrollerOptions="{ itemSize: 38, lazy: true }"
+    >
+      <template v-if="compiledTemplate" #option="{ option, index }">
+        <component :is="compiledTemplate" :option="option" :index="index" />
+      </template>
+    </AutoComplete>
   </InputGroup>
 </template>
 
 <script setup>
-  import AutoComplete from "primevue/autocomplete";
+  import AutoComplete from "./AutoComplete/AutoComplete.vue";
   import InputGroup from "primevue/inputgroup";
-  import { ref, watchEffect, onMounted } from "vue";
+  import { ref, watchEffect, onMounted, computed } from "vue";
+  import { compile } from "vue";
   import InputText from "primevue/inputtext";
   import { useNotifications } from "./useNotifications.js";
   import apiCtor from './api.js'
@@ -64,6 +71,34 @@
   const idCache = ref('')
   const items = ref([]);
   const selectedItem = ref({});
+
+  // Состояние пагинации для виртуального скроллинга
+  const pagination = ref({
+    offset: 0,
+    limit: 10,
+    loading: false,
+    hasMore: true,
+    total: 0,
+    currentQuery: '',
+    allowLazyLoad: false
+  });
+
+  // Компиляция шаблона из строки (приоритет: API ответ, затем props.field.template)
+  const compiledTemplate = computed(() => {
+    const templateSource = apiTemplate.value || props.field.template;
+    if (!templateSource) return null;
+    
+    try {
+      return compile(templateSource);
+    } catch (error) {
+      console.error('Ошибка компиляции шаблона:', error);
+      notify('error', { detail: `Ошибка в шаблоне: ${error.message}` });
+      return null;
+    }
+  });
+
+  // Шаблон из API ответа
+  const apiTemplate = ref('');
 
   const default_row = async () => {
     if(props.field.default_row){
@@ -144,6 +179,12 @@
 
   const search = async ({ query }) => {
     try {
+      // Сбрасываем пагинацию при новом поиске
+      pagination.value.offset = 0;
+      pagination.value.hasMore = true;
+      pagination.value.currentQuery = query;
+      pagination.value.allowLazyLoad = false; // Запрещаем ленивую загрузку до завершения поиска
+      
       if(!props.field.ids){
         props.field.ids = ''
       }
@@ -151,7 +192,9 @@
       const params = {
         query: query,
         parent: props.field.parent,
-        ids: props.field.ids
+        ids: props.field.ids,
+        limit: pagination.value.limit,
+        offset: pagination.value.offset
       };
       
       // Передаем параметр where, если он указан в поле
@@ -161,6 +204,18 @@
       
       const response = await api.autocomplete(params);
       items.value = response.data.rows;
+      pagination.value.total = response.data.total || 0;
+      pagination.value.hasMore = items.value.length < pagination.value.total;
+      
+      // Сохраняем шаблон из API ответа
+      if (response.data.template) {
+        apiTemplate.value = response.data.template;
+      }
+      
+      // Разрешаем ленивую загрузку только после успешного поиска
+      setTimeout(() => {
+        pagination.value.allowLazyLoad = true;
+      }, 100);
     } catch (error) {
       notify('error', { detail: error.message });
     }
@@ -270,6 +325,50 @@
     }
     emit('set-value')
   }
+
+  // Функция для ленивой загрузки следующих порций данных
+  const onLazyLoad = async (event) => {
+    // Проверяем, что ленивая загрузка разрешена
+    if (!pagination.value.allowLazyLoad) return;
+    
+    // Проверяем, что это действительно запрос на загрузку следующих данных
+    // а не инициализация VirtualScroller
+    if (pagination.value.loading || !pagination.value.hasMore) return;
+    
+    // Проверяем, что у нас уже есть данные для загрузки следующих порций
+    if (items.value.length === 0 || items.value.length >= pagination.value.total) return;
+    
+    try {
+      pagination.value.loading = true;
+      pagination.value.offset += pagination.value.limit;
+      
+      if(!props.field.ids){
+        props.field.ids = ''
+      }
+      
+      const params = {
+        query: pagination.value.currentQuery,
+        parent: props.field.parent,
+        ids: props.field.ids,
+        limit: pagination.value.limit,
+        offset: pagination.value.offset
+      };
+      
+      // Передаем параметр where, если он указан в поле
+      if (props.field.where) {
+        params.where = props.field.where;
+      }
+      
+      const response = await api.autocomplete(params);
+      items.value = [...items.value, ...response.data.rows];
+      pagination.value.total = response.data.total || 0;
+      pagination.value.hasMore = items.value.length < pagination.value.total;
+    } catch (error) {
+      notify('error', { detail: error.message });
+    } finally {
+      pagination.value.loading = false;
+    }
+  };
 </script>
 
 
