@@ -288,6 +288,34 @@
         />
       </template>
     </Dialog>
+
+    <Dialog
+      v-model:visible="modalFormDialog"
+      :header="modalFormAction?.action || 'Действие'"
+      modal
+      >
+      
+      <PVForm 
+        v-model="modalFormData" 
+        :columns="modalFormColumns" 
+        :autocompleteSettings="autocompleteSettings" 
+        :selectSettings="selectSettings"
+      />
+      <template #footer>
+        <Button
+          label="Отмена"
+          icon="pi pi-times"
+          class="p-button-text"
+          @click="hideModalForm"
+          />
+        <Button
+          :label="modalFormAction?.modal_form?.buttons?.submit?.label || 'Выполнить'"
+          :icon="modalFormAction?.modal_form?.buttons?.submit?.icon || 'pi pi-check'"
+          class="p-button-text"
+          @click="submitModalForm"
+          />
+      </template>
+    </Dialog>
   </div>
   <Toast/>
 </template>
@@ -1179,6 +1207,12 @@
 
   // default action
   const defHeadAction = async (tmp) => {
+    // Если есть modal_form, показываем форму
+    if (tmp.modal_form) {
+      showModalForm(tmp, null, 'head')
+      return
+    }
+    
     let filters0 = {}
     for(let field in filters.value){
       if(filters.value[field].hasOwnProperty('constraints')){
@@ -1197,6 +1231,11 @@
     // Добавляем data_fields для выбранных строк если они есть
     if (dataFields.value && dataFields.value.length > 0 && selectedlineItems.value && selectedlineItems.value.length > 0) {
       requestData.data_fields_values = selectedlineItems.value.map(item => getDataFieldsValues(item))
+    }
+    
+    // Добавляем ids выделенных строк
+    if (selectedlineItems.value && selectedlineItems.value.length > 0) {
+      requestData.ids = selectedlineItems.value.map(item => item.id).join(',');
     }
     
     try {
@@ -1238,6 +1277,12 @@
   }
   // defRowAction(event, tmp)
   const defRowAction = async (event, tmp) => {
+    // Если есть modal_form, показываем форму
+    if (tmp.modal_form) {
+      showModalForm(tmp, event, 'row')
+      return
+    }
+    
     let filters0 = prepFilters()
     
     let requestData = {...event, filters: filters0}
@@ -1471,6 +1516,90 @@
       // event.stopImmediatePropagation();
     }
   }
+
+  // Modal form для кастомных действий
+  const modalFormDialog = ref(false);
+  const modalFormData = ref({});
+  const modalFormAction = ref(null);
+  const modalFormRowData = ref(null);
+  const modalFormType = ref(''); // 'head' или 'row'
+  const modalFormColumns = ref([]);
+
+  const showModalForm = (action, rowData, type) => {
+    modalFormAction.value = action;
+    modalFormRowData.value = rowData;
+    modalFormType.value = type;
+    modalFormData.value = {};
+    
+    // Создаем колонки для формы из modal_form.fields
+    modalFormColumns.value = [];
+    if (action.modal_form && action.modal_form.fields) {
+      for (let fieldName in action.modal_form.fields) {
+        let field = { ...action.modal_form.fields[fieldName] };
+        field.field = fieldName;
+        if (!field.label) field.label = fieldName;
+        if (!field.type) field.type = 'text';
+        modalFormColumns.value.push(field);
+        
+        // Устанавливаем значения по умолчанию
+        if (field.default !== undefined) {
+          modalFormData.value[fieldName] = field.default;
+        } else if (rowData && rowData[fieldName] !== undefined) {
+          modalFormData.value[fieldName] = rowData[fieldName];
+        }
+      }
+    }
+    
+    modalFormDialog.value = true;
+  };
+
+  const hideModalForm = () => {
+    modalFormDialog.value = false;
+    modalFormAction.value = null;
+    modalFormRowData.value = null;
+    modalFormData.value = {};
+    modalFormColumns.value = [];
+  };
+
+  const submitModalForm = async () => {
+    if (!modalFormAction.value) return;
+    
+    let filters0 = prepFilters();
+    let requestData = { ...modalFormData.value, filters: filters0 };
+    
+    // Добавляем данные строки если это row action
+    if (modalFormType.value === 'row' && modalFormRowData.value) {
+      requestData = { ...modalFormRowData.value, ...requestData };
+      
+      // Добавляем data_fields для текущей строки если они есть
+      if (dataFields.value && dataFields.value.length > 0) {
+        requestData.data_fields_values = [getDataFieldsValues(modalFormRowData.value)];
+      }
+    } else if (modalFormType.value === 'head') {
+      // Добавляем data_fields для выбранных строк если они есть
+      if (dataFields.value && dataFields.value.length > 0 && selectedlineItems.value && selectedlineItems.value.length > 0) {
+        requestData.data_fields_values = selectedlineItems.value.map(item => getDataFieldsValues(item));
+      } else if (selectedlineItems.value && selectedlineItems.value.length > 0) {
+        // Если нет dataFields, добавляем ids выделенных строк
+        requestData.ids = selectedlineItems.value.map(item => item.id).join(',');
+      }
+    }
+    
+    try {
+      const resp = await api.action(modalFormAction.value.action, requestData);
+      emit('get-response', {table: props.table, action: modalFormAction.value.action, response: resp});
+      
+      if (!resp.success) {
+        notify('error', { detail: resp.message });
+      } else {
+        hideModalForm();
+        refresh(false);
+      }
+    } catch (error) {
+      console.log('error', error);
+      notify('error', { detail: error.message });
+    }
+  };
 </script>
 
 

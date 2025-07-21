@@ -147,7 +147,19 @@
       if(!props.field.ids){
         props.field.ids = ''
       }
-      const response = await api.autocomplete({query:query,parent:props.field.parent,ids:props.field.ids})
+      
+      const params = {
+        query: query,
+        parent: props.field.parent,
+        ids: props.field.ids
+      };
+      
+      // Передаем параметр where, если он указан в поле
+      if (props.field.where) {
+        params.where = props.field.where;
+      }
+      
+      const response = await api.autocomplete(params);
       items.value = response.data.rows;
     } catch (error) {
       notify('error', { detail: error.message });
@@ -155,11 +167,29 @@
   };
 
   async function getOptionById(id) {
-    const response = await api.autocomplete({id:id,parent:props.field.parent})
+    const params = {
+      id: id,
+      parent: props.field.parent
+    };
+    
+    if (props.field.where) {
+      params.where = props.field.where;
+    }
+    
+    const response = await api.autocomplete(params);
     return response.data.rows[0] || null;
   }
   async function getOptionByShowId(show_id) {
-    const response = await api.autocomplete({show_id:show_id,parent:props.field.parent})
+    const params = {
+      show_id: show_id,
+      parent: props.field.parent
+    };
+    
+    if (props.field.where) {
+      params.where = props.field.where;
+    }
+    
+    const response = await api.autocomplete(params);
     return response.data.rows[0] || null;
   }
   const onUserInputEnd = async ($evt) => {
