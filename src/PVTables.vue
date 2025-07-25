@@ -556,7 +556,13 @@
           if (!fields[field].hasOwnProperty("label")) {
             fields[field].label = field;
           }
-          if (!fields[field].hasOwnProperty("type")) fields[field].type = "text";
+          if (!Object.prototype.hasOwnProperty.call(fields[field], "type")){
+            if(field == 'id'){
+              fields[field].type = "view";
+            }else{
+              fields[field].type = "text";
+            }
+          }
           if (fields[field].hasOwnProperty("readonly")){
             if(fields[field].readonly === true || fields[field].readonly == 1){
               fields[field].readonly = true
@@ -978,6 +984,7 @@
 
     cacheAction({type: 'update', payload})
     let filters0 = {}
+    
     for(let field in filters.value){
       if(filters.value[field].hasOwnProperty('constraints')){
         if(filters.value[field].constraints[0].value !== null){
@@ -992,6 +999,7 @@
     let params = {
       filters: filters0,
     };
+    
     try {
       const response = await api.update(payload,params)
       emit('get-response', {table:props.table,action:"update",response:response})

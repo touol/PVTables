@@ -28,6 +28,7 @@
         @item-select="onAutocompleteItemSelect"
         @lazy-load="onLazyLoad"
         :disabled="disabled"
+        :placeholder="field.label"
         :virtualScrollerOptions="{ itemSize: 38, lazy: true }"
       >
       <template v-if="compiledTemplate" #option="{ option, index }">
