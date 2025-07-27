@@ -101,6 +101,7 @@
       size="small"
 
       :rowClass="rowClass"
+      :rowStyle="rowStyle"
 
       :rowGroupMode="rowGroupMode"
       :groupRowsBy="groupRowsBy"
@@ -166,12 +167,26 @@
         class="td-actions"
         >
         <template #body="slotProps">
-          <Button
-            v-for="action in cur_actions.filter((x) => x.row && x.menu !== 1)"
-            :icon="action.icon"
-            :class="action.class"
-            @click="action.click(slotProps.data, columns,table,filters)"
-          />
+          <template v-for="action in cur_actions.filter((x) => x.row && x.menu !== 1)" :key="action.action">
+            <!-- Кастомный Vue шаблон для действия, если указан -->
+            <component 
+              v-if="action.compiledTemplate" 
+              :is="action.compiledTemplate" 
+              :data="slotProps.data"
+              :columns="columns"
+              :table="table"
+              :filters="filters"
+              :action="action"
+              @action-click="action.click(slotProps.data, columns, table, filters)"
+            />
+            <!-- Стандартная кнопка действия -->
+            <Button
+              v-else
+              :icon="action.icon"
+              :class="action.class"
+              @click="action.click(slotProps.data, columns,table,filters)"
+            />
+          </template>
           <!-- <SplitButton v-if="SpeedDialEnabled" :model="speedDialActions" class="split-button" /> -->
           <PVTablesSplitButton 
             v-if="SpeedDialEnabled"
@@ -322,7 +337,8 @@
 
 <script setup>
   import Toast from 'primevue/toast';
-  import { ref, onMounted, defineComponent, watch } from "vue";
+  import { ref, onMounted, defineComponent, watch, computed } from "vue";
+  import { compile } from "vue";
   defineComponent({
     name: "PVTables",
   });
@@ -621,6 +637,83 @@
             actions0[action] = props.actions[props.table][action];
           }
         }
+        // Функция валидации шаблона на предмет безопасности
+        const validateTemplate = (template) => {
+          if (!template || typeof template !== 'string') return true;
+          
+          // Запрещенные паттерны для безопасности
+          const forbiddenPatterns = [
+            /\$parent/gi,
+            /\$root/gi,
+            /document\./gi,
+            /window\./gi,
+            /eval\(/gi,
+            /<script/gi,
+            /javascript:/gi,
+            /constructor\.constructor/gi,
+            /__proto__/gi,
+            /localStorage/gi,
+            /sessionStorage/gi,
+            /fetch\(/gi,
+            /XMLHttpRequest/gi,
+            /WebSocket/gi,
+            /setTimeout/gi,
+            /setInterval/gi,
+            /import\(/gi,
+            /require\(/gi,
+            /process\./gi,
+            /global\./gi
+          ];
+          
+          // Проверяем на наличие запрещенных паттернов
+          for (const pattern of forbiddenPatterns) {
+            if (pattern.test(template)) {
+              console.warn(`Обнаружен потенциально опасный паттерн в шаблоне: ${pattern}`);
+              return false;
+            }
+          }
+          
+          return true;
+        };
+
+        // Функция компиляции кастомного шаблона для действий
+        const compileActionTemplate = (template) => {
+          if (!template) return null;
+          
+          // Валидация шаблона перед компиляцией
+          if (!validateTemplate(template)) {
+            console.error('Шаблон содержит потенциально опасные конструкции');
+            notify('error', { detail: 'Шаблон содержит потенциально опасные конструкции и не может быть использован' });
+            return null;
+          }
+          
+          try {
+            const compiledRender = compile(template);
+            
+            // Создаем компонент с правильным контекстом
+            return {
+              render: compiledRender,
+              props: ['data', 'columns', 'table', 'filters', 'action'],
+              emits: ['action-click'],
+              setup(props, { emit }) {
+                // Предоставляем методы и переменные для шаблона
+                return {
+                  // Предоставляем доступ к emit под безопасным именем
+                  emitEvent: emit,
+                  // Добавляем другие методы, которые могут понадобиться в шаблоне
+                  executeAction: () => {
+                    emit('action-click');
+                  }
+                };
+              }
+            };
+          } catch (error) {
+            console.error('Ошибка компиляции шаблона действия:', error);
+            notify('error', { detail: `Ошибка в шаблоне действия: ${error.message}` });
+            return null;
+          }
+        };
+
         // console.log('actions0',actions0)
         for (let action in actions0) {
           let tmp = { ...actions0[action] };
@@ -744,6 +837,11 @@
             nemu_actions.value[action] = tmp
             
           }
+          // Компилируем template_row если он есть
+          if (tmp.template_row) {
+            tmp.compiledTemplate = compileActionTemplate(tmp.template_row);
+          }
+          
           if (addtmp) {
             if (tmp.hasOwnProperty("row")) actions_row.value = true;
             // if (tmp.hasOwnProperty("row")) actions_head.value = true;
@@ -1417,6 +1515,13 @@
       if(data[row_class_trigger.value.field]) return row_class_trigger.value.class
     }
     return
+  };
+
+  const rowStyle = (data) => {
+    if(row_setting.value[data.id] && row_setting.value[data.id].style){
+      return row_setting.value[data.id].style;
+    }
+    return {};
   };
   // const disableField = (data,field) =>{
   //   if(customFields.value[data.id]){

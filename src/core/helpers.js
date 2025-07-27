@@ -4,7 +4,7 @@ export const rowsHandler = (rowsData, fields) => {
   if (rowsData.length) {
     rowsData.forEach(function (item) {
       for (let field in fields) {
-        if (field == "id") item[field] = Number(item[field]);
+        // if (field == "id") item[field] = Number(item[field]);
         switch (fields[field].type) {
           case "boolean":
             if (item.hasOwnProperty(field)) {
@@ -15,10 +15,10 @@ export const rowsHandler = (rowsData, fields) => {
               }
             }
             break;
-          case "number":
-          case "decimal":
-            item[field] = Number(item[field]);
-            break;
+          // case "number":
+          // case "decimal":
+          //   item[field] = Number(item[field]);
+          //   break;
         }
       }
       rows.push(item);

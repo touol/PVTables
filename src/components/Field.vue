@@ -1,5 +1,16 @@
 <template>
-    <template v-if="col.field == 'id'">
+    <!-- Кастомный Vue шаблон, если указан и не в режиме редактирования -->
+    <component 
+        v-if="compiledTemplate && !isEditing" 
+        :is="compiledTemplate" 
+        :value="model"
+        :field="col"
+        :row="data"
+        :data="data"
+        @click="startEditing"
+    />
+    <!-- Стандартные поля -->
+    <template v-else-if="col.field == 'id'">
         {{ model }}
     </template>
     <PVAutoComplete
@@ -7,7 +18,7 @@
         :field="col"
         v-model="model"
         :options="autocompleteSettings"
-        @set-value="setValue()"
+        @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
     />
     <PVMultiAutoComplete
@@ -15,14 +26,14 @@
         :field="col"
         v-model="model"
         :options="autocompleteSettings"
-        @set-value="setValue()"
+        @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
     />
     <GTSSelect
         v-else-if="col.type == 'select'"
         v-model:id="model"
         :options="selectSettings2?.rows"
-        @set-value="setValue()"
+        @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
     />
     <template v-else-if="col.type == 'decimal'">
@@ -34,14 +45,14 @@
     <GTSDate
         v-else-if="col.type == 'date'"
         :model-value="model"
-        @update:modelValue="($event) => updateValue($event)"
+        @update:modelValue="($event) => { updateValue($event); stopEditing(); }"
         :disabled="use_readonly && col.readonly"
     />
     <ToggleSwitch 
         v-else-if="col.type == 'boolean'"
         v-model="model" 
         @keydown.tab.stop
-        @change="setValue()"
+        @change="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
     />
     <FileSelector
@@ -49,7 +60,7 @@
         v-model="model"
         :mediaSource="col.mediaSource"
         placeholder="Выберите файл"
-        @fileSelected="($event) => updateValue($event)"
+        @fileSelected="($event) => { updateValue($event); stopEditing(); }"
         :disabled="use_readonly && col.readonly"
     />
     <template v-else-if="col.type == 'html'">
@@ -60,7 +71,8 @@
     </template>
 </template>
 <script setup>
-    import { ref, watchEffect } from "vue";
+    import { ref, watchEffect, computed } from "vue";
+    import { compile } from "vue";
     // import InputText from "primevue/inputtext";
     // import Textarea from "primevue/textarea";
     // import InputNumber from "primevue/inputnumber";
@@ -72,6 +84,9 @@
     import PVMultiAutoComplete from "./PVMultiAutoComplete.vue";
     import GTSSelect from "./gtsSelect.vue";
     import FileSelector from './filebrowser/FileSelector.vue';
+    import { useNotifications } from "./useNotifications.js";
+
+    const { notify } = useNotifications();
 
     const model = defineModel({
         type: [String,Number,Boolean,Date],
@@ -108,8 +123,91 @@
             default: true,
         }
     });
+
+    // Функция валидации шаблона на предмет безопасности
+    const validateTemplate = (template) => {
+        if (!template || typeof template !== 'string') return true;
+        
+        // Запрещенные паттерны для безопасности
+        const forbiddenPatterns = [
+            /\$parent/gi,
+            /\$root/gi,
+            /document\./gi,
+            /window\./gi,
+            /eval\(/gi,
+            /<script/gi,
+            /javascript:/gi,
+            /constructor\.constructor/gi,
+            /__proto__/gi,
+            /localStorage/gi,
+            /sessionStorage/gi,
+            /fetch\(/gi,
+            /XMLHttpRequest/gi,
+            /WebSocket/gi,
+            /setTimeout/gi,
+            /setInterval/gi,
+            /import\(/gi,
+            /require\(/gi,
+            /process\./gi,
+            /global\./gi
+        ];
+        
+        // Проверяем на наличие запрещенных паттернов
+        for (const pattern of forbiddenPatterns) {
+            if (pattern.test(template)) {
+                console.warn(`Обнаружен потенциально опасный паттерн в шаблоне: ${pattern}`);
+                return false;
+            }
+        }
+        
+        return true;
+    };
+
+    // Компиляция кастомного шаблона
+    const compiledTemplate = computed(() => {
+        if (!col.value.template) return null;
+        
+        // Валидация шаблона перед компиляцией
+        if (!validateTemplate(col.value.template)) {
+            console.error('Шаблон содержит потенциально опасные конструкции');
+            notify('error', { detail: 'Шаблон содержит потенциально опасные конструкции и не может быть использован' });
+            return null;
+        }
+        
+        try {
+            const compiledRender = compile(col.value.template);
+            
+            // Создаем компонент с правильным контекстом
+            return {
+                render: compiledRender,
+                props: ['value', 'field', 'row', 'data'],
+                emits: ['click'],
+                setup(props, { emit }) {
+                    // Предоставляем методы и переменные для шаблона
+                    return {
+                        startEditing: () => {
+                            emit('click');
+                        },
+                        // Добавляем другие методы, которые могут понадобиться в шаблоне
+                        setValue,
+                        updateValue,
+                        format_decimal,
+                        getField,
+                        // Предоставляем доступ к emit под безопасным именем
+                        emitEvent: emit
+                    };
+                }
+            };
+        } catch (error) {
+            console.error('Ошибка компиляции шаблона:', error);
+            notify('error', { detail: `Ошибка в шаблоне: ${error.message}` });
+            return null;
+        }
+    });
+
     const col = ref({})
     const selectSettings2 = ref({})
+    const isEditing = ref(false)
     watchEffect(async () => {
         selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings}
         if (props.customFields.hasOwnProperty(props.field.field)){
@@ -140,6 +238,14 @@
     const updateValue = ($evt) => {
         model.value = $evt;
         emit('set-value', model.value)
+    }
+    
+    const startEditing = () => {
+        isEditing.value = true
+    }
+    
+    const stopEditing = () => {
+        isEditing.value = false
     }
     const format_decimal = (text,FractionDigits) => {
         if(text == '') text = 0

@@ -111,10 +111,56 @@
   const searchSuggestions = ref({});
   const searchFieldsData = ref({});
 
+  // Функция валидации шаблона на предмет безопасности
+  const validateTemplate = (template) => {
+    if (!template || typeof template !== 'string') return true;
+    
+    // Запрещенные паттерны для безопасности
+    const forbiddenPatterns = [
+      /\$parent/gi,
+      /\$root/gi,
+      /document\./gi,
+      /window\./gi,
+      /eval\(/gi,
+      /<script/gi,
+      /javascript:/gi,
+      /constructor\.constructor/gi,
+      /__proto__/gi,
+      /localStorage/gi,
+      /sessionStorage/gi,
+      /fetch\(/gi,
+      /XMLHttpRequest/gi,
+      /WebSocket/gi,
+      /setTimeout/gi,
+      /setInterval/gi,
+      /import\(/gi,
+      /require\(/gi,
+      /process\./gi,
+      /global\./gi
+    ];
+    
+    // Проверяем на наличие запрещенных паттернов
+    for (const pattern of forbiddenPatterns) {
+      if (pattern.test(template)) {
+        console.warn(`Обнаружен потенциально опасный паттерн в шаблоне: ${pattern}`);
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   // Компиляция шаблона из строки (приоритет: API ответ, затем props.field.template)
   const compiledTemplate = computed(() => {
     const templateSource = apiTemplate.value || props.field.template;
     if (!templateSource) return null;
+    
+    // Валидация шаблона перед компиляцией
+    if (!validateTemplate(templateSource)) {
+      console.error('Шаблон содержит потенциально опасные конструкции');
+      notify('error', { detail: 'Шаблон содержит потенциально опасные конструкции и не может быть использован' });
+      return null;
+    }
     
     try {
       return compile(templateSource);
