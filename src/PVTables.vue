@@ -819,6 +819,15 @@
               break;
             case "read":
               break
+            case "excel_export":
+              if (!tmp.hasOwnProperty("head")) tmp.head = true;
+              if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-file-excel";
+              if (!tmp.hasOwnProperty("class"))
+                tmp.class = "p-button-rounded p-button-success";
+              if (!tmp.hasOwnProperty("head_click"))
+                tmp.head_click = () => excelExport(tmp);
+              if (!tmp.hasOwnProperty("label")) tmp.label = "Excel";
+              break;
             default:
               if (!tmp.hasOwnProperty("class"))
                 tmp.class = "p-button-rounded p-button-success";
@@ -1708,6 +1717,35 @@
         hideModalForm();
         refresh(false);
       }
+    } catch (error) {
+      console.log('error', error);
+      notify('error', { detail: error.message });
+    }
+  };
+
+  // Excel Export
+  const excelExport = async (action) => {
+    try {
+      let filters0 = prepFilters();
+      
+      // Создаем URL для скачивания
+      const params = new URLSearchParams({
+        api_action: 'excel_export',
+        filters: JSON.stringify(filters0)
+      });
+      
+      // Создаем временную ссылку для скачивания
+      const url = `/api/${props.table}?${params.toString()}`;
+      
+      // Создаем невидимую ссылку и кликаем по ней
+      const link = document.createElement('a');
+      link.href = url;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      notify('success', { detail: 'Экспорт в Excel начат' });
     } catch (error) {
       console.log('error', error);
       notify('error', { detail: error.message });
