@@ -1,5 +1,6 @@
 import PVTables from './PVTables.vue'
 import PVTab from './components/PVTab.vue'
+import PVTabs from './components/PVTabs.vue'
 import apiCtor from './components/api.js'
 import gtsAutoComplete from './components/gtsAutoComplete.vue'
 import PVAutoComplete from './components/PVAutoComplete.vue'
@@ -86,6 +87,7 @@ export default {
 export {
     PVTables as PVTables,
     PVTab as PVTab,
+    PVTabs as PVTabs,
     apiCtor as apiCtor,
     gtsAutoComplete as gtsAutoComplete,
     PVAutoComplete as PVAutoComplete,

@@ -158,6 +158,7 @@
             v-model="filterModel.value"
             :autocompleteSettings="autocompleteSettings[col.field]"
             :selectSettings="selectSettings[col.field]"
+            :editId="true"
           />
         </template>
       </Column>
@@ -353,7 +354,7 @@
 
   //import fields component
   import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
-
+  
   // import InputText from "primevue/inputtext";
   // import Textarea from "primevue/textarea";
   // import InputNumber from "primevue/inputnumber";

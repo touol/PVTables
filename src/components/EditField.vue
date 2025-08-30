@@ -1,6 +1,14 @@
 <template>
     <template v-if="col.field == 'id'">
+        <InputText
+            v-if="editId"
+            v-model="model"
+            @change="setValue()"
+            :disabled="use_readonly && col.readonly"
+            class="w-full" autocomplete="off"
+        />
         <span 
+            v-else
             class="w-full" autocomplete="off">
             {{ model }}
         </span>
@@ -136,6 +144,10 @@
         use_readonly:{
             type: Boolean,
             default: true,
+        },
+        editId:{
+            type: Boolean,
+            default: false,
         }
     });
     const col = ref({})
