@@ -14,6 +14,7 @@ import { useNotifications } from './components/useNotifications.js'
 import UniTree from './components/UniTree.vue'
 import UniTreePanel from './components/UniTreePanel.vue'
 import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
+import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
 
 import 'primeicons/primeicons.css'
@@ -50,6 +51,7 @@ import SpeedDial from 'primevue/speeddial';
 import InputGroup from "primevue/inputgroup";
 import Tree from 'primevue/tree';
 import Select from 'primevue/select';
+import Menubar from 'primevue/menubar';
 
 export default {
     install: (app, options) => {
@@ -100,6 +102,7 @@ export {
     UniTree as UniTree,
     UniTreePanel as UniTreePanel,
     UniTreeSplitButton as UniTreeSplitButton,
+    PVMenu as PVMenu,
     FileSelector as FileSelector,
 
     
@@ -128,4 +131,5 @@ export {
     InputGroup as InputGroup,
     Tree as Tree,
     Select as Select,
+    Menubar as Menubar,
 }
