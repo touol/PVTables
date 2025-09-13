@@ -16,6 +16,7 @@ import UniTreePanel from './components/UniTreePanel.vue'
 import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
 import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
+import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGalleryAPI, fileUtils } from './components/gtsAPIFileGallery/index.js'
 
 import 'primeicons/primeicons.css'
 import './style.css'
@@ -84,6 +85,12 @@ export default {
         app.component('EditField', EditField)
         app.component('useNotifications', useNotifications)
         
+        // Компоненты галереи файлов
+        app.component('FileGallery', FileGallery)
+        app.component('FileUploadDialog', FileUploadDialog)
+        app.component('FileEditDialog', FileEditDialog)
+        app.component('FileViewDialog', FileViewDialog)
+        
     }
 }
 export {
@@ -104,6 +111,14 @@ export {
     UniTreeSplitButton as UniTreeSplitButton,
     PVMenu as PVMenu,
     FileSelector as FileSelector,
+    
+    // Компоненты галереи файлов
+    FileGallery as FileGallery,
+    FileUploadDialog as FileUploadDialog,
+    FileEditDialog as FileEditDialog,
+    FileViewDialog as FileViewDialog,
+    FileGalleryAPI as FileGalleryAPI,
+    fileUtils as fileUtils,
 
     
     Button as Button,
