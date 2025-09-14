@@ -33,6 +33,19 @@
           @update-treenode-title="updateTreeNodeTitle"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
+        <FileGallery 
+          v-else-if="tab.type=='file-gallery'" 
+          :title="tab.title"
+          :parent-id="current_id"
+          :parent-class="class_key"
+          :list-name="tab.list_name"
+          :allow-upload="true"
+          :allow-edit="true"
+          :allow-delete="true"
+          :show-filters="true"
+          :page-size="20"
+          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          />
         <component v-else-if="tab.type=='component'" :is="tab.name_component" :parent_row="parent_row"></component>
         <PVTables 
           v-else
@@ -65,6 +78,7 @@
   import FileTree from './FileTree.vue'
   import FileContent from './FileContent.vue'
   import PVFormPanel from './PVFormPanel.vue'
+  import FileGallery from './gtsAPIFileGallery/FileGallery.vue'
 
   const props = defineProps({
     tabs: {
@@ -90,6 +104,10 @@
     child:{
       type: Boolean,
       default: false
+    },
+    class_key:{
+      type: [String],
+      default: ''
     }
   });
   const key0 = ref()

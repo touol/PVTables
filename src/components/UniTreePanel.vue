@@ -20,6 +20,7 @@
                             :actions="{}"
                             :filters="filters"
                             :current_id="current_id"
+                            :class_key="class_key"
                             @update-treenode-title="updateTreeNodeTitle"
                             ref="childComponentRefPanel"
                         />
@@ -52,11 +53,14 @@
     
     const paneltabs = ref({})
     const current_id = ref('')
+    const class_key = ref('')
     const title = ref('')
     const filters = ref({});
     const selectTreenode = (event) => {
+        // console.log('event.tabs',event.tabs)
         paneltabs.value = event.tabs
-        current_id.value = event.node.data.target_id
+        current_id.value = event.node.data.target_id ? event.node.data.target_id : event.node.data.id
+        class_key.value = event.node.data.class
         title.value = ''
         if(event.label) title.value = event.label + ': '
         title.value += event.node.title
