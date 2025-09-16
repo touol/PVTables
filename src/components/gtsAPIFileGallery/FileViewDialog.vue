@@ -316,6 +316,8 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Исправление конфликта с Bootstrap */
+  pointer-events: auto !important;
 }
 
 .modal-header {
