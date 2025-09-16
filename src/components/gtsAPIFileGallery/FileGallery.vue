@@ -378,6 +378,33 @@ export default {
     this.debouncedSearch = this.debounce(this.loadFiles, 500)
     this.loadFiles()
   },
+  watch: {
+    // Отслеживаем изменения props, которые влияют на загрузку файлов
+    parentId: {
+      handler() {
+        this.refreshFiles()
+      },
+      immediate: false
+    },
+    parentClass: {
+      handler() {
+        this.refreshFiles()
+      },
+      immediate: false
+    },
+    listName: {
+      handler() {
+        this.refreshFiles()
+      },
+      immediate: false
+    },
+    apiEndpoint: {
+      handler() {
+        this.refreshFiles()
+      },
+      immediate: false
+    }
+  },
   methods: {
     async loadFiles() {
       this.loading = true
