@@ -265,9 +265,11 @@
     }
     const onNodeclick = async (node) => {
         // console.log('nodeclick.value.classes',nodeclick.value.classes)
+        let target_id = node.data.target_id ? node.data.target_id: node.data.id
         if(nodeclick.value.classes){
             let tabs
             let label
+            
             if(nodeclick.value.classes[node.data.class]){
                 if(nodeclick.value.classes[node.data.class].label) label = nodeclick.value.classes[node.data.class].label
                 if(nodeclick.value.classes[node.data.class].tabs){
@@ -275,7 +277,7 @@
                 }else if(nodeclick.value.classes[node.data.class].table){
                     const apiTable = apiCtor(nodeclick.value.classes[node.data.class].table)
                     try {
-                        const data = await apiTable.get(node.data.target_id)
+                        const data = await apiTable.get(target_id)
                         for(let key in nodeclick.value.classes[node.data.class]){
                             if(key == 'table') continue
                             if(nodeclick.value.classes[node.data.class][key].if){
@@ -298,7 +300,7 @@
                 }else if(nodeclick.value.classes['default'].table){
                     const apiTable = apiCtor(nodeclick.value.classes['default'].table)
                     try {
-                        const data = await apiTable.get(node.data.target_id)
+                        const data = await apiTable.get(target_id)
                         for(let key in nodeclick.value.classes['default']){
                             if(key == 'table') continue
                             if(nodeclick.value.classes['default'][key].if){
@@ -327,7 +329,7 @@
                     let tmpfilters = {};
                     for (let field in tabs[key].where) {
                         let value = tabs[key].where[field]
-                        if(value == 'current_id') value = node.data.target_id
+                        if(value == 'current_id') value = target_id
                         if(value == 'tree_id') value = node.data.id 
                         tmpfilters[field] = {
                             operator: 'and',
