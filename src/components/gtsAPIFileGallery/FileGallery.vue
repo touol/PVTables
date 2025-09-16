@@ -388,6 +388,7 @@ export default {
           class: this.parentClass,
           list: this.listName,
           limit: this.pageSize,
+          trumb: '',
           offset: (this.currentPage - 1) * this.pageSize,
           ...this.filters
         }
