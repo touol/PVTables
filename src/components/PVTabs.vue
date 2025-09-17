@@ -47,6 +47,20 @@
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
         <component v-else-if="tab.type=='component'" :is="tab.name_component" :parent_row="parent_row"></component>
+        <template v-else-if="tab.type=='tables'">
+          <PVTables 
+            v-for="table in tab.tables"
+            :table="table.table"
+            :actions="actions"
+            :filters="filters[table.key]"
+            :reload="false"
+            :key="table.key"
+            @refresh-table="refresh(false)"
+            :child="true"
+            :ref="el => { if (el) childComponentRefs[table.key] = el }"
+            @get-response="get_response($event)"
+          />
+        </template>
         <PVTables 
           v-else
           :table="tab.table"
@@ -140,6 +154,11 @@
             }
           }
           if(check) tabs0.value[key] = { ...props.tabs[key] }
+        }
+        if(props.tabs[key].type == 'tables'){
+          for(let table_key in props.tabs[key].tables){
+            tabs0.value[key].tables[table_key].key = table_key
+          }
         }
       }
       if(failcheck && key2){

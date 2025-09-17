@@ -325,6 +325,7 @@
             }
             let subfilters = {}
             for(let key in tabs){
+                
                 if (tabs[key].hasOwnProperty("where")) {
                     let tmpfilters = {};
                     for (let field in tabs[key].where) {
@@ -343,7 +344,42 @@
                     }
                     subfilters[key] = tmpfilters;
                 }
+                if (tabs[key].hasOwnProperty("tables")) {
+                    for(let table_key in tabs[key].tables){
+                        let tmpfilters = {};
+                        for (let field in tabs[key].tables[table_key].where) {
+                            let value = tabs[key].tables[table_key].where[field]
+                            if(value == 'current_id') value = target_id
+                            if(value == 'tree_id') value = node.data.id 
+                            tmpfilters[field] = {
+                                operator: 'and',
+                                constraints: [
+                                    {
+                                    value: value,
+                                    matchMode: 'equals',
+                                    },
+                                ],
+                            };
+                        }
+                        subfilters[table_key] = tmpfilters;
+                    }
+                }
             }
+            // tabs insert_menu_id = target_id
+            // Проходим по всем свойствам tabs и заменяем insert_menu_id на target_id
+            if (tabs) {
+                const processTabsRecursively = (obj) => {
+                    for (let key in obj) {
+                        if (typeof obj[key] === 'string' && obj[key].includes('insert_menu_id')) {
+                            obj[key] = obj[key].replace(/insert_menu_id/g, target_id);
+                        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                            processTabsRecursively(obj[key]);
+                        }
+                    }
+                };
+                processTabsRecursively(tabs);
+            }
+            // console.log('subfilters',subfilters)
             emit('select-treenode',{tabs,label,node,subfilters})
         }
         

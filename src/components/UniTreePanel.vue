@@ -98,7 +98,7 @@
     .tree-container .p-tabpanels{
       height: 95%;
       width: 100%;
-      overflow: hidden;
+      overflow: auto;
     }
     .tree-container, .tree-container .p-splitter, .tree-container .p-splitterpanel,
     .tree-container .p-tabs, .tree-container .p-tabpanel

@@ -8,7 +8,7 @@ export const rowsHandler = (rowsData, fields) => {
         switch (fields[field].type) {
           case "boolean":
             if (item.hasOwnProperty(field)) {
-              if (item[field] === "0") {
+              if (item[field] == null || item[field] === "0") {
                 item[field] = false;
               } else {
                 item[field] = true;
