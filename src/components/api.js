@@ -9,10 +9,14 @@ export default (tableName, timeout = 60000) => {
   // if(import.meta.env.VITE_API_BASE_URL){
   //   baseURL = import.meta.env.VITE_API_BASE_URL
   // }
-  const instance = axios.create({
+  
+  // Конфигурация для SSR поддержки
+  const axiosConfig = {
     baseURL: `${baseURL}api/${tableName}`,
     timeout: timeout
-  })
+  };
+
+  const instance = axios.create(axiosConfig)
 
   const { notify } = useNotifications()
 
@@ -38,7 +42,7 @@ export default (tableName, timeout = 60000) => {
       return data
     },
     ({message, response}) => {
-      console.log('notify2')
+      console.log('notify2',message)
       notify('error', { detail: message })
     }
   )

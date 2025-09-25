@@ -5,9 +5,6 @@ import tailwindcss from 'tailwindcss'
 export default defineConfig(({ mode }) => {
   // process.env = {...process.env,...loadEnv(mode, './'),...loadEnv(mode, '../')}
   return {
-    // define: {
-    //   'import.meta': 'import.meta'
-    // },
     build: {
       outDir: "./dist",
       lib: {
@@ -21,23 +18,20 @@ export default defineConfig(({ mode }) => {
             globals: {
                 vue: 'Vue'
             }
-        }
+        },
       }
     },
-    plugins: [vue({
-      template: {
-        compilerOptions: {
-          isCustomElement: (tag) => false
-        }
-      }
-    }),tailwindcss()],
+    plugins: [
+      vue(),
+      tailwindcss(),
+    ],
     define: {
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false
     },
     resolve: {
       alias: {
-        'vue': 'vue/dist/vue.esm-bundler.js'
+        'vue': 'vue/dist/vue.esm-bundler.js',
       }
     },
     server: {

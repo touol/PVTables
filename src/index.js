@@ -2,6 +2,7 @@ import PVTables from './PVTables.vue'
 import PVTab from './components/PVTab.vue'
 import PVTabs from './components/PVTabs.vue'
 import apiCtor from './components/api.js'
+import apiFetch from './components/api-ofetch.js'
 import gtsAutoComplete from './components/gtsAutoComplete.vue'
 import PVAutoComplete from './components/PVAutoComplete.vue'
 import gtsDate from './components/gtsDate.vue'
@@ -98,6 +99,7 @@ export {
     PVTab as PVTab,
     PVTabs as PVTabs,
     apiCtor as apiCtor,
+    apiFetch as apiFetch,
     gtsAutoComplete as gtsAutoComplete,
     PVAutoComplete as PVAutoComplete,
     gtsDate as gtsDate,

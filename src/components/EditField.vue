@@ -43,7 +43,7 @@
         v-else-if="col.type == 'decimal'"
         :id="col.field"
         v-model="model"
-        @change="setValue()"
+        @update:modelValue="setValue()"
         :minFractionDigits="col.FractionDigits"
         :maxFractionDigits="col.FractionDigits"
         :disabled="use_readonly && col.readonly"
@@ -52,7 +52,7 @@
     <InputNumber 
         v-else-if="col.type == 'number'" 
         v-model="model"
-        @change="setValue()"
+        @update:modelValue="setValue()"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
@@ -91,7 +91,7 @@
     <InputText 
         v-else 
         v-model="model"
-        @change="setValue()" 
+        @update:modelValue="setValue()" 
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
