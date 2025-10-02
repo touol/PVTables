@@ -31,6 +31,15 @@
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
+    <PVMultiple
+        v-else-if="col.type == 'multiple'"
+        :field="col"
+        v-model="model"
+        :data="data"
+        @set-value="setValue()"
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
     <GTSSelect
         v-else-if="col.type == 'select'"
         v-model:id="model"
@@ -108,6 +117,7 @@
     import GTSDate from "./gtsDate.vue";
     import PVAutoComplete from "./PVAutoComplete.vue";
     import PVMultiAutoComplete from "./PVMultiAutoComplete.vue";
+    import PVMultiple from "./PVMultiple.vue";
     import GTSSelect from "./gtsSelect.vue";
     import FileSelector from './filebrowser/FileSelector.vue';
 

@@ -23,9 +23,17 @@
     />
     <PVMultiAutoComplete
         v-else-if="col.type == 'multiautocomplete'"
-        :field="col"
         v-model="model"
+        :field="col"
         :options="autocompleteSettings"
+        @set-value="setValue(); stopEditing()"
+        :disabled="use_readonly && col.readonly"
+    />
+    <PVMultiple
+        v-else-if="col.type == 'multiple'"
+        v-model="model"
+        :field="col"
+        :data="data"
         @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
     />
@@ -82,6 +90,7 @@
     import GTSDate from "./gtsDate.vue";
     import PVAutoComplete from "./PVAutoComplete.vue";
     import PVMultiAutoComplete from "./PVMultiAutoComplete.vue";
+    import PVMultiple from "./PVMultiple.vue";
     import GTSSelect from "./gtsSelect.vue";
     import FileSelector from './filebrowser/FileSelector.vue';
     import { useNotifications } from "./useNotifications.js";
