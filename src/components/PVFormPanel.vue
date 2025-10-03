@@ -5,6 +5,7 @@
             v-model="Item" 
             :columns="columns" 
             :mywatch="mywatch"
+            :form="form"
         />
         <Button
           label="Сохранить"
@@ -51,14 +52,17 @@
     const Item = ref({})
     let fields = {}
     const columns = ref([{field:'id',label:'id',type:'text'}])
-    
+    const form = ref({})
+
     const loadForm = async () => { /* logic to load tree data */ 
         try {
             api = apiCtor(props.table)
             const response = await api.options()
             // console.log('response.data',response.data)
             fields = response.data.fields;
-            
+            if(response.data.form){
+                form.value = response.data.form
+            }
             columns.value = setCollumns(fields)
             if(props.current_id > 0){
                 const data = await api.get(props.current_id)

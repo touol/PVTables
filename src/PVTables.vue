@@ -236,6 +236,7 @@
         :selectSettings="selectSettings"
         :customFields="customFields[lineItem.id]"
         :mywatch="mywatch"
+        :form="form"
       />
       <template #footer>
         <Button
@@ -557,6 +558,9 @@
         }
         if(response.data.data_fields){
           dataFields.value = response.data.data_fields;
+        }
+        if(response.data.form){
+          form.value = response.data.form;
         }
         if(response.data.hide_id == 1){
           hideId.value = true;
@@ -1013,6 +1017,7 @@
   const autocompleteSettings = ref({});
   const row_setting = ref({});
   const customFields = ref({});
+  const form = ref({});
 
   const loadLazyData = async (event) => {
     loading.value = true;

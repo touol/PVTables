@@ -31,6 +31,7 @@
     "primevue": "^4.0.1",
     "sl-vue-tree-next": "^0.0.13",
     "tailwindcss-primeui": "^0.3.4",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue3-runtime-template-next": "^1.0.0"
   }
 }
