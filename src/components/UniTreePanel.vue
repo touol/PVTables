@@ -12,7 +12,7 @@
                 />
             </SplitterPanel>
             <SplitterPanel class="flex" :size="100 - size">
-                <div class="flex flex-col gap-1" style="width:100%;">
+                <div class="gap-1" style="width:100%;">
                     <h1>{{ title }} {{ current_id }}</h1>
                     <div class="tree-panel-container">
                         <PVTabs 
@@ -115,5 +115,4 @@
     {
         display: inherit !important;
     }
-;
 </style>

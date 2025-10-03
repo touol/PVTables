@@ -113,6 +113,7 @@
 
     import UniTreeSplitButton from './UniTreeSplitButton.vue'
     import { SlVueTreeNext } from 'sl-vue-tree-next'
+    import 'sl-vue-tree-next/sl-vue-tree-next-minimal.css';
     import { ref, onMounted } from 'vue';
     import apiCtor from './api'
     import { useNotifications } from "./useNotifications";
@@ -637,7 +638,7 @@
     }, { deep: true, immediate: true })
 </script>
 <style>
-    @import 'sl-vue-tree-next/sl-vue-tree-next-minimal.css';
+    
     .sl-vue-tree-next-root{
       font-size: x-large;
     }
