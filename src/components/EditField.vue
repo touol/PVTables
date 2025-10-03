@@ -51,7 +51,7 @@
     <InputNumber
         v-else-if="col.type == 'decimal'"
         :id="col.field"
-        v-model="model"
+        v-model="numericModel"
         @update:modelValue="setValue()"
         :minFractionDigits="col.FractionDigits"
         :maxFractionDigits="col.FractionDigits"
@@ -60,7 +60,7 @@
     />
     <InputNumber 
         v-else-if="col.type == 'number'" 
-        v-model="model"
+        v-model="numericModel"
         @update:modelValue="setValue()"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
@@ -106,7 +106,7 @@
     />
 </template>
 <script setup>
-    import { ref, watchEffect } from "vue";
+    import { ref, watchEffect, computed } from "vue";
     import InputText from "primevue/inputtext";
     import Textarea from "primevue/textarea";
     import InputNumber from "primevue/inputnumber";
@@ -162,6 +162,21 @@
     });
     const col = ref({})
     const selectSettings2 = ref({})
+    
+    // Computed свойство для преобразования model в число для InputNumber
+    const numericModel = computed({
+        get() {
+            if (col.value.type === 'number' || col.value.type === 'decimal') {
+                const num = Number(model.value);
+                return isNaN(num) ? null : num;
+            }
+            return model.value;
+        },
+        set(value) {
+            model.value = value;
+        }
+    });
+    
     watchEffect(async () => {
         selectSettings2.value = JSON.parse(JSON.stringify(props.selectSettings)) //props.selectSettings
         if (props.customFields.hasOwnProperty(props.field.field)){
@@ -183,6 +198,19 @@
         }
         if(col.value.type == 'boolean'){
             if(model.value == "1") model.value = true
+        }
+        // Преобразование строки в число для number и decimal полей
+        if(col.value.type == 'number' || col.value.type == 'decimal'){
+            if(typeof model.value === 'string'){
+                if(model.value === ''){
+                    model.value = null;
+                } else {
+                    const num = Number(model.value);
+                    if(!isNaN(num)){
+                        model.value = num;
+                    }
+                }
+            }
         }
     })
     const emit = defineEmits(['set-value']);

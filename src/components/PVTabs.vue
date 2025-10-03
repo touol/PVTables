@@ -46,7 +46,12 @@
           :page-size="20"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
-        <component v-else-if="tab.type=='component'" :is="tab.name_component" :parent_row="parent_row"></component>
+        <component 
+          v-else-if="tab.type=='component'" 
+          :is="resolveComponentName(tab.name_component)" 
+          :parent_row="parent_row" 
+          :parent-id="current_id"
+        ></component>
         <template v-else-if="tab.type=='tables'">
           <PVTables 
             v-for="table in tab.tables"
@@ -81,7 +86,7 @@
 <script setup>
   import PVTables from '../PVTables.vue'
   import Toast from 'primevue/toast';
-  import { ref, watch } from 'vue';
+  import { ref, watch, resolveComponent, onErrorCaptured } from 'vue';
 
   import Tabs from 'primevue/tabs';
   import TabList from 'primevue/tablist';
@@ -127,6 +132,37 @@
   const key0 = ref()
   const tabs0 = ref({})
   const childComponentRefs = ref({})
+  
+  // Функция для резолва динамических компонентов
+  const resolveComponentName = (componentName) => {
+    if (!componentName) {
+      console.error('PVTabs: componentName is empty')
+      return null
+    }
+    try {
+      // Пытаемся резолвить компонент
+      const component = resolveComponent(componentName)
+      if (!component || component === componentName) {
+        console.error(`PVTabs: Component "${componentName}" not found. Make sure it's globally registered or imported.`)
+        return null
+      }
+      return component
+    } catch (error) {
+      console.error(`PVTabs: Error resolving component "${componentName}":`, error)
+      return null
+    }
+  }
+  
+  
+  // Перехват ошибок рендеринга
+  onErrorCaptured((err, instance, info) => {
+    console.error('PVTabs: Error captured:', {
+      error: err,
+      component: instance?.$options?.name || 'Unknown',
+      info: info
+    })
+    return false // Продолжаем всплытие ошибки
+  })
   watch(
     () => props,
     () => {
