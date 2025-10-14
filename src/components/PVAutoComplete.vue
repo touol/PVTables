@@ -202,7 +202,7 @@
         const option = await getOptionById(model.value);
 
         if (!option) {
-          notify('error', { detail: 'Отсутствует такой ID' })
+          notify('error', { detail: 'Отсутствует такой ID! id=' + model.value + ' table=' +props.field.table })
           return
         }
 
