@@ -18,6 +18,7 @@ import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
 import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
 import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGalleryAPI, fileUtils } from './components/gtsAPIFileGallery/index.js'
+import DataTable from "./components/DataTable/DataTable.vue";
 
 import 'primeicons/primeicons.css'
 import './style.css'
@@ -37,7 +38,7 @@ import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Toast from 'primevue/toast'
 import MultiSelect from 'primevue/multiselect';
-import DataTable from "primevue/datatable";
+
 import Column from "primevue/column";
 import Toolbar from "primevue/toolbar";
 
@@ -113,6 +114,7 @@ export {
     UniTreeSplitButton as UniTreeSplitButton,
     PVMenu as PVMenu,
     FileSelector as FileSelector,
+    DataTable as DataTable,
     
     // Компоненты галереи файлов
     FileGallery as FileGallery,
@@ -142,7 +144,6 @@ export {
     MultiSelect as MultiSelect,
     FileUpload as FileUpload,
     SpeedDial as SpeedDial,
-    DataTable as DataTable,
     Column as Column,
     Toolbar as Toolbar,
     InputGroup as InputGroup,

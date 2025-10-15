@@ -198,7 +198,7 @@ export default {
     name: 'AutoComplete',
     extends: BaseAutoComplete,
     inheritAttrs: false,
-    emits: ['update:modelValue', 'change', 'focus', 'blur', 'item-select', 'item-unselect', 'option-select', 'option-unselect', 'dropdown-click', 'clear', 'complete', 'before-show', 'before-hide', 'show', 'hide', 'lazy-load'],
+    emits: ['update:modelValue', 'tab', 'change', 'focus', 'blur', 'item-select', 'item-unselect', 'option-select', 'option-unselect', 'dropdown-click', 'clear', 'complete', 'before-show', 'before-hide', 'show', 'hide', 'lazy-load'],
     outsideClickListener: null,
     resizeListener: null,
     scrollHandler: null,
@@ -389,7 +389,9 @@ export default {
                     break;
 
                 case 'Tab':
-                    this.onTabKey(event);
+                    // console.log('tab ac')
+                    this.$emit('tab', event);
+                    // this.onTabKey(event);
                     break;
 
                 case 'Backspace':

@@ -27,6 +27,7 @@
             @set-value="
               onSetTopFilter(filter)
             "
+            
           />
           <PVMultiAutoComplete
             v-else-if="filter.type == 'multiautocomplete'"
@@ -203,6 +204,7 @@
               :autocompleteSettings="autocompleteSettings[field]"
               :selectSettings="selectSettings[field]"
               :customFields="customFields[data.id]"
+              @tab="onTab"
             />
           </template>
           <template #filter="{ filterModel }">
@@ -399,7 +401,7 @@
   defineComponent({
     name: "PVTables",
   });
-  import DataTable from "primevue/datatable";
+  import DataTable from "./components/DataTable/DataTable.vue";
   import Column from "primevue/column";
 
   import Button from "primevue/button";
@@ -1144,6 +1146,7 @@
 
   const onCellEditComplete = async (event) => {
     let { data, newValue, field } = event;
+    if(!field) return
     // console.log('field',field)
     // console.log('newValue',newValue)
     if(getField(data,field) == newValue) return
@@ -1661,21 +1664,50 @@
     }
   }
 
-  function invokeElementMethod(element, methodName, args) {
-    element[methodName].apply(element, args);
+  const findPrevEditableColumn = (cell) => {
+    if(!cell) return null;
+    var prevCell = cell.previousElementSibling;
+    if (!prevCell) {
+      var prevRow = cell.parentElement.previousElementSibling;
+      if (prevRow) {
+        prevCell = prevRow.lastElementChild;
+      }
+    }
+    if (prevCell) {
+      if (prevCell.tagName === "TD" 
+      && !prevCell.firstElementChild.classList.contains('readonly')
+      && prevCell.firstElementChild.classList.contains('td-body')
+      && !prevCell.firstElementChild.classList.contains('view')
+      ){
+        return prevCell;
+      }else{
+        return findPrevEditableColumn(prevCell);
+      } 
+    } else {
+      return null;
+    }
   }
-  const onKeyDown = (event) => {
+
+  async function invokeElementMethod(element, methodName, args) {
+    return element[methodName].apply(element, args);
+  }
+  const onTab = (event) => {
+    // console.log('tab event',event)
+    onKeyDown(event)
+  }
+  const onKeyDown = async (event) => {
     // console.log('onTab',event)
     // if(event.key == 'Tab'){
     //   console.log('Tab',event)
-    //   event.preventDefault();
+    //   event.stopImmediatePropagation();
     // }
-    if(event.key == 'Enter'){
+    if(event.key == 'Enter' || event.key == 'Tab'){
       // console.log('Enter',event)
       // if(event.target.tagName == 'TEXTAREA') return
+      event.preventDefault();
       var currentCell = findCell(event.target);
-      var targetCell = findNextEditableColumn(currentCell);
-      // console.log('targetCell',targetCell)
+      var targetCell = event.shiftKey ? findPrevEditableColumn(currentCell) : findNextEditableColumn(currentCell);
+      console.log('targetCell',targetCell)
       if (targetCell) {
         
         if(targetCell.firstElementChild.classList.contains('readonly')){
@@ -1685,19 +1717,30 @@
           targetCell = findNextEditableColumn(targetCell);
         }
         if(targetCell.firstElementChild.classList.contains('autocomplete')
-        // || targetCell.classList.contains('select')
-        || targetCell.firstElementChild.classList.contains('date')
+        ){
+          if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+          targetCell = targetCell.firstElementChild.firstElementChild
+          targetCell.select()
+          // console.log('targetCell2',targetCell)
+        }
+        if(targetCell.firstElementChild.classList.contains('date')
         || targetCell.firstElementChild.classList.contains('datetime')
         ){
           targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
           targetCell.focus()
-          // console.log('targetCell2',targetCell)
-        }else if(targetCell.firstElementChild.classList.contains('select')){
-          targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild.nextElementSibling
+        }
+        if(targetCell.firstElementChild.classList.contains('select')){
+          if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+          targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling
           invokeElementMethod(targetCell, "click");
         }else{
-          // console.log('targetCell2',targetCell)
-          invokeElementMethod(targetCell, "click");
+          await invokeElementMethod(targetCell, "click");
+          //найти первый инпут или текстареа в targetCell и сделать селект на нем
+          const input = targetCell.querySelector('input, textarea');
+          if (input) {
+            input.focus();
+            input.select();
+          }
         }
       }
       // event.stopImmediatePropagation();
@@ -1824,9 +1867,12 @@
     width: 100%;
     height: 100%;
   }
+  .td-body:not(.date){
+    margin-top: 10px;
+  }
   .td-body.readonly {
       background-blend-mode: multiply;
-      background: rgb(0,0,0,0.1);
+      background: rgba(190, 164, 164, 0.1);
   }
   td.number,td.decimal,td.textarea,td.text{
     max-width: 100px;
@@ -1900,6 +1946,10 @@
   .td-actions .p-speeddial-list {
     position: absolute;
     right: 0;
+  }
+
+  .p-datatable .p-inputtext{
+    color:black;
   }
 
 </style>

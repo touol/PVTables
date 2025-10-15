@@ -28,6 +28,7 @@
       @complete="search"
       @item-select="onAutocompleteItemSelect"
       @lazy-load="onLazyLoad"
+      @tab="onTab"
       :disabled="disabled"
       :virtualScrollerOptions="{ itemSize: 24, lazy: true, style: { contain: 'content'} }"
       :panelStyle="{ width: 'auto' }"
@@ -75,9 +76,12 @@
   });
 
   const api = apiCtor(props.field.table)
-  const emit = defineEmits(['update:id', 'set-value']);
+  const emit = defineEmits(['update:id', 'set-value', 'tab']);
 
   const { notify } = useNotifications()
+  const onTab = (e) => {
+    emit('tab',e)
+  }
   const idCache = ref('')
   const items = ref([]);
   const selectedItem = ref({});

@@ -21,6 +21,7 @@
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
+        @tab="onTab"
     />
     <PVMultiAutoComplete
         v-else-if="col.type == 'multiautocomplete'"
@@ -213,7 +214,10 @@
             }
         }
     })
-    const emit = defineEmits(['set-value']);
+    const emit = defineEmits(['set-value','tab']);
+    const onTab = (e) => {
+        emit('tab',e)
+    }
     const setValue = () => {
         emit('set-value', model.value)
     }
