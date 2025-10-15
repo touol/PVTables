@@ -1,14 +1,18 @@
 <template>
-    <AutoComplete
-      v-model="selectedItem"
-      dropdown
-      option-label="content"
-      :suggestions="items"
-      @complete="search"
-      @item-select="onAutocompleteItemSelect"
-      @hide="onHide"
-      :disabled="disabled"
-    />
+  <span v-if="styleShow">{{ selectedItem.content }}</span>
+  <AutoComplete
+    v-else
+    v-model="selectedItem"
+    dropdown
+    option-label="content"
+    :suggestions="items"
+    @complete="search"
+    @item-select="onAutocompleteItemSelect"
+    @hide="onHide"
+    :disabled="disabled"
+    :panelStyle="{ width: 'auto' }"
+    :overlayStyle="{ width: 'auto' }"
+  />
 </template>
 
 <script setup>
@@ -28,6 +32,10 @@ const props = defineProps({
   options: {
     type: Object,
     default: () => []
+  },
+  styleShow: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -66,3 +74,9 @@ const onHide = () => {
 }
 
 </script>
+<style>
+  /* Ширина панели AutoComplete по контенту */
+  .p-virtualscroller-content {
+    position: relative !important;
+  }
+</style>

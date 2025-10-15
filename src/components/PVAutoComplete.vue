@@ -1,5 +1,9 @@
 <template>
-  <InputGroup @keydown.tab.stop>
+  <span v-if="styleShow">
+    <span v-if="show_id_enable">{{ show_id }}</span>
+    <span v-else>{{ model }}</span> {{ selectedItem.content }}
+  </span>
+  <InputGroup v-else @keydown.tab.stop>
     <InputText 
       v-if="show_id_enable"
       v-model="show_id" 
@@ -25,7 +29,9 @@
       @item-select="onAutocompleteItemSelect"
       @lazy-load="onLazyLoad"
       :disabled="disabled"
-      :virtualScrollerOptions="{ itemSize: 38, lazy: true }"
+      :virtualScrollerOptions="{ itemSize: 24, lazy: true, style: { contain: 'content'} }"
+      :panelStyle="{ width: 'auto' }"
+      :overlayStyle="{ width: 'auto' }"
     >
       <template v-if="compiledTemplate" #option="{ option, index }">
         <component :is="compiledTemplate" :option="option" :index="index" />
@@ -61,6 +67,10 @@
     options: {
       type: Object,
       default: () => {}
+    },
+    styleShow: {
+      type: Boolean,
+      default: false
     }
   });
 
@@ -426,5 +436,10 @@
   .gts-ac__search-field input{
     border-top-right-radius: unset;
     border-bottom-right-radius: unset;
+  }
+
+  /* Ширина панели AutoComplete по контенту */
+  .p-virtualscroller-content {
+    position: relative !important;
   }
 </style>

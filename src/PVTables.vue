@@ -115,53 +115,108 @@
         </template>
       </Column>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-      <Column
-        v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && x.field == 'id'))"
-        :field="col.field"
-        :header="col.label"
-        sortable
-        :dataType="col.dataType"
-        :class="getClassTD(col)"
-        :pt="{ bodyCell: { onKeydown: onKeyDown } }"
-        >
-        <template #body="{ data, field }">
-          <div :class="getClassBody(col,data)">
-            <Field
+      
+      <!-- Стиль таблицы: init -->
+      <template v-if="styleTable === 'init'">
+        <Column
+          v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && x.field == 'id'))"
+          :field="col.field"
+          :header="col.label"
+          sortable
+          :dataType="col.dataType"
+          :class="getClassTD(col)"
+          :pt="{ bodyCell: { onKeydown: onKeyDown } }"
+          >
+          <template #body="{ data, field }">
+            <div :class="getClassBody(col,data)">
+              <Field
+                :field="col"
+                :data="data"
+                :use_data="true"
+                :autocompleteSettings="autocompleteSettings[field]"
+                :selectSettings="selectSettings[field]"
+                @set-value="
+                  onCellEditComplete({ data, field, newValue: $event })
+                "
+                :customFields="customFields[data.id]"
+                />
+            </div>
+          </template>
+          <template v-if="!['autocomplete', 'multiautocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+            
+            <EditField
               :field="col"
+              v-model="data[field]"
               :data="data"
               :use_data="true"
               :autocompleteSettings="autocompleteSettings[field]"
               :selectSettings="selectSettings[field]"
-              @set-value="
-                onCellEditComplete({ data, field, newValue: $event })
-              "
               :customFields="customFields[data.id]"
-              />
-          </div>
-        </template>
-        <template v-if="!['autocomplete', 'multiautocomplete', 'select', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
-          
-          <EditField
-            :field="col"
-            v-model="data[field]"
-            :data="data"
-            :use_data="true"
-            :autocompleteSettings="autocompleteSettings[field]"
-            :selectSettings="selectSettings[field]"
-            :customFields="customFields[data.id]"
-          />
-        </template>
-        <template #filter="{ filterModel }">
-          <EditField
-            :field="col"
-            :use_readonly="false"
-            v-model="filterModel.value"
-            :autocompleteSettings="autocompleteSettings[col.field]"
-            :selectSettings="selectSettings[col.field]"
-            :editId="true"
-          />
-        </template>
-      </Column>
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <EditField
+              :field="col"
+              :use_readonly="false"
+              v-model="filterModel.value"
+              :autocompleteSettings="autocompleteSettings[col.field]"
+              :selectSettings="selectSettings[col.field]"
+              :editId="true"
+            />
+          </template>
+        </Column>
+      </template>
+
+      <!-- Стиль таблицы: pro (по умолчанию) -->
+      <template v-else>
+        <Column
+          v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && x.field == 'id'))"
+          :field="col.field"
+          :header="col.label"
+          sortable
+          :dataType="col.dataType"
+          :class="getClassTD(col)"
+          :pt="{ bodyCell: { onKeydown: onKeyDown } }"
+          >
+          <template #body="{ data, field }">
+            <div :class="getClassBody(col,data)">
+              <Field
+                :field="col"
+                :data="data"
+                :use_data="true"
+                :autocompleteSettings="autocompleteSettings[field]"
+                :selectSettings="selectSettings[field]"
+                @set-value="
+                  onCellEditComplete({ data, field, newValue: $event })
+                "
+                :customFields="customFields[data.id]"
+                />
+            </div>
+          </template>
+          <template v-if="!['multiautocomplete', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+            
+            <EditField
+              :field="col"
+              v-model="data[field]"
+              :data="data"
+              :use_data="true"
+              :autocompleteSettings="autocompleteSettings[field]"
+              :selectSettings="selectSettings[field]"
+              :customFields="customFields[data.id]"
+            />
+          </template>
+          <template #filter="{ filterModel }">
+            <EditField
+              :field="col"
+              :use_readonly="false"
+              v-model="filterModel.value"
+              :autocompleteSettings="autocompleteSettings[col.field]"
+              :selectSettings="selectSettings[col.field]"
+              :editId="true"
+            />
+          </template>
+        </Column>
+      </template>
       <Column
         v-if="actions_row"
         :exportable="false"
@@ -400,6 +455,10 @@
     child:{
       type: Boolean, //и не понятно зачем это. Вроде нет использования переменной.
       default: false
+    },
+    styleTable: {
+      type: String,
+      default: 'pro' // 'init' или 'pro'
     }
   });
   const emit = defineEmits(['get-response','refresh-table'])

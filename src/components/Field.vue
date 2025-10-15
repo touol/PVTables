@@ -20,6 +20,7 @@
         :options="autocompleteSettings"
         @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
+        :styleShow="true"
     />
     <PVMultiAutoComplete
         v-else-if="col.type == 'multiautocomplete'"
@@ -43,6 +44,7 @@
         :options="selectSettings2?.rows"
         @set-value="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
+        :styleShow="true"
     />
     <template v-else-if="col.type == 'decimal'">
         {{ format_decimal(model,col.FractionDigits) }}
