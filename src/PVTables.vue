@@ -177,6 +177,7 @@
           sortable
           :dataType="col.dataType"
           :class="getClassTD(col)"
+          :style="getColumnStyle(col)"
           :pt="{ bodyCell: { onKeydown: onKeyDown } }"
           >
           <template #body="{ data, field }">
@@ -1584,6 +1585,23 @@
   const getClassTD = (col) => {
     return col.type
   };
+  
+  const getColumnStyle = (col) => {
+    let style = {};
+    
+    // Сначала применяем col.style если есть
+    if (col.style) {
+      style = typeof col.style === 'string' ? {} : { ...col.style };
+    }
+    
+    // Затем применяем col.width поверх style
+    if (col.width) {
+      style.width = col.width;
+    }
+    
+    return style;
+  };
+  
   const rowClass = (data) => {
     if(row_setting.value[data.id] && row_setting.value[data.id].class){
       return row_setting.value[data.id].class;
@@ -1654,6 +1672,7 @@
       && !nextCell.firstElementChild.classList.contains('readonly')
       && nextCell.firstElementChild.classList.contains('td-body')
       && !nextCell.firstElementChild.classList.contains('view')
+      && !prevCell.firstElementChild.classList.contains('html')
       ){
         return nextCell;
       }else{
@@ -1678,6 +1697,7 @@
       && !prevCell.firstElementChild.classList.contains('readonly')
       && prevCell.firstElementChild.classList.contains('td-body')
       && !prevCell.firstElementChild.classList.contains('view')
+      && !prevCell.firstElementChild.classList.contains('html')
       ){
         return prevCell;
       }else{

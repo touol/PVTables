@@ -77,7 +77,9 @@
         <span v-html="model"></span>
     </template>
     <template v-else>
-        {{ model }}
+        <span :title="col.truncate && model && model.length > col.truncate ? model : ''">
+            {{ col.truncate && model ? truncateText(model, col.truncate) : model }}
+        </span>
     </template>
 </template>
 <script setup>
@@ -267,5 +269,12 @@
 
     function getField(obj, field) {
       return field.split('.').reduce((acc, curr) => acc[curr], obj);
+    }
+    
+    const truncateText = (text, maxLength) => {
+        if (!text) return '';
+        const str = String(text);
+        if (str.length <= maxLength) return str;
+        return str.substring(0, maxLength) + '...';
     }
 </script>
