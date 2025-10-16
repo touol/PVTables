@@ -30,7 +30,7 @@
       @lazy-load="onLazyLoad"
       @tab="onTab"
       :disabled="disabled"
-      :virtualScrollerOptions="{ itemSize: 24, lazy: true, style: { contain: 'content'} }"
+      :virtualScrollerOptions="{ itemSize: 36, lazy: true, style: { contain: 'content'} }"
       :panelStyle="{ width: 'auto' }"
       :overlayStyle="{ width: 'auto' }"
     >
