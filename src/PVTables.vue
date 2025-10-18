@@ -949,6 +949,7 @@
   const expandedTableTreeRows = ref({});
   const subs = ref({});
   const childComponentRefs = ref({})
+  
   const refresh = (from_parent,table) => {
     // console.log('table',table)
     // console.log('props.table',props.table)
@@ -1296,7 +1297,7 @@
         }
         if(response.data.refresh_row == 1) lineItem.value = response.data.object
         if(response.data.refresh_table == 1) refresh(false)
-
+        
         lineItems.value[findIndexById(Number(lineItem.value.id))] = lineItem.value;
         lineItemDialog.value = false;
         lineItem.value = {};
@@ -1373,7 +1374,7 @@
   const findIndexById = (id) => {
     let index = -1;
     for (let i = 0; i < lineItems.value.length; i++) {
-      if (lineItems.value[i].id === id) {
+      if (lineItems.value[i].id == id) {
         index = i;
         break;
       }
@@ -1459,7 +1460,7 @@
     })
     return result
   }
-  // defRowAction(event, tmp)
+  
   const defRowAction = async (event, tmp) => {
     // Если есть modal_form, показываем форму
     if (tmp.modal_form) {
@@ -1618,12 +1619,7 @@
     }
     return {};
   };
-  // const disableField = (data,field) =>{
-  //   if(customFields.value[data.id]){
-  //     if(customFields.value[data.id][field] && customFields.value[data.id][field].readonly == 1) return true
-  //   }
-  //   return false
-  // }
+  
   const op = ref();
   const toggleSettings = (event) => {
     selectedColumns.value = columns.value.filter(col => col.modal_only != true);
@@ -1672,7 +1668,7 @@
       && !nextCell.firstElementChild.classList.contains('readonly')
       && nextCell.firstElementChild.classList.contains('td-body')
       && !nextCell.firstElementChild.classList.contains('view')
-      && !prevCell.firstElementChild.classList.contains('html')
+      && !nextCell.firstElementChild.classList.contains('html')
       ){
         return nextCell;
       }else{
@@ -1716,57 +1712,69 @@
     onKeyDown(event)
   }
   const onKeyDown = async (event) => {
-    // console.log('onTab',event)
-    // if(event.key == 'Tab'){
-    //   console.log('Tab',event)
-    //   event.stopImmediatePropagation();
-    // }
+    
     if(event.key == 'Enter' || event.key == 'Tab'){
       // console.log('Enter',event)
-      // if(event.target.tagName == 'TEXTAREA') return
-      event.preventDefault();
-      var currentCell = findCell(event.target);
-      var targetCell = event.shiftKey ? findPrevEditableColumn(currentCell) : findNextEditableColumn(currentCell);
-      console.log('targetCell',targetCell)
-      if (targetCell) {
-        
-        if(targetCell.firstElementChild.classList.contains('readonly')){
-          targetCell = findNextEditableColumn(targetCell);
-        }
-        if(targetCell.firstElementChild.classList.contains('boolean')){
-          targetCell = findNextEditableColumn(targetCell);
-        }
-        if(targetCell.firstElementChild.classList.contains('autocomplete')
-        ){
-          if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
-          targetCell = targetCell.firstElementChild.firstElementChild
-          targetCell.select()
-          // console.log('targetCell2',targetCell)
-        }
-        if(targetCell.firstElementChild.classList.contains('date')
-        || targetCell.firstElementChild.classList.contains('datetime')
-        ){
-          targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
-          targetCell.focus()
-        }
-        if(targetCell.firstElementChild.classList.contains('select')){
-          if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
-          targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling
-          invokeElementMethod(targetCell, "click");
-        }else{
-          await invokeElementMethod(targetCell, "click");
-          //найти первый инпут или текстареа в targetCell и сделать селект на нем
-          const input = targetCell.querySelector('input, textarea');
-          if (input) {
-            input.focus();
-            input.select();
-          }
+      if(event.key == 'Enter') {
+        if(event.target.tagName == 'TEXTAREA') {
+          return;
         }
       }
-      // event.stopImmediatePropagation();
+      event.preventDefault();
+      event.stopPropagation();
+      var currentCell = findCell(event.target);
+      var targetCell = event.shiftKey ? findPrevEditableColumn(currentCell) : findNextEditableColumn(currentCell);
+      // console.log('targetCell',targetCell)
+      // if(event.target.classList.contains('pv_show_id')){
+        
+      //   await invokeElementMethod(event.target, "blur");
+      //   setTimeout(()=>{
+      //     moveCell(event,targetCell)
+      //   },1500)
+        
+      // }else{
+        moveCell(event,targetCell)
+      // }
+      
     }
   }
-
+  const moveCell = async (event,targetCell) => {
+    if (targetCell) {
+        
+      if(targetCell.firstElementChild.classList.contains('readonly')){
+        targetCell = findNextEditableColumn(targetCell);
+      }
+      if(targetCell.firstElementChild.classList.contains('boolean')){
+        targetCell = findNextEditableColumn(targetCell);
+      }
+      if(targetCell.firstElementChild.classList.contains('autocomplete')
+      ){
+        if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+        targetCell = targetCell.firstElementChild.firstElementChild
+        targetCell.select()
+        // console.log('targetCell2',targetCell)
+      }
+      if(targetCell.firstElementChild.classList.contains('date')
+      || targetCell.firstElementChild.classList.contains('datetime')
+      ){
+        targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
+        targetCell.focus()
+      }
+      if(targetCell.firstElementChild.classList.contains('select')){
+        if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+        targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling
+        invokeElementMethod(targetCell, "click");
+      }else{
+        await invokeElementMethod(targetCell, "click");
+        //найти первый инпут или текстареа в targetCell и сделать селект на нем
+        const input = targetCell.querySelector('input, textarea');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+    }
+  }
   // Modal form для кастомных действий
   const modalFormDialog = ref(false);
   const modalFormData = ref({});

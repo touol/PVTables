@@ -306,6 +306,9 @@ export default {
                 this.documentEditListener = (event) => {
                     if (!this.selfClick) {
                         this.completeEdit(event, 'outside');
+                        // setTimeout(() => {
+                        //     this.completeEdit(event, 'outside');
+                        // }, 1500);
                     }
 
                     this.selfClick = false;
@@ -374,6 +377,9 @@ export default {
                     case 'Enter':
                     case 'NumpadEnter':
                         this.completeEdit(event, 'enter');
+                        // setTimeout(() => {
+                        //     this.completeEdit(event, 'enter');
+                        // }, 1500);
                         break;
 
                     case 'Escape':

@@ -9,7 +9,7 @@
       v-model="show_id" 
       @blur="onUserInputEndShowId" 
       @keydown.enter="onUserInputEndShowId" 
-      class="gts-ac__id-field"
+      class="gts-ac__id-field pv_show_id"
       :disabled="disabled"/>
     <InputText 
       v-else
