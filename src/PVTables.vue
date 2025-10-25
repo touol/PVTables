@@ -1979,5 +1979,7 @@
   .p-datatable .p-inputtext{
     color:black;
   }
-
+  .navbar-collapse.collapse {
+     visibility: inherit !important;
+  }
 </style>
