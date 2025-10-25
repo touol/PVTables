@@ -73,6 +73,13 @@
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
+    <PVDateTime
+        v-else-if="col.type == 'datetime'"
+        :model-value="model"
+        @update:modelValue="($event) => updateValue($event)"
+        :disabled="use_readonly && col.readonly"
+        class="w-full" autocomplete="off"
+    />
     <ToggleSwitch 
         v-else-if="col.type == 'boolean'"
         v-model="model" 
@@ -116,6 +123,7 @@
     // import Checkbox from 'primevue/checkbox';
 
     import GTSDate from "./gtsDate.vue";
+    import PVDateTime from "./PVDateTime.vue";
     import PVAutoComplete from "./PVAutoComplete.vue";
     import PVMultiAutoComplete from "./PVMultiAutoComplete.vue";
     import PVMultiple from "./PVMultiple.vue";

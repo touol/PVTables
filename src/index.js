@@ -6,6 +6,7 @@ import apiFetch from './components/api-ofetch.js'
 import gtsAutoComplete from './components/gtsAutoComplete.vue'
 import PVAutoComplete from './components/PVAutoComplete.vue'
 import gtsDate from './components/gtsDate.vue'
+import PVDateTime from './components/PVDateTime.vue'
 import gtsSelect from './components/gtsSelect.vue'
 import PVTable from './components/PVTable.vue'
 import PVForm from './components/PVForm.vue'
@@ -80,6 +81,7 @@ export default {
         app.component('apiCtor', apiCtor)
         
         app.component('gtsDate', gtsDate)
+        app.component('PVDateTime', PVDateTime)
         app.component('gtsSelect', gtsSelect)
         app.component('PVTable', PVTable)
         app.component('PVForm', PVForm)
@@ -104,6 +106,7 @@ export {
     gtsAutoComplete as gtsAutoComplete,
     PVAutoComplete as PVAutoComplete,
     gtsDate as gtsDate,
+    PVDateTime as PVDateTime,
     PVTable as PVTable,
     PVForm as PVForm,
     PVTableModel as PVTableModel,
