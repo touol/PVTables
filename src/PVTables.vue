@@ -1192,7 +1192,7 @@
           customFields.value[key] = response.data.customFields[key]
         }
       }
-      if(response.data.refresh_row == 1){
+      if(response.data.object){
         lineItems.value[findIndexById(Number(payload.id))] = response.data.object
       }else if(response.data.defvalues){
         // console.log('response.data.defvalues',response.data.defvalues)
@@ -1599,7 +1599,11 @@
     if (col.width) {
       style.width = col.width;
     }
-    
+    // Если style пустое и col.type == datetime, то ширина 120px
+    if (Object.keys(style).length === 0 && col.type === 'datetime') {
+      style['min-width'] = '190px';
+    }
+
     return style;
   };
   
