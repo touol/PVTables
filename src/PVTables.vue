@@ -1599,6 +1599,9 @@
     if (col.width) {
       style.width = col.width;
     }
+    if (col['min-width']) {
+      style['min-width'] = col['min-width'];
+    }
     // Если style пустое и col.type == datetime, то ширина 120px
     if (Object.keys(style).length === 0 && col.type === 'datetime') {
       style['min-width'] = '190px';
