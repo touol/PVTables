@@ -1117,7 +1117,8 @@
       const response = await api.read(params)
       
       
-      lineItems.value = rowsHandler(response.data.rows, fields)
+      // Всегда создаем новый массив для гарантированной реактивности
+      lineItems.value = [...rowsHandler(response.data.rows, fields)]
 
       if(!response.success && response.message){
         notify('error', { detail: response.message });

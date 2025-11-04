@@ -1,7 +1,7 @@
 <template>
   <span v-if="styleShow">
     <span v-if="show_id_enable">{{ show_id }}</span>
-    <span v-else>{{ model }}</span> {{ selectedItem.content }}
+    <span v-else-if="!field.hide_id">{{ model }}</span> {{ selectedItem.content }}
   </span>
   <InputGroup v-else @keydown.tab.stop>
     <InputText 
@@ -12,7 +12,7 @@
       class="gts-ac__id-field pv_show_id"
       :disabled="disabled"/>
     <InputText 
-      v-else
+      v-else-if="!field.hide_id"
       v-model="model" 
       @blur="onUserInputEnd" 
       @keydown.enter="onUserInputEnd" 

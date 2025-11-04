@@ -675,7 +675,7 @@
   }
 
   .search-field-autocomplete {
-    flex: 0 1 20% !important;
+    flex: 0 1 40% !important;
   }
 
   .gts-ac__search-field {
