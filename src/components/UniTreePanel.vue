@@ -1,15 +1,17 @@
 <template>
-    <div class="tree-container">
+    <div class="tree-outer-container">
         <Splitter>
             <SplitterPanel class="flex" :size="size">
-                <PVTabs 
-                    :tabs="treetabs"
-                    :actions="{}"
-                    :filters="{}"
-                    @select-treenode="selectTreenode"
-                    @select-file="selectFile"
-                    ref="childComponentRefTree"
-                />
+                <div class="tree-container">
+                    <PVTabs 
+                        :tabs="treetabs"
+                        :actions="{}"
+                        :filters="{}"
+                        @select-treenode="selectTreenode"
+                        @select-file="selectFile"
+                        ref="childComponentRefTree"
+                    />
+                </div>
             </SplitterPanel>
             <SplitterPanel class="flex" :size="100 - size">
                 <div class="gap-1" style="width:100%;">
@@ -95,10 +97,22 @@
     .sl-vue-tree-next-root{
       font-size: x-large;
     }
-    .tree-container .p-tabpanels{
-      height: 95%;
+    .tree-outer-container{
+      height: 80vh;
       width: 100%;
       overflow: auto;
+      
+    }
+    /* .tree-container{
+        position: fixed;
+      top:0;
+      
+    } */
+    .tree-container .p-tabpanels{
+      height: 95vh;
+      width: 100%;
+      overflow: auto;
+      
     }
     .tree-container, .tree-container .p-splitter, .tree-container .p-splitterpanel,
     .tree-container .p-tabs, .tree-container .p-tabpanel
@@ -106,11 +120,11 @@
       height: 100%;
       width: 100%;
     }
-    .tree-panel-container{
+    /* .tree-panel-container{
         height: 100%; 
         width: 100%; 
         overflow: auto;
-    }
+    } */
     .tree-container .p-tablist-tab-list
     {
         display: inherit !important;
