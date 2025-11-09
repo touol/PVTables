@@ -51,6 +51,7 @@
           :is="resolveComponentName(tab.name_component)" 
           :parent_row="parent_row" 
           :parent-id="current_id"
+          :filters="filters[tab.key]"
         ></component>
         <template v-else-if="tab.type=='tables'">
           <PVTables 
