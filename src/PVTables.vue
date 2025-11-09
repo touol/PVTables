@@ -397,7 +397,7 @@
 
 <script setup>
   import Toast from 'primevue/toast';
-  import { ref, onMounted, defineComponent, watch, computed } from "vue";
+  import { ref, onMounted, defineComponent, watch, computed, markRaw } from "vue";
   import { compile } from "vue";
   defineComponent({
     name: "PVTables",
@@ -615,8 +615,13 @@
           rowsPerPage.value = response.data.limit
           lazyParams.value.rows = response.data.limit
         }
-        if(response.data.selects){
-          selectSettings.value = response.data.selects;
+        if(response.data.selects && typeof response.data.selects === 'object'){
+          // Фильтруем только объекты из selects
+          for(let key in response.data.selects) {
+            if(typeof response.data.selects[key] === 'object' && response.data.selects[key] !== null) {
+              selectSettings.value[key] = response.data.selects[key];
+            }
+          }
         }
         if(response.data.data_fields){
           dataFields.value = response.data.data_fields;
@@ -653,8 +658,12 @@
               fields[field].readonly = false
             }
           }
+          // Инициализируем selectSettings для всех полей
+          if(!selectSettings.value[field]) {
+            selectSettings.value[field] = {}
+          }
+          // Если есть select_data, добавляем rows
           if(fields[field].select_data){ 
-            if(!selectSettings.value[field]) selectSettings.value[field] = {}
             selectSettings.value[field].rows = fields[field].select_data
           }
           switch(fields[field].type){
@@ -757,8 +766,9 @@
           try {
             const compiledRender = compile(template);
             
-            // Создаем компонент с правильным контекстом
-            return {
+            // Создаем компонент с правильным контекстом и оборачиваем в markRaw
+            // для предотвращения реактивности и улучшения производительности
+            return markRaw({
               render: compiledRender,
               props: ['data', 'columns', 'table', 'filters', 'action'],
               emits: ['action-click'],
@@ -773,7 +783,7 @@
                   }
                 };
               }
-            };
+            });
           } catch (error) {
             console.error('Ошибка компиляции шаблона действия:', error);
             notify('error', { detail: `Ошибка в шаблоне действия: ${error.message}` });

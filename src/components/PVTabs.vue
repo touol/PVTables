@@ -52,6 +52,8 @@
           :parent_row="parent_row" 
           :parent-id="current_id"
           :filters="filters[tab.key]"
+          @refresh="refresh(false)"
+          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
         ></component>
         <template v-else-if="tab.type=='tables'">
           <PVTables 
@@ -214,13 +216,20 @@
       return
     }
     if(table){
-      childComponentRefs.value[table].refresh(true,table);
+      // Проверяем существование компонента и метода refresh
+      if(childComponentRefs.value[table] && typeof childComponentRefs.value[table].refresh === 'function'){
+        childComponentRefs.value[table].refresh(true,table);
+      }
       for(let key in props.tabs){
-        childComponentRefs.value[key].refresh(true,table);
+        if(childComponentRefs.value[key] && typeof childComponentRefs.value[key].refresh === 'function'){
+          childComponentRefs.value[key].refresh(true,table);
+        }
       }
     }else{
       for(let key in props.tabs){
-        childComponentRefs.value[key].refresh(true);
+        if(childComponentRefs.value[key] && typeof childComponentRefs.value[key].refresh === 'function'){
+          childComponentRefs.value[key].refresh(true);
+        }
       }
     }
   };
