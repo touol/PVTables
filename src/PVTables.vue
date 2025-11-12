@@ -14,6 +14,16 @@
           :class="action.class"
           @click="action.head_click($event,table,filters,selectedlineItems)"
         />
+        <!-- Компонент печати PVPrint -->
+        <PVPrintAction 
+          v-if="actions1 && actions1.print && actions1.print !== false"
+          :table="table"
+          :filters="filters"
+          :api="api"
+          :page-key="`pvtables-${table}`"
+          @print-success="handlePrintSuccess"
+          @print-error="handlePrintError"
+        />
       </template>
       <template #center>
         <template
@@ -433,6 +443,7 @@
   import PVTabs from './components/PVTabs.vue'
   import PVForm from "./components/PVForm.vue";
   import PVTablesSplitButton from './components/PVTablesSplitButton.vue'
+  import PVPrintAction from './components/PVPrintAction.vue'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
   import apiCtor from './components/api'
@@ -483,6 +494,15 @@
   //filters
   const filters = ref();
   const nemu_actions = ref({});
+  const actions1 = ref({})
+
+  const handlePrintSuccess = (result) => {
+    notify('success', { detail: 'Печать выполнена успешно' })
+  }
+
+  const handlePrintError = (error) => {
+    notify('error', { detail: `Ошибка печати: ${error.message}` })
+  }
 
   const initFilters = () => {
     let filters0 = {};
@@ -705,6 +725,8 @@
 
         let actions0 = response.data.actions;
 
+        actions1.value = response.data.actions
+
         // console.log('props.table',props.table)
         // console.log('props.actions',props.actions)
         if (props.actions.hasOwnProperty(props.table)) {
@@ -905,6 +927,9 @@
                 tmp.head_click = () => excelExport(tmp);
               if (!tmp.hasOwnProperty("label")) tmp.label = "Excel";
               break;
+            case "print":
+              addtmp = false;
+              break
             default:
               if (!tmp.hasOwnProperty("class"))
                 tmp.class = "p-button-rounded p-button-success";
@@ -976,19 +1001,27 @@
   defineExpose({ refresh });
   //expand
   
+  /**
+   * Переключает раскрытие/сворачивание строки в древовидной таблице
+   * Используется для отображения дочерних элементов в иерархической структуре
+   * @param {Object} data - Данные строки с полями id и количеством дочерних элементов
+   */
   const toogleExpandRow = async (data) => {
     let tmp = { ...expandedRows.value };
     if(expandedTableTreeRows.value[data.id]){
+      // Закрываем раскрытую строку: удаляем из трекеров и очищаем подтаблицу
       delete expandedTableTreeRows.value[data.id]
       delete tmp[data.id];
       await delExpand(tmp);
       delete subs.value[data.id]
 
     }else{
+      // Открываем строку: создаем фильтр для загрузки дочерних элементов
       let tmpfilters = {};
       delete tmp[data.id];
       await delExpand(tmp);
 
+      // Фильтруем дочерние элементы по родительскому ID
       tmpfilters[table_tree.value.parentIdField] = {
         operator: FilterOperator.AND,
         constraints: [
@@ -1015,51 +1048,153 @@
     expandedRows.value = { ...tmp };
     parent_row.value = {}
   };
+  
+  /**
+   * Обрабатывает модификаторы полей в where-условиях
+   * Поддерживает модификаторы: IN, LIKE, NOT LIKE, !=, <, <=, >, >=
+   * @param {string} field - Имя поля с возможным модификатором (например, "id:IN" или "name:LIKE")
+   * @param {any} value - Значение для фильтра
+   * @param {Object} event - Данные строки
+   * @returns {Object} Объект с fieldName, matchMode и filterValue
+   */
+  const processFieldModifier = (field, value, event) => {
+    // Разбиваем поле на имя и модификатор
+    const fieldParts = field.split(':');
+    const fieldName = fieldParts[0];
+    const modifier = fieldParts[1]; // может быть 'IN', 'LIKE', 'NOT LIKE', '!=', '<', '<=', '>', '>=' или undefined
+    
+    let filterValue = value;
+    let matchMode = FilterMatchMode.EQUALS;
+    
+    // Проверяем, является ли значение полем из data_fields
+    if (dataFields.value && dataFields.value.includes(value)) {
+      const dataFieldsValues = getDataFieldsValues(event);
+      if (dataFieldsValues[value]) {
+        try {
+          // Если значение - строка JSON, парсим её
+          filterValue = typeof dataFieldsValues[value] === 'string' 
+            ? JSON.parse(dataFieldsValues[value]) 
+            : dataFieldsValues[value];
+        } catch (e) {
+          filterValue = dataFieldsValues[value];
+        }
+      }
+    }
+    
+    // Устанавливаем matchMode в зависимости от модификатора
+    if (modifier) {
+      switch (modifier.toUpperCase()) {
+        case 'IN':
+          matchMode = FilterMatchMode.IN;
+          // Для IN значение должно быть массивом
+          if (!Array.isArray(filterValue)) {
+            filterValue = filterValue ? [filterValue] : [];
+          }
+          break;
+        case 'LIKE':
+          matchMode = FilterMatchMode.CONTAINS;
+          break;
+        case 'NOT LIKE':
+          matchMode = FilterMatchMode.NOT_CONTAINS;
+          break;
+        case '!=':
+          matchMode = FilterMatchMode.NOT_EQUALS;
+          break;
+        case '<':
+          matchMode = FilterMatchMode.LESS_THAN;
+          break;
+        case '<=':
+          matchMode = FilterMatchMode.LESS_THAN_OR_EQUAL_TO;
+          break;
+        case '>':
+          matchMode = FilterMatchMode.GREATER_THAN;
+          break;
+        case '>=':
+          matchMode = FilterMatchMode.GREATER_THAN_OR_EQUAL_TO;
+          break;
+        default:
+          // Если модификатор не распознан, используем EQUALS
+          matchMode = FilterMatchMode.EQUALS;
+      }
+    }
+    
+    return { fieldName, matchMode, filterValue };
+  };
+  /**
+   * Устанавливает раскрытие строки для подтаблиц или подвкладок из действий
+   * Поддерживает умное переключение: закрывает если та же таблица, переключает если другая
+   * @param {Object} event - Данные строки (объект с id и другими полями)
+   * @param {Object} tmpt - Конфигурация действия (table, action, where, tabs и т.д.)
+   */
   const setExpandedRow = async (event, tmpt) => {
     // console.log('tmpt',tmpt)
     let tmp = { ...expandedRows.value };
+    
+    // Проверяем, раскрыта ли уже эта строка
     if (tmp.hasOwnProperty(event.id)) {
       if (subs.value[event.id].table == tmpt.table) {
+        // Та же таблица - закрываем
         delete tmp[event.id];
         await delExpand(tmp);
         return;
       } else {
+        // Другая таблица - переключаем
         delete tmp[event.id];
         await delExpand(tmp);
         tmp[event.id] = true;
       }
     } else {
+      // Открываем новую строку
       tmp[event.id] = true;
     }
     subs.value[event.id] = tmpt;
 
+    // Обработка подтаблиц (subtables)
     if(tmpt.action == 'subtables'){
       if (tmpt.hasOwnProperty("where")) {
+        // Создаем фильтры на основе конфигурации where
         let tmpfilters = {};
         for (let field in tmpt.where) {
-          tmpfilters[field] = {
+          // Получаем значение напрямую из event или из where
+          const value = event[tmpt.where[field]] || tmpt.where[field];
+          
+          // Обрабатываем модификатор поля
+          const { fieldName, matchMode, filterValue } = processFieldModifier(field, value, event);
+          
+          tmpfilters[fieldName] = {
             operator: FilterOperator.AND,
             constraints: [
               {
-                value: event[tmpt.where[field]],
-                matchMode: FilterMatchMode.EQUALS,
+                value: filterValue,
+                matchMode: matchMode,
               },
             ],
           };
         }
         subfilters.value[event.id] = tmpfilters;
       }
-    }else if(tmpt.action == 'subtabs'){
+    }
+    // Обработка подвкладок (subtabs)
+    else if(tmpt.action == 'subtabs'){
       for(let key in tmpt.tabs){
         if (tmpt.tabs[key].hasOwnProperty("where")) {
+          // Создаем фильтры для каждой вкладки
           let tmpfilters = {};
           for (let field in tmpt.tabs[key].where) {
-            tmpfilters[field] = {
+            // Получаем значение напрямую из event или из where
+            const value = event[tmpt.tabs[key].where[field]] 
+              ? event[tmpt.tabs[key].where[field]] 
+              : tmpt.tabs[key].where[field];
+            
+            // Обрабатываем модификатор поля
+            const { fieldName, matchMode, filterValue } = processFieldModifier(field, value, event);
+            
+            tmpfilters[fieldName] = {
               operator: FilterOperator.AND,
               constraints: [
                 {
-                  value: event[tmpt.tabs[key].where[field]]?event[tmpt.tabs[key].where[field]]:tmpt.tabs[key].where[field],
-                  matchMode: FilterMatchMode.EQUALS,
+                  value: filterValue,
+                  matchMode: matchMode,
                 },
               ],
             };
