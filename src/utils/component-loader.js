@@ -76,8 +76,8 @@ export class ComponentLoader {
     
     try {
       // 1. Предоставляем зависимости глобально для UMD модулей
+      // Дополняем PVTablesAPI, если он уже существует, или создаем новый
       if (!window.PVTablesAPI) {
-        // Импортируем необходимые зависимости
         const { useNotifications } = await import('../components/useNotifications.js')
         const apiCtor = (await import('../components/api.js')).default
         const Vue = await import('vue')
@@ -87,11 +87,18 @@ export class ComponentLoader {
           apiCtor,
           Vue
         }
-        
-        // Также делаем Vue доступным глобально для UMD модулей
-        if (!window.Vue) {
-          window.Vue = Vue
+      } else {
+        // Если PVTablesAPI уже существует, добавляем Vue если его нет
+        if (!window.PVTablesAPI.Vue) {
+          const Vue = await import('vue')
+          window.PVTablesAPI.Vue = Vue
         }
+      }
+      
+      // Также делаем Vue доступным глобально для UMD модулей
+      if (!window.Vue) {
+        const Vue = window.PVTablesAPI.Vue || await import('vue')
+        window.Vue = Vue
       }
       
       // 2. Загружаем CSS

@@ -22,6 +22,16 @@ import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGall
 import DataTable from "./components/DataTable/DataTable.vue";
 import { ComponentLoader } from './utils/component-loader.js'
 
+// Создаем глобальный PVTablesAPI для использования в динамически загружаемых компонентах
+if (!window.PVTablesAPI) {
+    window.PVTablesAPI = {
+        useNotifications,
+        apiCtor,
+        apiFetch,
+        ComponentLoader
+    }
+}
+
 import 'primeicons/primeicons.css'
 import './style.css'
 import Lara from '@primevue/themes/lara/'
