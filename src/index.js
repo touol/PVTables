@@ -20,6 +20,7 @@ import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
 import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGalleryAPI, fileUtils } from './components/gtsAPIFileGallery/index.js'
 import DataTable from "./components/DataTable/DataTable.vue";
+import { ComponentLoader } from './utils/component-loader.js'
 
 import 'primeicons/primeicons.css'
 import './style.css'
@@ -59,6 +60,15 @@ import Menubar from 'primevue/menubar';
 
 export default {
     install: (app, options) => {
+        // Создаем ComponentLoader только если он еще не предоставлен
+        if (!app._context.provides.componentLoader) {
+            const componentLoader = new ComponentLoader(app)
+            app.provide('componentLoader', componentLoader)
+            if (!window.componentLoader) {
+                window.componentLoader = componentLoader
+            }
+        }
+        
         app.use(PrimeVue, {
             theme: {
                 preset: Lara,
@@ -87,7 +97,6 @@ export default {
         app.component('PVForm', PVForm)
         app.component('PVTableModel', PVTableModel)
         app.component('EditField', EditField)
-        app.component('useNotifications', useNotifications)
         
         // Компоненты галереи файлов
         app.component('FileGallery', FileGallery)
@@ -126,7 +135,9 @@ export {
     FileViewDialog as FileViewDialog,
     FileGalleryAPI as FileGalleryAPI,
     fileUtils as fileUtils,
-
+    
+    // ComponentLoader
+    ComponentLoader as ComponentLoader,
     
     Button as Button,
     Dialog as Dialog,

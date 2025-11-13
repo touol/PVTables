@@ -9,7 +9,9 @@ export default defineConfig(({ mode }) => {
       outDir: "./dist",
       lib: {
         entry:'./src/index.js',
+        name: 'PVTables',
         formats: ["es", "cjs"],
+        fileName: (format) => `pvtables.${format === 'es' ? 'js' : 'cjs'}`
       },
       emptyOutDir: true,
       rollupOptions: {
@@ -17,7 +19,8 @@ export default defineConfig(({ mode }) => {
         output: {
             globals: {
                 vue: 'Vue'
-            }
+            },
+            exports: 'named'
         },
       }
     },

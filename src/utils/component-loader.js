@@ -1,9 +1,14 @@
+import apiCtor from '../components/api.js'
+
 export class ComponentLoader {
-  constructor(table = 'tSkladNaryad') {
-    this.loadedComponents = new Set()
+  constructor(app) {
+    this.app = app
+    this.loadedComponents = new Map() // Изменено на Map для хранения модулей
     this.loadingComponents = new Map()
     this.assetsPath = null
-
+    
+    // Используем API клиент для tSkladNaryad
+    this.api = apiCtor('tSkladNaryad')
   }
 
   /**
@@ -17,8 +22,8 @@ export class ComponentLoader {
       const response = await fetch('/api/get_assets_path')
       const data = await response.json()
       
-      if (data.assets_path) {
-        this.assetsPath = data.assets_path
+      if (data.data.assets_path) {
+        this.assetsPath = data.data.assets_path
         console.log('✓ Assets path получен:', this.assetsPath)
       } else {
         throw new Error('Не удалось получить assets path')
@@ -33,14 +38,13 @@ export class ComponentLoader {
   /**
    * Загружает компонент по имени
    * @param {string} componentName - Название компонента
-   * @returns {Promise<Object>} - Возвращает загруженный компонент
+   * @returns {Promise<void>}
    */
   async loadComponent(componentName) {
     await this.initialize()
     
     if (this.loadedComponents.has(componentName)) {
-      // Возвращаем из window если уже загружен
-      return window[componentName] || null
+      return
     }
 
     if (this.loadingComponents.has(componentName)) {
@@ -51,9 +55,8 @@ export class ComponentLoader {
     this.loadingComponents.set(componentName, loadPromise)
 
     try {
-      const component = await loadPromise
-      this.loadedComponents.add(componentName)
-      return component
+      await loadPromise
+      // Модуль уже сохранен в _doLoadComponent через .set()
     } finally {
       this.loadingComponents.delete(componentName)
     }
@@ -67,10 +70,29 @@ export class ComponentLoader {
     const basePath = `${this.assetsPath}${componentName.toLowerCase()}/web`
     
     try {
-      // 1. Загружаем CSS
+      // 1. Предоставляем зависимости глобально для UMD модулей
+      if (!window.PVTablesAPI) {
+        // Импортируем необходимые зависимости
+        const { useNotifications } = await import('../components/useNotifications.js')
+        const apiCtor = (await import('../components/api.js')).default
+        const Vue = await import('vue')
+        
+        window.PVTablesAPI = {
+          useNotifications,
+          apiCtor,
+          Vue
+        }
+        
+        // Также делаем Vue доступным глобально для UMD модулей
+        if (!window.Vue) {
+          window.Vue = Vue
+        }
+      }
+      
+      // 2. Загружаем CSS
       await this._loadCSS(`${basePath}/css/${componentName.toLowerCase()}.css`)
       
-      // 2. Загружаем JS модуль
+      // 3. Загружаем JS модуль
       const module = await this._loadJS(`${basePath}/js/${componentName.toLowerCase()}.js`)
       
       // Проверяем, может быть это UMD и нужно взять из window
@@ -79,14 +101,22 @@ export class ComponentLoader {
         componentModule = window[componentName]
       }
       
-      // Возвращаем компонент
-      if (componentModule.default) {
-        return componentModule.default
+      // 4. Регистрируем компонент глобально
+      if (componentModule.default && typeof componentModule.default.install === 'function') {
+        // Если это плагин с методом install
+        this.app.use(componentModule.default)
+      } else if (componentModule.default) {
+        // Если это просто компонент
+        this.app.component(componentName, componentModule.default)
       } else if (componentModule[componentName]) {
-        return componentModule[componentName]
-      } else {
-        return componentModule
+        // Если экспортирован по имени
+        this.app.component(componentName, componentModule[componentName])
       }
+      
+      // 5. Сохраняем модуль в Map для доступа к экспортированным функциям
+      this.loadedComponents.set(componentName, componentModule)
+      
+      console.log(`✓ Компонент ${componentName} загружен и зарегистрирован`)
     } catch (error) {
       console.error(`✗ Ошибка загрузки компонента ${componentName}:`, error)
       throw error
@@ -136,5 +166,41 @@ export class ComponentLoader {
       script.onerror = () => reject(new Error(`Failed to load JS: ${url}`))
       document.head.appendChild(script)
     })
+  }
+
+  /**
+   * Получает список компонентов из таблицы tSkladNaryad
+   * @returns {Promise<string[]>}
+   */
+  async fetchComponentsList() {
+    try {
+      const response = await this.api.read()
+      
+      if (!response.success) {
+        console.error('Ошибка чтения tSkladNaryad:', response.message)
+        return []
+      }
+      
+      // Извлекаем названия компонентов из поля component
+      const components = response.data.rows
+        .map(row => row.component)
+        .filter(component => component && component.trim() !== '')
+      
+      // Убираем дубликаты
+      return [...new Set(components)]
+    } catch (error) {
+      console.error('Ошибка получения списка компонентов:', error)
+      return []
+    }
+  }
+
+  /**
+   * Загружает все компоненты из списка
+   * @param {string[]} components - Массив названий компонентов
+   * @returns {Promise<void>}
+   */
+  async loadComponents(components) {
+    const promises = components.map(name => this.loadComponent(name))
+    await Promise.allSettled(promises)
   }
 }

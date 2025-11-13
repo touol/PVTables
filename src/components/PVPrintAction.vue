@@ -12,8 +12,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, defineProps, defineEmits } from 'vue'
-import { ComponentLoader } from '../utils/component-loader'
+import { ref, onMounted, defineProps, defineEmits, inject } from 'vue'
 
 const props = defineProps({
   table: {
@@ -39,18 +38,19 @@ const emit = defineEmits(['print-success', 'print-error'])
 const isPVPrintLoaded = ref(false)
 const printBtn = ref(null)
 
+// Получаем ComponentLoader через inject
+const componentLoader = inject('componentLoader')
+
 // Загрузка компонента PVPrint
 const loadPVPrint = async () => {
   try {
-    const loader = new ComponentLoader(props.table)
-    const component = await loader.loadComponent('PVPrint')
-    
-    if (component) {
-      isPVPrintLoaded.value = true
-      console.log('✓ Компонент PVPrint загружен через ComponentLoader')
-    } else {
-      throw new Error('PVPrint компонент не найден')
+    if (!componentLoader) {
+      throw new Error('ComponentLoader не найден. Убедитесь, что PVTables плагин установлен.')
     }
+    
+    await componentLoader.loadComponent('PVPrint')
+    isPVPrintLoaded.value = true
+    console.log('✓ Компонент PVPrint загружен и зарегистрирован')
   } catch (error) {
     console.error('Ошибка загрузки компонента PVPrint:', error)
     emit('print-error', error)
