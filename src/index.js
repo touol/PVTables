@@ -60,13 +60,14 @@ import Menubar from 'primevue/menubar';
 
 export default {
     install: (app, options) => {
-        // Создаем ComponentLoader только если он еще не предоставлен
-        if (!app._context.provides.componentLoader) {
+        // Создаем ComponentLoader только если он еще не существует глобально
+        if (!window.componentLoader) {
             const componentLoader = new ComponentLoader(app)
             app.provide('componentLoader', componentLoader)
-            if (!window.componentLoader) {
-                window.componentLoader = componentLoader
-            }
+            window.componentLoader = componentLoader
+        } else {
+            // Используем существующий ComponentLoader
+            app.provide('componentLoader', window.componentLoader)
         }
         
         app.use(PrimeVue, {

@@ -1,6 +1,7 @@
 <template>
   <div class="pv-print-wrapper" style="display: inline-block;">
-    <PVPrint 
+    <component 
+      :is="'PVPrint'"
       v-if="isPVPrintLoaded"
       :custom-print-handler="customPrintHandler"
       :page-key="pageKey"
@@ -45,15 +46,19 @@ const componentLoader = inject('componentLoader')
 const loadPVPrint = async () => {
   try {
     if (!componentLoader) {
-      throw new Error('ComponentLoader не найден. Убедитесь, что PVTables плагин установлен.')
+      return
     }
     
     await componentLoader.loadComponent('PVPrint')
     isPVPrintLoaded.value = true
-    console.log('✓ Компонент PVPrint загружен и зарегистрирован')
   } catch (error) {
-    console.error('Ошибка загрузки компонента PVPrint:', error)
-    emit('print-error', error)
+    // Проверяем, является ли это ошибкой "компонент не найден"
+    if (error.message && (error.message.includes('Component not found') || error.message.includes('Component not available'))) {
+      console.warn('Компонент PVPrint недоступен')
+    } else {
+      console.error('Ошибка загрузки компонента PVPrint:', error)
+      emit('print-error', error)
+    }
   }
 }
 
@@ -117,12 +122,10 @@ const customPrintHandler = async (printer, options) => {
 }
 
 const handlePrintSuccess = (result) => {
-  console.log('Печать успешна:', result)
   emit('print-success', result)
 }
 
 const handlePrintError = (error) => {
-  console.error('Ошибка печати:', error)
   emit('print-error', error)
 }
 

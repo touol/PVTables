@@ -24,12 +24,10 @@ export class ComponentLoader {
       
       if (data.data.assets_path) {
         this.assetsPath = data.data.assets_path
-        console.log('✓ Assets path получен:', this.assetsPath)
       } else {
         throw new Error('Не удалось получить assets path')
       }
     } catch (error) {
-      console.warn('Используем fallback assets path:', error.message)
       // Fallback на default путь
       this.assetsPath = '/assets/components/'
     }
@@ -43,10 +41,12 @@ export class ComponentLoader {
   async loadComponent(componentName) {
     await this.initialize()
     
+    // Проверяем, не загружен ли уже компонент
     if (this.loadedComponents.has(componentName)) {
       return
     }
 
+    // Проверяем, не загружается ли компонент в данный момент
     if (this.loadingComponents.has(componentName)) {
       return this.loadingComponents.get(componentName)
     }
@@ -68,6 +68,11 @@ export class ComponentLoader {
    */
   async _doLoadComponent(componentName) {
     const basePath = `${this.assetsPath}${componentName.toLowerCase()}/web`
+    
+    // Дополнительная проверка на случай race condition
+    if (this.loadedComponents.has(componentName)) {
+      return
+    }
     
     try {
       // 1. Предоставляем зависимости глобально для UMD модулей
@@ -139,7 +144,22 @@ export class ComponentLoader {
       link.rel = 'stylesheet'
       link.href = url
       link.onload = () => resolve()
-      link.onerror = () => reject(new Error(`Failed to load CSS: ${url}`))
+      link.onerror = () => {
+        // Проверяем, действительно ли файл не найден (404)
+        fetch(url, { method: 'HEAD' })
+          .then(response => {
+            if (response.status === 404) {
+              console.warn(`CSS файл не найден: ${url}`)
+              resolve() // Не блокируем загрузку, если CSS не найден
+            } else {
+              reject(new Error(`Failed to load CSS: ${url}`))
+            }
+          })
+          .catch(() => {
+            console.warn(`CSS файл недоступен: ${url}`)
+            resolve() // Не блокируем загрузку
+          })
+      }
       document.head.appendChild(link)
     })
   }
@@ -163,7 +183,20 @@ export class ComponentLoader {
         }
       }
       
-      script.onerror = () => reject(new Error(`Failed to load JS: ${url}`))
+      script.onerror = () => {
+        // Проверяем, действительно ли файл не найден (404)
+        fetch(url, { method: 'HEAD' })
+          .then(response => {
+            if (response.status === 404) {
+              reject(new Error(`Component not found: ${url}`))
+            } else {
+              reject(new Error(`Failed to load JS: ${url}`))
+            }
+          })
+          .catch(() => {
+            reject(new Error(`Component not available: ${url}`))
+          })
+      }
       document.head.appendChild(script)
     })
   }
