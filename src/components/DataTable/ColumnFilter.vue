@@ -129,7 +129,48 @@
                                 </template>
                             </Button>
                         </div>
+                        <!-- Список уникальных значений с чекбоксами -->
+                        <div v-if="filterList && filterList[field]" :class="cx('filterValueList')" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;" v-bind="getColumnPT('filterValueList')">
+                            <div style="padding: 0.5rem; border-bottom: 1px solid #dee2e6;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input 
+                                        type="checkbox" 
+                                        :checked="isAllSelected"
+                                        @change="toggleAllValues"
+                                        style="margin-right: 0.5rem;"
+                                    />
+                                    <span style="font-weight: bold;">Показать все</span>
+                                </label>
+                            </div>
+                            <div 
+                                v-for="value in filterList[field]" 
+                                :key="value"
+                                style="padding: 0.5rem;"
+                            >
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input 
+                                        type="checkbox" 
+                                        :value="value"
+                                        :checked="selectedValues.includes(value)"
+                                        @change="toggleValue(value)"
+                                        style="margin-right: 0.5rem;"
+                                    />
+                                    <span>{{ value === '' ? '(Пусто)' : value }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        
                         <div :class="cx('filterButtonbar')" v-bind="getColumnPT('filterButtonbar')">
+                            <Button
+                                v-if="filterList && filterList[field]"
+                                type="button"
+                                :class="cx('pcFilterApplyButton')"
+                                label="Применить"
+                                @click="applyValueListFilter()"
+                                :unstyled="unstyled"
+                                v-bind="filterButtonProps.popover.apply"
+                                :pt="getColumnPT('pcFilterApplyButton')"
+                            ></Button>
                             <Button
                                 v-if="!filterClearTemplate && showClearButton"
                                 type="button"
@@ -141,7 +182,7 @@
                                 :pt="getColumnPT('pcFilterClearButton')"
                             ></Button>
                             <component v-else :is="filterClearTemplate" :field="field" :filterModel="filters[field]" :filterCallback="clearFilter" />
-                            <template v-if="showApplyButton">
+                            <template v-if="showApplyButton && !(filterList && filterList[field])">
                                 <Button
                                     v-if="!filterApplyTemplate"
                                     type="button"
@@ -294,6 +335,10 @@ export default {
             type: null,
             default: null
         },
+        filterList: {
+            type: Object,
+            default: null
+        },
         column: null
     },
     data() {
@@ -301,7 +346,8 @@ export default {
             id: this.$attrs.id,
             overlayVisible: false,
             defaultMatchMode: null,
-            defaultOperator: null
+            defaultOperator: null,
+            selectedValues: []
         };
     },
     watch: {
@@ -336,8 +382,75 @@ export default {
                 this.defaultMatchMode = this.filters[this.field].matchMode;
             }
         }
+        
+        // Инициализируем selectedValues из текущего фильтра
+        this.initSelectedValues();
     },
     methods: {
+        initSelectedValues() {
+            if (this.filterList && this.filterList[this.field]) {
+                // Если есть активный фильтр IN, используем его значения
+                if (this.filters && this.filters[this.field]) {
+                    const fieldFilter = this.filters[this.field];
+                    if (fieldFilter.constraints) {
+                        const inConstraint = fieldFilter.constraints.find(c => c.matchMode === 'in');
+                        if (inConstraint && Array.isArray(inConstraint.value)) {
+                            this.selectedValues = [...inConstraint.value];
+                            return;
+                        }
+                    } else if (fieldFilter.matchMode === 'in' && Array.isArray(fieldFilter.value)) {
+                        this.selectedValues = [...fieldFilter.value];
+                        return;
+                    }
+                }
+                // По умолчанию выбраны все значения
+                this.selectedValues = [...this.filterList[this.field]];
+            }
+        },
+        toggleValue(value) {
+            const index = this.selectedValues.indexOf(value);
+            if (index > -1) {
+                this.selectedValues.splice(index, 1);
+            } else {
+                this.selectedValues.push(value);
+            }
+        },
+        toggleAllValues() {
+            if (this.filterList && this.filterList[this.field]) {
+                if (this.isAllSelected) {
+                    this.selectedValues = [];
+                } else {
+                    this.selectedValues = [...this.filterList[this.field]];
+                }
+            }
+        },
+        applyValueListFilter() {
+            let _filters = { ...this.filters };
+            
+            if (this.selectedValues.length === 0 || 
+                (this.filterList && this.filterList[this.field] && 
+                 this.selectedValues.length === this.filterList[this.field].length)) {
+                // Если ничего не выбрано или выбрано всё - очищаем фильтр
+                if (_filters[this.field].operator) {
+                    _filters[this.field].constraints = [{ value: null, matchMode: this.defaultMatchMode }];
+                } else {
+                    _filters[this.field].value = null;
+                    _filters[this.field].matchMode = this.defaultMatchMode;
+                }
+            } else {
+                // Применяем фильтр IN с выбранными значениями
+                if (_filters[this.field].operator) {
+                    _filters[this.field].constraints = [{ value: this.selectedValues, matchMode: 'in' }];
+                } else {
+                    _filters[this.field].value = this.selectedValues;
+                    _filters[this.field].matchMode = 'in';
+                }
+            }
+            
+            this.$emit('filter-change', _filters);
+            this.$emit('filter-apply');
+            this.hide();
+        },
         getColumnPT(key, params) {
             const columnMetaData = {
                 props: this.column.props,
@@ -719,6 +832,10 @@ export default {
                     active: this.hasFilter()
                 }
             };
+        },
+        isAllSelected() {
+            if (!this.filterList || !this.filterList[this.field]) return false;
+            return this.selectedValues.length === this.filterList[this.field].length;
         }
     },
     components: {

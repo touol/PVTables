@@ -102,6 +102,7 @@
       filterDisplay="menu"
       :globalFilterFields="globalFilterFields"
       @filter="onFilter($event)"
+      :filterList="filterList"
       
       v-model:expandedRows="expandedRows"
       showGridlines
@@ -1226,6 +1227,7 @@
   const row_setting = ref({});
   const customFields = ref({});
   const form = ref({});
+  const filterList = ref({});
 
   const loadLazyData = async (event) => {
     loading.value = true;
@@ -1278,6 +1280,9 @@
       }   
       if(response.data.customFields){
         customFields.value = response.data.customFields
+      }
+      if(response.data.filter_list){
+        filterList.value = response.data.filter_list
       }
       //
 

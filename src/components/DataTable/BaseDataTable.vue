@@ -296,6 +296,10 @@ export default {
                     cancel: { severity: 'secondary', text: true, rounded: true }
                 };
             }
+        },
+        filterList: {
+            type: Object,
+            default: null
         }
     },
     style: DataTableStyle,

@@ -30,6 +30,7 @@
                         :filtersStore="filtersStore"
                         :filterInputProps="filterInputProps"
                         :filterButtonProps="filterButtonProps"
+                        :filterList="filterList"
                         :first="first"
                         @filter-change="$emit('filter-change', $event)"
                         @filter-apply="$emit('filter-apply')"
@@ -115,6 +116,7 @@
                         :filters="filters"
                         :filterDisplay="filterDisplay"
                         :filtersStore="filtersStore"
+                        :filterList="filterList"
                         @filter-change="$emit('filter-change', $event)"
                         @filter-apply="$emit('filter-apply')"
                         @operator-change="$emit('operator-change', $event)"
@@ -236,6 +238,10 @@ export default {
         },
         filterButtonProps: {
             type: null,
+            default: null
+        },
+        filterList: {
+            type: Object,
             default: null
         }
     },
