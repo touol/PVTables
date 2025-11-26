@@ -114,7 +114,7 @@ const actions = ref({
     create:{
       head:true,
       icon:"pi pi-plus",
-      class:"p-button-rounded p-button-success",
+      class:" p-button-success",
       head_click: async (event,table,filters,selectedlineItems) => {
         // Код для обработки клика по кнопке создания
       }
@@ -122,7 +122,7 @@ const actions = ref({
     update:{
       row:true,
       icon:"pi pi-pencil",
-      class:"p-button-rounded p-button-success",
+      class:" p-button-success",
       click: async (data, columns,table,filters) => {
         // Код для обработки клика по кнопке обновления
       }

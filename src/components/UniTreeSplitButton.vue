@@ -46,7 +46,7 @@
                 switch(action){
                     case 'delete':
                         if(props.node.data.class != 'root'){
-                            let cls = props.actions[action].cls?props.actions[action].cls:'p-button-rounded p-button-info'
+                            let cls = props.actions[action].cls?props.actions[action].cls:' p-button-info'
                             let table = null
                             speedDialActions.value.push({
                                 label: props.actions[action].label?props.actions[action].label:'Удалить',

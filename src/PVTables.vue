@@ -51,12 +51,12 @@
         </template>
       </template>
       <template #end>
-        <button class="p-button p-component p-button-rounded" @click="toggleDarkMode">
+        <button class="p-button p-component " @click="toggleDarkMode">
           <i :class="['pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"></i>
         </button>
         <Button
           icon="pi pi-refresh"
-          class="p-button-rounded p-button-success"
+          class=" p-button-success"
           @click="refresh(false)"
         />
         <Button
@@ -825,7 +825,7 @@
               if (!tmp.hasOwnProperty("row")) tmp.row = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-pencil";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if (!tmp.hasOwnProperty("click"))
                 tmp.click = (data) => editLineItem(data,tmp);
               break;
@@ -834,7 +834,7 @@
               if (!tmp.hasOwnProperty("head")) tmp.head = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-trash";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-danger";
+                tmp.class = " p-button-danger";
               if (!tmp.hasOwnProperty("click"))
                 tmp.click = (data) => confirmDeleteLineItem(data);
               if (!tmp.hasOwnProperty("head_click"))
@@ -847,7 +847,7 @@
               if (!tmp.hasOwnProperty("head")) tmp.head = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if (!tmp.hasOwnProperty("head_click"))
                 tmp.head_click = () => openNew(tmp);
               // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
@@ -857,7 +857,7 @@
               if (!tmp.hasOwnProperty("head")) tmp.head = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if (!tmp.hasOwnProperty("head_click"))
                 tmp.head_click = () => Insert();
               // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
@@ -874,7 +874,7 @@
               if (!tmp.hasOwnProperty("row")) tmp.row = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if (!tmp.hasOwnProperty("head_click"))
                 tmp.click = (data) => Insert_child(data);
               // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
@@ -895,7 +895,7 @@
                 if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
                 if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
                 if (!tmpt.hasOwnProperty("class"))
-                  tmpt.class = "p-button-rounded p-button-success";
+                  tmpt.class = " p-button-success";
                 if (!tmpt.hasOwnProperty("click"))
                   tmpt.click = (event) => setExpandedRow(event, tmpt);
                 actions_row.value = true;
@@ -910,7 +910,7 @@
                 if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
                 if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
                 if (!tmpt.hasOwnProperty("class"))
-                  tmpt.class = "p-button-rounded p-button-success";
+                  tmpt.class = " p-button-success";
                 if (!tmpt.hasOwnProperty("click"))
                   tmpt.click = (event) => setExpandedRow(event, tmpt);
                 actions_row.value = true;
@@ -923,7 +923,7 @@
               if (!tmp.hasOwnProperty("head")) tmp.head = true;
               if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-file-excel";
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if (!tmp.hasOwnProperty("head_click"))
                 tmp.head_click = () => excelExport(tmp);
               if (!tmp.hasOwnProperty("label")) tmp.label = "Excel";
@@ -933,7 +933,7 @@
               break
             default:
               if (!tmp.hasOwnProperty("class"))
-                tmp.class = "p-button-rounded p-button-success";
+                tmp.class = " p-button-success";
               if(!(tmp.head_click || tmp.click)){
                 // console.log('tmp.click',tmp.click)
                 if (tmp.head)
@@ -2139,5 +2139,11 @@
   }
   .navbar-collapse.collapse {
      visibility: inherit !important;
+  }
+  .p-datatable-table td, .p-datatable-table th {
+    padding: 8px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
   }
 </style>
