@@ -585,7 +585,15 @@
   };
   const clearFilter = async () => {
     initFilters();
-    // lazyParams.value.filters = filters.value;
+    
+    // Очистка сортировки
+    lazyParams.value.multiSortMeta = [];
+    
+    // Принудительно обновляем DataTable через ref
+    if (dt.value) {
+      dt.value.d_multiSortMeta = [];
+    }
+    
     await loadLazyData();
   };
   // const filterPlaceholder = (col) => {

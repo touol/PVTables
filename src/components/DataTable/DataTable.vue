@@ -612,9 +612,18 @@ export default {
             let index = this.d_multiSortMeta.findIndex((meta) => meta.field === field);
 
             if (index >= 0) {
-                if (this.removableSort && this.d_multiSortMeta[index].order * -1 === this.defaultSortOrder) this.d_multiSortMeta.splice(index, 1);
-                else this.d_multiSortMeta[index] = { field: field, order: this.d_multiSortMeta[index].order * -1 };
+                const currentOrder = this.d_multiSortMeta[index].order;
+                
+                // Переключение: defaultSortOrder → инверсия → удаление
+                if (currentOrder === this.defaultSortOrder) {
+                    // Первое состояние → второе (инверсия)
+                    this.d_multiSortMeta[index] = { field: field, order: currentOrder * -1 };
+                } else {
+                    // Второе состояние → удаление (третий клик)
+                    this.d_multiSortMeta.splice(index, 1);
+                }
             } else {
+                // Добавление нового поля с дефолтным порядком
                 this.d_multiSortMeta.push({ field: field, order: this.defaultSortOrder });
             }
 
