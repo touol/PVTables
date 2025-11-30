@@ -38,6 +38,8 @@
                     :rowGroupHeaderStyle="rowGroupHeaderStyle"
                     :expandedRowId="expandedRowId"
                     :nameAttributeSelector="nameAttributeSelector"
+                    :cellSelectionMode="cellSelectionMode"
+                    :cellSelectionState="cellSelectionState"
                     @rowgroup-toggle="$emit('rowgroup-toggle', $event)"
                     @row-click="$emit('row-click', $event)"
                     @row-dblclick="$emit('row-dblclick', $event)"
@@ -224,6 +226,14 @@ export default {
         isVirtualScrollerDisabled: {
             type: Boolean,
             default: false
+        },
+        cellSelectionMode: {
+            type: Boolean,
+            default: false
+        },
+        cellSelectionState: {
+            type: Object,
+            default: null
         }
     },
     data() {

@@ -68,7 +68,7 @@
                 :pt="ptm('virtualScroller')"
             >
                 <template #content="slotProps">
-                    <table ref="table" role="table" :class="[cx('table'), tableClass]" :style="[tableStyle, slotProps.spacerStyle]" v-bind="{ ...tableProps, ...ptm('table') }">
+                    <table ref="table" role="table" :class="[cx('table'), tableClass]" :style="[tableStyle, slotProps.spacerStyle]" v-bind="{ ...tableProps, ...ptm('table') }" :data-cell-selection-mode="cellSelectionMode">
                         <DTTableHeader
                             :columnGroup="headerColumnGroup"
                             :columns="slotProps.columns"
@@ -190,6 +190,8 @@
                             :editButtonProps="rowEditButtonProps"
                             :virtualScrollerContentProps="slotProps"
                             :isVirtualScrollerDisabled="virtualScrollerDisabled"
+                            :cellSelectionMode="cellSelectionMode"
+                            :cellSelectionState="cellSelectionState"
                             @rowgroup-toggle="toggleRowGroup"
                             @row-click="onRowClick($event)"
                             @row-dblclick="onRowDblClick($event)"

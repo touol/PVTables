@@ -59,6 +59,8 @@
                     :expandedRowIcon="expandedRowIcon"
                     :collapsedRowIcon="collapsedRowIcon"
                     :editButtonProps="editButtonProps"
+                    :cellSelectionMode="cellSelectionMode"
+                    :cellSelectionState="cellSelectionState"
                     @radio-change="onRadioChange"
                     @checkbox-change="onCheckboxChange"
                     @row-toggle="onRowToggle"
@@ -268,6 +270,14 @@ export default {
         },
         nameAttributeSelector: {
             type: String,
+            default: null
+        },
+        cellSelectionMode: {
+            type: Boolean,
+            default: false
+        },
+        cellSelectionState: {
+            type: Object,
             default: null
         }
     },

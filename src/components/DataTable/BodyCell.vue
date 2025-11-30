@@ -10,6 +10,8 @@
         :rowspan="columnProp('rowspan')"
         @click="onClick"
         @keydown="onKeyDown"
+        @mousedown="onCellMouseDown"
+        @mouseenter="onCellMouseEnter"
         role="cell"
         v-bind="{ ...getColumnPT('root'), ...getColumnPT('bodyCell') }"
         :data-p-selection-column="columnProp('selectionMode') != null"
@@ -214,6 +216,14 @@ export default {
             default: null
         },
         editButtonProps: {
+            type: Object,
+            default: null
+        },
+        cellSelectionMode: {
+            type: Boolean,
+            default: false
+        },
+        cellSelectionState: {
             type: Object,
             default: null
         }
@@ -522,6 +532,26 @@ export default {
         },
         getVirtualScrollerProp(option) {
             return this.virtualScrollerContentProps ? this.virtualScrollerContentProps[option] : null;
+        },
+        onCellMouseDown(event) {
+            // Игнорируем клики по колонкам выбора
+            if (this.columnProp('selectionMode') != null) {
+                return;
+            }
+            
+            if (this.cellSelectionMode && this.cellSelectionState && this.cellSelectionState.onCellMouseDown) {
+                this.cellSelectionState.onCellMouseDown(this.rowIndex, this.index, event);
+            }
+        },
+        onCellMouseEnter(event) {
+            // Игнорируем наведение на колонки выбора
+            if (this.columnProp('selectionMode') != null) {
+                return;
+            }
+            
+            if (this.cellSelectionMode && this.cellSelectionState && this.cellSelectionState.onCellMouseEnter) {
+                this.cellSelectionState.onCellMouseEnter(this.rowIndex, this.index, event);
+            }
         }
     },
     computed: {
@@ -531,8 +561,22 @@ export default {
         field() {
             return this.columnProp('field');
         },
+        isCellSelected() {
+            if (!this.cellSelectionState?.selectedCells) return false;
+            
+            // Сравниваем по полю, а не по индексу, так как индексы могут не совпадать
+            // из-за служебных колонок (checkbox, tree expander)
+            return this.cellSelectionState.selectedCells.some(
+                cell => cell.rowIndex === this.rowIndex && cell.field === this.field
+            );
+        },
         containerClass() {
-            return [this.columnProp('bodyClass'), this.columnProp('class'), this.cx('bodyCell')];
+            return [
+                this.columnProp('bodyClass'), 
+                this.columnProp('class'), 
+                this.cx('bodyCell'),
+                { 'cell-selected': this.isCellSelected }
+            ];
         },
         containerStyle() {
             let bodyStyle = this.columnProp('bodyStyle');

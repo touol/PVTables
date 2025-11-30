@@ -300,6 +300,14 @@ export default {
         filterList: {
             type: Object,
             default: null
+        },
+        cellSelectionMode: {
+            type: Boolean,
+            default: false
+        },
+        cellSelectionState: {
+            type: Object,
+            default: null
         }
     },
     style: DataTableStyle,

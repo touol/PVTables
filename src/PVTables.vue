@@ -51,6 +51,12 @@
         </template>
       </template>
       <template #end>
+        <Button
+          :icon="cellSelectionMode ? 'pi pi-check-square' : 'pi pi-table'"
+          :class="cellSelectionMode ? 'p-button-success' : ''"
+          @click="toggleCellSelectionMode"
+          v-tooltip.bottom="'Режим выделения ячеек (Ctrl+Shift+S)'"
+        />
         <button class="p-button p-component p-button-icon-only " @click="toggleDarkMode">
           <span :class="['p-button-icon  pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"></span>
           <span class="p-button-label" data-pc-section="label">&nbsp;</span>
@@ -72,6 +78,11 @@
         />
       </template>
     </Toolbar>
+    <StatusBar 
+      v-if="cellSelectionMode && selectedCells.length > 0"
+      :selectedCells="selectedCells"
+      @copy="handleCellCopy"
+    />
     <DataTable
       :value="lineItems"
       lazy
@@ -118,6 +129,15 @@
 
       :rowGroupMode="rowGroupMode"
       :groupRowsBy="groupRowsBy"
+      
+      :data-cell-selection-mode="cellSelectionMode"
+      :cellSelectionMode="cellSelectionMode"
+      :cellSelectionState="{ 
+        isSelecting, 
+        selectedCells, 
+        onCellMouseDown, 
+        onCellMouseEnter 
+      }"
       >
       <Column v-if="table_tree" headerStyle="width: 3rem">
         <template #body="{ data }">
@@ -409,11 +429,12 @@
 
 <script setup>
   import Toast from 'primevue/toast';
-  import { ref, onMounted, defineComponent, watch, computed, markRaw } from "vue";
+  import Tooltip from 'primevue/tooltip';
+  import { ref, onMounted, defineComponent, watch, computed, markRaw, onBeforeUnmount } from "vue";
   import { compile } from "vue";
-  defineComponent({
-    name: "PVTables",
-  });
+  
+  // Регистрация директивы для использования в template
+  const vTooltip = Tooltip;
   import DataTable from "./components/DataTable/DataTable.vue";
   import Column from "primevue/column";
 
@@ -446,6 +467,7 @@
   import PVForm from "./components/PVForm.vue";
   import PVTablesSplitButton from './components/PVTablesSplitButton.vue'
   import PVPrintAction from './components/PVPrintAction.vue'
+  import StatusBar from './components/DataTable/StatusBar.vue'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
   import apiCtor from './components/api'
@@ -626,6 +648,190 @@
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
+
+  // Режим выделения ячеек
+  const cellSelectionMode = ref(false);
+  const selectedCells = ref([]);
+  const selectionStart = ref(null);
+  const isSelecting = ref(false);
+
+  // Переключение режима выделения
+  const toggleCellSelectionMode = () => {
+    cellSelectionMode.value = !cellSelectionMode.value;
+    
+    // Очистка выделения при выключении режима
+    if (!cellSelectionMode.value) {
+      selectedCells.value = [];
+      selectionStart.value = null;
+      isSelecting.value = false;
+    }
+  };
+
+  // Получение данных ячейки по rowIndex и colIndex
+  const getCellData = (rowIndex, colIndex) => {
+    const row = lineItems.value[rowIndex];
+    if (!row) return null;
+    
+    // Получаем все видимые колонки данных (без modal_only и hidden)
+    const visibleColumns = columns.value.filter(c => !c.modal_only && c.type !== 'hidden');
+    
+    // Находим ячейку в DOM по rowIndex и colIndex
+    const table = document.querySelector('[data-cell-selection-mode="true"]');
+    if (!table) return null;
+    
+    const rows = table.querySelectorAll('tbody tr');
+    const targetRow = rows[rowIndex];
+    if (!targetRow) return null;
+    
+    const cells = targetRow.querySelectorAll('td');
+    const targetCell = cells[colIndex];
+    if (!targetCell) return null;
+    
+    // Ищем поле колонки через DOM
+    let fieldName = null;
+    
+    // Ищем div с классом td-body внутри ячейки
+    const bodyDiv = targetCell.querySelector('.td-body');
+    if (bodyDiv) {
+      // Считаем позицию среди ячеек с td-body
+      let tdBodyIndex = 0;
+      for (let i = 0; i < colIndex; i++) {
+        if (cells[i].querySelector('.td-body')) {
+          tdBodyIndex++;
+        }
+      }
+      
+      // Берем колонку по этому индексу
+      const col = visibleColumns[tdBodyIndex];
+      if (col) {
+        fieldName = col.field;
+      }
+    }
+    
+    if (!fieldName) return null;
+    
+    const col = visibleColumns.find(c => c.field === fieldName);
+    if (!col) return null;
+    
+    const adjustedColIndex = visibleColumns.findIndex(c => c.field === fieldName);
+    
+    // Получаем отображаемое значение из DOM (для autocomplete, select и других полей)
+    let displayValue = bodyDiv ? bodyDiv.textContent.trim() : row[col.field];
+    
+    // Определяем, можно ли суммировать значения этой колонки
+    const isSummable = col.type === 'decimal' || col.type === 'number';
+    
+    // Для числовых полей пытаемся преобразовать в число
+    if (isSummable) {
+      // Убираем пробелы (разделители тысяч) и заменяем запятую на точку
+      const numStr = displayValue.replace(/\s/g, '').replace(',', '.');
+      const num = parseFloat(numStr);
+      if (!isNaN(num)) {
+        displayValue = num;
+      }
+    }
+    
+    const cellData = {
+      rowIndex,
+      colIndex: adjustedColIndex,
+      field: col.field,
+      value: displayValue,
+      label: col.label,
+      summable: isSummable
+    };
+    
+    return cellData;
+  };
+
+  // Обработчики событий мыши для выделения
+  const onCellMouseDown = (rowIndex, colIndex, event) => {
+    if (!cellSelectionMode.value) return;
+    
+    isSelecting.value = true;
+    selectionStart.value = { rowIndex, colIndex };
+    
+    const cellData = getCellData(rowIndex, colIndex);
+    if (cellData) {
+      // Если Ctrl нажат - добавляем к существующему выделению
+      if (event.ctrlKey || event.metaKey) {
+        selectedCells.value = [...selectedCells.value, cellData];
+      } else {
+        // Если Ctrl не нажат - сбрасываем старое выделение и создаем новое
+        selectedCells.value = [cellData];
+      }
+    }
+  };
+
+  const onCellMouseEnter = (rowIndex, colIndex, event) => {
+    if (!isSelecting.value || !cellSelectionMode.value || !selectionStart.value) return;
+    
+    // Получаем данные текущей ячейки для получения скорректированного индекса
+    const currentCellData = getCellData(rowIndex, colIndex);
+    if (!currentCellData) return;
+    
+    // Используем скорректированные индексы для вычисления диапазона
+    const minRow = Math.min(selectionStart.value.rowIndex, rowIndex);
+    const maxRow = Math.max(selectionStart.value.rowIndex, rowIndex);
+    
+    // Получаем скорректированный индекс начальной ячейки
+    const startCellData = getCellData(selectionStart.value.rowIndex, selectionStart.value.colIndex);
+    if (!startCellData) return;
+    
+    const minCol = Math.min(startCellData.colIndex, currentCellData.colIndex);
+    const maxCol = Math.max(startCellData.colIndex, currentCellData.colIndex);
+    
+    // Заполнение массива выделенных ячеек для текущего диапазона
+    const currentRangeSelection = [];
+    
+    // Получаем видимые колонки
+    const visibleColumns = columns.value.filter(c => !c.modal_only && c.type !== 'hidden');
+    
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let adjustedCol = minCol; adjustedCol <= maxCol; adjustedCol++) {
+        // Вычисляем обратно полный индекс для getCellData
+        let fullColIndex = adjustedCol;
+        if (table_tree.value) fullColIndex += 1;
+        fullColIndex += 1; // checkbox column
+        
+        const cellData = getCellData(r, fullColIndex);
+        if (cellData) {
+          currentRangeSelection.push(cellData);
+        }
+      }
+    }
+    
+    // Если Ctrl нажат - объединяем с предыдущим выделением
+    if (event?.ctrlKey || event?.metaKey) {
+      // Получаем ячейки, которые были выделены до начала текущего drag
+      const previousSelection = selectedCells.value.filter(cell => {
+        const isInCurrentRange = cell.rowIndex >= minRow && cell.rowIndex <= maxRow &&
+                                 cell.colIndex >= minCol && cell.colIndex <= maxCol;
+        return !isInCurrentRange;
+      });
+      
+      selectedCells.value = [...previousSelection, ...currentRangeSelection];
+    } else {
+      // Если Ctrl не нажат - только текущий диапазон
+      selectedCells.value = currentRangeSelection;
+    }
+  };
+
+  const onCellMouseUp = () => {
+    isSelecting.value = false;
+  };
+
+  const handleCellCopy = (tsvData) => {
+    // Обработчик успешного копирования
+    console.log('Данные скопированы:', tsvData);
+  };
+
+  // Горячие клавиши для режима выделения
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey && e.shiftKey && e.code === 'KeyS') {
+      e.preventDefault();
+      toggleCellSelectionMode();
+    }
+  };
 
   onMounted(async () => {
     loading.value = true;
@@ -981,6 +1187,15 @@
       console.log('error',error)
       notify('error', { detail: error.message }, true);
     }
+    
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mouseup', onCellMouseUp);
+  });
+  
+  // Очистка при размонтировании
+  onBeforeUnmount(() => {
+    document.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener('mouseup', onCellMouseUp);
   });
   const PVTablesMenuAction = (event,data, columns,table,filters) => {
     if(nemu_actions.value[event.action]){
