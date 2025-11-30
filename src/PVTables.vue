@@ -51,8 +51,9 @@
         </template>
       </template>
       <template #end>
-        <button class="p-button p-component " @click="toggleDarkMode">
-          <i :class="['pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"></i>
+        <button class="p-button p-component p-button-icon-only " @click="toggleDarkMode">
+          <span :class="['p-button-icon  pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"></span>
+          <span class="p-button-label" data-pc-section="label">&nbsp;</span>
         </button>
         <Button
           icon="pi pi-refresh"
