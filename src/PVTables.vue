@@ -1,9 +1,29 @@
 <template>
   <div class="card">
     <Popover ref="op">
-      
       <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="onToggleColomns"
         placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
+    </Popover>
+    
+    <Popover ref="virtualScrollPopover">
+      <div class="virtual-scroll-settings" style="min-width: 300px; padding: 1rem;">
+        <p class="mb-3" style="font-size: 0.9rem; color: #666;">
+          Ускоряет отрисовку больших таблиц. Работает только с фиксированной высотой строк.
+        </p>
+        
+        <div class="field-checkbox mb-3" style="display: flex; align-items: center; gap: 0.5rem;">
+          <ToggleSwitch v-model="virtualScrollEnabled" @change="onVirtualScrollToggle" inputId="vs-toggle" />
+          <label for="vs-toggle" style="margin: 0;">Включить виртуальный скроллинг</label>
+        </div>
+        
+        <div class="field mb-3">
+          <label for="row-height" style="display: block; margin-bottom: 0.5rem;">Высота строки (px)</label>
+          <InputNumber v-model="rowHeight" :disabled="!virtualScrollEnabled" :min="30" :max="200" inputId="row-height" style="width: 100%;" />
+          <small class="block mt-1" style="color: #666;">Автоопределенная: {{ calculatedRowHeight }}px</small>
+        </div>
+        
+        <Button label="Пересчитать" icon="pi pi-refresh" @click="recalculateRowHeight" size="small" :disabled="!virtualScrollEnabled" />
+      </div>
     </Popover>
     <Toolbar class="p-mb-4">
       <template #start>
@@ -76,6 +96,13 @@
           icon="pi pi-cog"
           @click="toggleSettings"
         />
+        <Button
+          type="button"
+          :icon="virtualScrollEnabled ? 'pi pi-bolt' : 'pi pi-forward'"
+          :class="virtualScrollEnabled ? 'p-button-warning' : ''"
+          @click="toggleVirtualScrollSettings"
+          v-tooltip.bottom="'Виртуальный скроллинг'"
+        />
       </template>
     </Toolbar>
     <StatusBar 
@@ -86,6 +113,8 @@
     <DataTable
       :value="lineItems"
       lazy
+      
+      :virtualScrollerOptions="virtualScrollerOptions"
 
       paginator
       :first="first"
@@ -454,6 +483,8 @@
   // import Checkbox from 'primevue/checkbox';
   import MultiSelect from 'primevue/multiselect'
   import Popover from 'primevue/popover';
+  import ToggleSwitch from 'primevue/toggleswitch';
+  import InputNumber from 'primevue/inputnumber';
 
   // import GTSDate from "./components/gtsDate.vue";
   // import GTSSelect from "./components/gtsSelect.vue";
@@ -470,6 +501,7 @@
   import StatusBar from './components/DataTable/StatusBar.vue'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
+  import { useVirtualScroll } from "./composables/useVirtualScroll";
   import apiCtor from './components/api'
   import { rowsHandler } from "./core/helpers";
 
@@ -669,23 +701,28 @@
 
   // Получение данных ячейки по rowIndex и colIndex
   const getCellData = (rowIndex, colIndex) => {
-    const row = lineItems.value[rowIndex];
-    if (!row) return null;
-    
-    // Получаем все видимые колонки данных (без modal_only и hidden)
-    const visibleColumns = columns.value.filter(c => !c.modal_only && c.type !== 'hidden');
-    
-    // Находим ячейку в DOM по rowIndex и colIndex
+    // Находим таблицу
     const table = document.querySelector('[data-cell-selection-mode="true"]');
     if (!table) return null;
     
-    const rows = table.querySelectorAll('tbody tr');
-    const targetRow = rows[rowIndex];
+    // Находим строку по data-p-index (работает с виртуальным скроллингом)
+    const targetRow = table.querySelector(`tbody tr[data-p-index="${rowIndex}"]`);
     if (!targetRow) return null;
     
     const cells = targetRow.querySelectorAll('td');
     const targetCell = cells[colIndex];
     if (!targetCell) return null;
+    
+    // Получаем данные строки по реальному индексу
+    const row = lineItems.value[rowIndex];
+    if (!row) return null;
+    
+    // Получаем все видимые колонки данных (без modal_only, hidden и скрытого id)
+    const visibleColumns = columns.value.filter(c => 
+      !c.modal_only && 
+      c.type !== 'hidden' && 
+      !(hideId.value && c.field === 'id')
+    );
     
     // Ищем поле колонки через DOM
     let fieldName = null;
@@ -693,11 +730,19 @@
     // Ищем div с классом td-body внутри ячейки
     const bodyDiv = targetCell.querySelector('.td-body');
     if (bodyDiv) {
-      // Считаем позицию среди ячеек с td-body
+      // Считаем позицию среди ячеек с td-body, исключая скрытые колонки
       let tdBodyIndex = 0;
       for (let i = 0; i < colIndex; i++) {
-        if (cells[i].querySelector('.td-body')) {
-          tdBodyIndex++;
+        const cellBodyDiv = cells[i].querySelector('.td-body');
+        if (cellBodyDiv) {
+          // Проверяем, не является ли это скрытой колонкой id
+          // Скрытая колонка id будет иметь display: none или visibility: hidden
+          const cellStyle = window.getComputedStyle(cells[i]);
+          const isVisible = cellStyle.display !== 'none' && cellStyle.visibility !== 'hidden';
+          
+          if (isVisible) {
+            tdBodyIndex++;
+          }
         }
       }
       
@@ -1521,6 +1566,24 @@
 
   const { cacheAction, cache } = useActionsCaching()
 
+  // Виртуальный скроллинг
+  const {
+    virtualScrollEnabled,
+    rowHeight,
+    calculatedRowHeight,
+    virtualScrollPopover,
+    virtualScrollerOptions,
+    onVirtualScrollToggle,
+    toggleVirtualScrollSettings,
+    recalculateRowHeight,
+    getVirtualScrollRowStyle
+  } = useVirtualScroll({
+    columns,
+    lineItems,
+    dt,
+    storageKey: `pvtables-virtual-scroll-${props.table}`
+  });
+
   const onCellEditComplete = async (event) => {
     let { data, newValue, field } = event;
     if(!field) return
@@ -1981,6 +2044,9 @@
     if (Object.keys(style).length === 0 && col.type === 'datetime') {
       style['min-width'] = '190px';
     }
+    if (Object.keys(style).length === 0 && col.type === 'textarea') {
+      style['min-width'] = '190px';
+    }
 
     return style;
   };
@@ -1995,12 +2061,18 @@
     return
   };
 
-  const rowStyle = (data) => {
+  const baseRowStyle = (data) => {
     if(row_setting.value[data.id] && row_setting.value[data.id].style){
-      return row_setting.value[data.id].style;
+      const style = row_setting.value[data.id].style;
+      // Проверяем, что style - это объект, а не массив
+      if (style && typeof style === 'object' && !Array.isArray(style)) {
+        return style;
+      }
     }
     return {};
   };
+  
+  const rowStyle = getVirtualScrollRowStyle(baseRowStyle);
   
   const op = ref();
   const toggleSettings = (event) => {
@@ -2369,5 +2441,26 @@
     border: 1px solid #555;
     vertical-align: top;
     color: #000;
+  }
+  
+  /* Стили для виртуального скроллинга */
+  .p-datatable table {
+    border-collapse: separate !important;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td,
+  .p-datatable table .p-virtualscroller-content th {
+    max-height: inherit;
+    padding: 8px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td .td-body {
+    max-height: inherit;
+    overflow: auto;
+    text-overflow: ellipsis;
+    display: block;
   }
 </style>

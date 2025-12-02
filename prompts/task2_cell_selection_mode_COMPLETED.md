@@ -164,5 +164,67 @@ if (col.type === 'decimal' || col.type === 'number') {
 11. ✅ Вставка в Excel с сохранением структуры
 12. ✅ Корректное отображение значений autocomplete
 
+## Исправления
+
+### 01.12.2025 - Исправлена проблема с выделением при скрытом поле id
+
+**Проблема:**
+При скрытом поле `id` (когда `hideId = true`) выделялась не та ячейка, а предыдущая в строке. Это происходило из-за несоответствия между:
+- Массивом `visibleColumns`, который уже был отфильтрован без поля `id`
+- Подсчетом ячеек в DOM, который включал скрытую колонку `id`
+
+**Решение:**
+В функции `getCellData` в `src/PVTables.vue`:
+1. Добавлена фильтрация скрытого поля `id` при создании массива `visibleColumns`:
+   ```javascript
+   const visibleColumns = columns.value.filter(c => 
+     !c.modal_only && 
+     c.type !== 'hidden' && 
+     !(hideId.value && c.field === 'id')
+   );
+   ```
+
+2. При подсчете позиции ячейки добавлена проверка видимости через `window.getComputedStyle`:
+   ```javascript
+   for (let i = 0; i < colIndex; i++) {
+     const cellBodyDiv = cells[i].querySelector('.td-body');
+     if (cellBodyDiv) {
+       const cellStyle = window.getComputedStyle(cells[i]);
+       const isVisible = cellStyle.display !== 'none' && cellStyle.visibility !== 'hidden';
+       
+       if (isVisible) {
+         tdBodyIndex++;
+       }
+     }
+   }
+   ```
+
+Теперь выделение работает корректно независимо от того, скрыто поле `id` или нет.
+
+### 02.12.2025 - Исправлена проблема с выделением при виртуальном скроллинге
+
+**Проблема:**
+При включенном виртуальном скроллинге с некоторой строки ячейки не выделялись. Это происходило потому, что виртуальный скроллинг PrimeVue рендерит только видимые строки в DOM, и индексы строк в DOM не совпадают с реальными индексами данных.
+
+**Решение:**
+В функции `getCellData` в `src/PVTables.vue` изменен способ поиска строки:
+
+**Было:**
+```javascript
+const rows = table.querySelectorAll('tbody tr');
+const targetRow = rows[rowIndex];
+```
+
+**Стало:**
+```javascript
+// Находим строку по data-p-index (работает с виртуальным скроллингом)
+const targetRow = table.querySelector(`tbody tr[data-p-index="${rowIndex}"]`);
+```
+
+Теперь используется атрибут `data-p-index`, который PrimeVue автоматически добавляет к каждой строке и содержит реальный индекс данных, независимо от того, какие строки отрендерены в DOM. Это решение работает как с виртуальным скроллингом, так и без него.
+
 ## Дата завершения
 30.11.2025
+
+## Дата последнего обновления
+02.12.2025
