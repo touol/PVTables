@@ -145,7 +145,7 @@
       @filter="onFilter($event)"
       :filterList="filterList"
       
-      v-model:expandedRows="expandedRowsComposable"
+      v-model:expandedRows="expandedRows"
       showGridlines
 
       scrollable scrollHeight="85vh"
@@ -171,8 +171,8 @@
       <Column v-if="table_tree" headerStyle="width: 3rem">
         <template #body="{ data }">
           <template v-if="data['gtsapi_children_count'] > 0">
-            <Button v-if="expandedTableTreeRowsComposable[data.id]" icon="pi pi-angle-down" class="p-button-text" @click="toogleExpandRowComposable(data)"/>
-            <Button v-else icon="pi pi-angle-right" class="p-button-text" @click="toogleExpandRowComposable(data)"/>
+            <Button v-if="expandedTableTreeRows[data.id]" icon="pi pi-angle-down" class="p-button-text" @click="toogleExpandRow(data)"/>
+            <Button v-else icon="pi pi-angle-right" class="p-button-text" @click="toogleExpandRow(data)"/>
           </template>
         </template>
       </Column>
@@ -316,26 +316,26 @@
         </template>
       </Column>
       <template #expansion="slotProps">
-        <div v-if="subsComposable[slotProps.data.id].action == 'subtables'" class="p-3">
+        <div v-if="subs[slotProps.data.id].action == 'subtables'" class="p-3">
           <PVTables
-            :table="subsComposable[slotProps.data.id].table"
+            :table="subs[slotProps.data.id].table"
             :actions="actions"
-            :filters="subfiltersComposable[slotProps.data.id]"
+            :filters="subfilters[slotProps.data.id]"
             @refresh-table="refresh(false)"
             :child="true"
-            :ref="el => { if (el) childComponentRefsComposable[slotProps.data.id] = el }"
+            :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
             @get-response="get_response($event)"
             />
         </div>
-        <div v-if="subsComposable[slotProps.data.id].action == 'subtabs'" class="p-3">
+        <div v-if="subs[slotProps.data.id].action == 'subtabs'" class="p-3">
           <PVTabs 
-            :tabs="subsComposable[slotProps.data.id].tabs"
+            :tabs="subs[slotProps.data.id].tabs"
             :actions="actions"
-            :parent_row="parentRowComposable"
-            :filters="subfiltersComposable[slotProps.data.id]"
+            :parent_row="parent_row"
+            :filters="subfilters[slotProps.data.id]"
             @refresh-table="refresh(false)"
             :child="true"
-            :ref="el => { if (el) childComponentRefsComposable[slotProps.data.id] = el }"
+            :ref="el => { if (el) childComponentRefs[slotProps.data.id] = el }"
             @get-response="get_response($event)"
             />
         </div>
@@ -464,16 +464,6 @@
   
   // Регистрация директивы для использования в template
   const vTooltip = Tooltip;
-  
-  // Импорт composables
-  import { usePVTableData } from './composables/usePVTableData';
-  import { usePVTableCRUD } from './composables/usePVTableCRUD';
-  import { usePVTableActions } from './composables/usePVTableActions';
-  import { usePVTableExpand } from './composables/usePVTableExpand';
-  import { usePVTableCellSelection } from './composables/usePVTableCellSelection';
-  import { usePVTableNavigation } from './composables/usePVTableNavigation';
-  import { usePVTableStyles } from './composables/usePVTableStyles';
-  
   import DataTable from "./components/DataTable/DataTable.vue";
   import Column from "primevue/column";
 
@@ -547,10 +537,18 @@
 
   const { notify } = useNotifications();
 
-  // Управление фильтрами таблицы
+  const darkTheme = ref(false);
+  const toggleDarkMode = () =>{
+      const element = document.querySelector('html');
+      darkTheme.value = !darkTheme.value
+      element.classList.toggle('my-app-dark');
+  }
+  // const getDarkIcon = () =>{
+  //     return 'pi ' + darkTheme.value?'pi-moon':'pi-sun'
+  // }
+  // ['pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]
+  //filters
   const filters = ref();
-  const topFilters = ref({});
-
   const nemu_actions = ref({});
   const actions1 = ref({})
 
@@ -564,43 +562,37 @@
 
   const initFilters = () => {
     let filters0 = {};
-    
-    // Инициализация фильтров для полей таблицы
     for (let field in fields) {
+      // console.log('props.filters',props.filters,field)
       if (props.filters.hasOwnProperty(field)) {
+        // console.log('field',field)
         filters0[field] = props.filters[field];
-      } else if (fields[field].filter) {
-        filters0[field] = fields[field].filter;
-      } else {
+      }else if(fields[field].filter){
+        filters0[field] = fields[field].filter
+      }else {
         switch (fields[field].type) {
-          case 'autocomplete':
-          case 'multiautocomplete':
-          case 'select':
-          case 'decimal':
-          case 'number':
-          case 'view':
+          case 'autocomplete': case 'multiautocomplete': case 'select': case 'decimal': case 'number': case 'view':
             filters0[field] = {
-              operator: FilterOperator.AND,
-              constraints: [
-                { value: null, matchMode: FilterMatchMode.EQUALS },
-              ],
-            };
-            break;
+                operator: FilterOperator.AND,
+                constraints: [
+                  { value: null, matchMode: FilterMatchMode.EQUALS },
+                ],
+              };
+          break
           case 'boolean':
             filters0[field] = {
-              value: null,
-              matchMode: FilterMatchMode.EQUALS
-            };
-            break;
+              value: null, matchMode: FilterMatchMode.EQUALS
+              };
+          break
           case 'date':
             filters0[field] = {
-              operator: FilterOperator.AND,
-              constraints: [
-                { value: null, matchMode: FilterMatchMode.DATE_AFTER },
-                { value: null, matchMode: FilterMatchMode.DATE_BEFORE },
-              ],
-            };
-            break;
+                operator: FilterOperator.AND,
+                constraints: [
+                  { value: null, matchMode: FilterMatchMode.DATE_AFTER },
+                  { value: null, matchMode: FilterMatchMode.DATE_BEFORE },
+                ],
+              };
+          break
           default:
             filters0[field] = {
               operator: FilterOperator.AND,
@@ -611,61 +603,37 @@
         }
       }
     }
-
-    // Добавление фильтров из props, которых нет в fields
     for (let field in props.filters) {
       if (!filters0.hasOwnProperty(field)) {
         filters0[field] = props.filters[field];
       }
     }
-
-    // Инициализация верхних фильтров
-    for (let field in topFilters0) {
-      const value = topFilters0[field].default ? topFilters0[field].default : null;
-      filters0[field] = {
-        operator: FilterOperator.AND,
-        constraints: [
-          { value: value, matchMode: FilterMatchMode.EQUALS },
-        ],
-      };
+    for(let field in topFilters0){
+      switch (topFilters0[field].type) {
+          default:
+            const value = topFilters0[field].default?topFilters0[field].default:null
+            filters0[field] = {
+              operator: FilterOperator.AND,
+              constraints: [
+                { value: value, matchMode: FilterMatchMode.EQUALS },
+              ],
+            };
+        }
     }
 
-    topFilters.value = JSON.parse(JSON.stringify(topFilters0));
+    topFilters.value = JSON.parse(JSON.stringify(topFilters0))
     filters.value = filters0;
-  };
-  
-  watch(() => props.filters, async () => { 
-    initFilters();
-    await loadLazyData();
-  });
 
+  };
+  watch(() => props.filters, async () => { 
+    initFilters()
+    await loadLazyData();
+  })
   const onSetTopFilter = async (filter) => {
     filters.value[filter.field].constraints[0].value = filter.default;
     await loadLazyData();
   };
-  const prepFilters = () => {
-    console.log('prepFilters - filters.value:', filters.value);
-    let filters0 = {};
-    for (let field in filters.value) {
-      if (filters.value[field].hasOwnProperty('constraints')) {
-        if (filters.value[field].constraints[0].value !== null) {
-          filters0[field] = filters.value[field];
-        }
-      } else {
-        if (filters.value[field].value !== null) {
-          filters0[field] = filters.value[field];
-        }
-      }
-    }
-    return filters0;
-  };
-
   const onFilter = async (event) => {
-    console.log('onFilter event:', event);
-    console.log('onFilter - filters.value after event:', filters.value);
-    console.log('onFilter - filial_id filter:', filters.value?.filial_id);
-    console.log('onFilter - filial_id constraints:', filters.value?.filial_id?.constraints);
-    console.log('onFilter - filial_id value:', filters.value?.filial_id?.constraints?.[0]?.value);
     // lazyParams.value.filters = filters.value;
     await loadLazyData(event);
   };
@@ -685,40 +653,230 @@
   // const filterPlaceholder = (col) => {
   //   return "Поиск по " + col.label;
   // };
-  // Управление данными таблицы
-  const {
-    loading,
-    totalRecords,
-    first,
-    lineItems,
-    lazyParams,
-    autocompleteSettings,
-    row_setting,
-    customFields,
-    filterList,
-    createLoadLazyData,
-    createOnPage,
-    createOnSort,
-    findIndexById
-  } = usePVTableData();
-
   const rowsPerPage = ref(10);
   const dt = ref();
+  const loading = ref(true);
+  const totalRecords = ref(0);
+  const first = ref(0);
+  const lazyParams = ref({});
   const columns = ref([{ field: "id", label: "ID" }]);
   let fields = {};
+  const lineItems = ref();
+  // const countRow  = ref(60);
   let cur_actions = ref([]);
   const actions_row = ref(false);
+  // const actions_head = ref(false);
   const globalFilterFields = ref([]);
   const selectSettings = ref({});
+  const topFilters = ref({})
   let topFilters0 = {}
   const row_class_trigger = ref({})
   const table_tree = ref()
   const SpeedDialEnabled = ref(false)
   const speedDialActions = ref([])
+  // :rowGroupMode="rowGroupMode"
+  //     :groupRowsBy="groupRowsBy"
   const rowGroupMode = ref(null)
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
+
+  // Режим выделения ячеек
+  const cellSelectionMode = ref(false);
+  const selectedCells = ref([]);
+  const selectionStart = ref(null);
+  const isSelecting = ref(false);
+
+  // Переключение режима выделения
+  const toggleCellSelectionMode = () => {
+    cellSelectionMode.value = !cellSelectionMode.value;
+    
+    // Очистка выделения при выключении режима
+    if (!cellSelectionMode.value) {
+      selectedCells.value = [];
+      selectionStart.value = null;
+      isSelecting.value = false;
+    }
+  };
+
+  // Получение данных ячейки по rowIndex и colIndex
+  const getCellData = (rowIndex, colIndex) => {
+    // Находим таблицу
+    const table = document.querySelector('[data-cell-selection-mode="true"]');
+    if (!table) return null;
+    
+    // Находим строку по data-p-index (работает с виртуальным скроллингом)
+    const targetRow = table.querySelector(`tbody tr[data-p-index="${rowIndex}"]`);
+    if (!targetRow) return null;
+    
+    const cells = targetRow.querySelectorAll('td');
+    const targetCell = cells[colIndex];
+    if (!targetCell) return null;
+    
+    // Получаем данные строки по реальному индексу
+    const row = lineItems.value[rowIndex];
+    if (!row) return null;
+    
+    // Получаем все видимые колонки данных (без modal_only, hidden и скрытого id)
+    const visibleColumns = columns.value.filter(c => 
+      !c.modal_only && 
+      c.type !== 'hidden' && 
+      !(hideId.value && c.field === 'id')
+    );
+    
+    // Ищем поле колонки через DOM
+    let fieldName = null;
+    
+    // Ищем div с классом td-body внутри ячейки
+    const bodyDiv = targetCell.querySelector('.td-body');
+    if (bodyDiv) {
+      // Считаем позицию среди ячеек с td-body, исключая скрытые колонки
+      let tdBodyIndex = 0;
+      for (let i = 0; i < colIndex; i++) {
+        const cellBodyDiv = cells[i].querySelector('.td-body');
+        if (cellBodyDiv) {
+          // Проверяем, не является ли это скрытой колонкой id
+          // Скрытая колонка id будет иметь display: none или visibility: hidden
+          const cellStyle = window.getComputedStyle(cells[i]);
+          const isVisible = cellStyle.display !== 'none' && cellStyle.visibility !== 'hidden';
+          
+          if (isVisible) {
+            tdBodyIndex++;
+          }
+        }
+      }
+      
+      // Берем колонку по этому индексу
+      const col = visibleColumns[tdBodyIndex];
+      if (col) {
+        fieldName = col.field;
+      }
+    }
+    
+    if (!fieldName) return null;
+    
+    const col = visibleColumns.find(c => c.field === fieldName);
+    if (!col) return null;
+    
+    const adjustedColIndex = visibleColumns.findIndex(c => c.field === fieldName);
+    
+    // Получаем отображаемое значение из DOM (для autocomplete, select и других полей)
+    let displayValue = bodyDiv ? bodyDiv.textContent.trim() : row[col.field];
+    
+    // Определяем, можно ли суммировать значения этой колонки
+    const isSummable = col.type === 'decimal' || col.type === 'number';
+    
+    // Для числовых полей пытаемся преобразовать в число
+    if (isSummable) {
+      // Убираем пробелы (разделители тысяч) и заменяем запятую на точку
+      const numStr = displayValue.replace(/\s/g, '').replace(',', '.');
+      const num = parseFloat(numStr);
+      if (!isNaN(num)) {
+        displayValue = num;
+      }
+    }
+    
+    const cellData = {
+      rowIndex,
+      colIndex: adjustedColIndex,
+      field: col.field,
+      value: displayValue,
+      label: col.label,
+      summable: isSummable
+    };
+    
+    return cellData;
+  };
+
+  // Обработчики событий мыши для выделения
+  const onCellMouseDown = (rowIndex, colIndex, event) => {
+    if (!cellSelectionMode.value) return;
+    
+    isSelecting.value = true;
+    selectionStart.value = { rowIndex, colIndex };
+    
+    const cellData = getCellData(rowIndex, colIndex);
+    if (cellData) {
+      // Если Ctrl нажат - добавляем к существующему выделению
+      if (event.ctrlKey || event.metaKey) {
+        selectedCells.value = [...selectedCells.value, cellData];
+      } else {
+        // Если Ctrl не нажат - сбрасываем старое выделение и создаем новое
+        selectedCells.value = [cellData];
+      }
+    }
+  };
+
+  const onCellMouseEnter = (rowIndex, colIndex, event) => {
+    if (!isSelecting.value || !cellSelectionMode.value || !selectionStart.value) return;
+    
+    // Получаем данные текущей ячейки для получения скорректированного индекса
+    const currentCellData = getCellData(rowIndex, colIndex);
+    if (!currentCellData) return;
+    
+    // Используем скорректированные индексы для вычисления диапазона
+    const minRow = Math.min(selectionStart.value.rowIndex, rowIndex);
+    const maxRow = Math.max(selectionStart.value.rowIndex, rowIndex);
+    
+    // Получаем скорректированный индекс начальной ячейки
+    const startCellData = getCellData(selectionStart.value.rowIndex, selectionStart.value.colIndex);
+    if (!startCellData) return;
+    
+    const minCol = Math.min(startCellData.colIndex, currentCellData.colIndex);
+    const maxCol = Math.max(startCellData.colIndex, currentCellData.colIndex);
+    
+    // Заполнение массива выделенных ячеек для текущего диапазона
+    const currentRangeSelection = [];
+    
+    // Получаем видимые колонки
+    const visibleColumns = columns.value.filter(c => !c.modal_only && c.type !== 'hidden');
+    
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let adjustedCol = minCol; adjustedCol <= maxCol; adjustedCol++) {
+        // Вычисляем обратно полный индекс для getCellData
+        let fullColIndex = adjustedCol;
+        if (table_tree.value) fullColIndex += 1;
+        fullColIndex += 1; // checkbox column
+        
+        const cellData = getCellData(r, fullColIndex);
+        if (cellData) {
+          currentRangeSelection.push(cellData);
+        }
+      }
+    }
+    
+    // Если Ctrl нажат - объединяем с предыдущим выделением
+    if (event?.ctrlKey || event?.metaKey) {
+      // Получаем ячейки, которые были выделены до начала текущего drag
+      const previousSelection = selectedCells.value.filter(cell => {
+        const isInCurrentRange = cell.rowIndex >= minRow && cell.rowIndex <= maxRow &&
+                                 cell.colIndex >= minCol && cell.colIndex <= maxCol;
+        return !isInCurrentRange;
+      });
+      
+      selectedCells.value = [...previousSelection, ...currentRangeSelection];
+    } else {
+      // Если Ctrl не нажат - только текущий диапазон
+      selectedCells.value = currentRangeSelection;
+    }
+  };
+
+  const onCellMouseUp = () => {
+    isSelecting.value = false;
+  };
+
+  const handleCellCopy = (tsvData) => {
+    // Обработчик успешного копирования
+    console.log('Данные скопированы:', tsvData);
+  };
+
+  // Горячие клавиши для режима выделения
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey && e.shiftKey && e.code === 'KeyS') {
+      e.preventDefault();
+      toggleCellSelectionMode();
+    }
+  };
 
   onMounted(async () => {
     loading.value = true;
@@ -824,14 +982,7 @@
           }
         }
         globalFilterFields.value = filter_fields;
-        
-        // Инициализируем фильтры
         initFilters();
-
-        // Создаем функции загрузки данных
-        loadLazyData = createLoadLazyData(api, fields, filters, prepFilters, notify);
-        onPage = createOnPage(loadLazyData);
-        onSort = createOnSort(loadLazyData);
 
         let actions0 = response.data.actions;
 
@@ -1006,7 +1157,7 @@
                 if (!tmpt.hasOwnProperty("class"))
                   tmpt.class = " p-button-success";
                 if (!tmpt.hasOwnProperty("click"))
-                  tmpt.click = (event) => setExpandedRowComposable(event, tmpt);
+                  tmpt.click = (event) => setExpandedRow(event, tmpt);
                 actions_row.value = true;
                 cur_actions.value.push(tmpt);
               }
@@ -1021,7 +1172,7 @@
                 if (!tmpt.hasOwnProperty("class"))
                   tmpt.class = " p-button-success";
                 if (!tmpt.hasOwnProperty("click"))
-                  tmpt.click = (event) => setExpandedRowComposable(event, tmpt);
+                  tmpt.click = (event) => setExpandedRow(event, tmpt);
                 actions_row.value = true;
                 cur_actions.value.push(tmpt);
               }
@@ -1082,13 +1233,13 @@
       notify('error', { detail: error.message }, true);
     }
     
-    document.addEventListener('keydown', handleCellSelectionKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mouseup', onCellMouseUp);
   });
   
   // Очистка при размонтировании
   onBeforeUnmount(() => {
-    document.removeEventListener('keydown', handleCellSelectionKeyDown);
+    document.removeEventListener('keydown', handleKeyDown);
     document.removeEventListener('mouseup', onCellMouseUp);
   });
   const PVTablesMenuAction = (event,data, columns,table,filters) => {
@@ -1098,25 +1249,319 @@
       }
     }
   }
+  //expand row
+  const expandedRows = ref({});
+  const expandedTableTreeRows = ref({});
+  const subs = ref({});
+  const childComponentRefs = ref({})
   
   const refresh = (from_parent,table) => {
+    // console.log('table',table)
+    // console.log('props.table',props.table)
+    // console.log('childComponentRefs',childComponentRefs)
     if(!table || table == props.table){
       loadLazyData();
       if(!from_parent) emit('refresh-table')
-    }else if(table && childComponentRefsComposable.value){
-      for(let id in childComponentRefsComposable.value){
-        childComponentRefsComposable.value[id].refresh(true,table)
+    }else if(table && childComponentRefs.value){
+      for(let id in childComponentRefs.value){
+        childComponentRefs.value[id].refresh(true,table)
       }
     }
   };
   defineExpose({ refresh });
+  //expand
+  
+  /**
+   * Переключает раскрытие/сворачивание строки в древовидной таблице
+   * Используется для отображения дочерних элементов в иерархической структуре
+   * @param {Object} data - Данные строки с полями id и количеством дочерних элементов
+   */
+  const toogleExpandRow = async (data) => {
+    let tmp = { ...expandedRows.value };
+    if(expandedTableTreeRows.value[data.id]){
+      // Закрываем раскрытую строку: удаляем из трекеров и очищаем подтаблицу
+      delete expandedTableTreeRows.value[data.id]
+      delete tmp[data.id];
+      await delExpand(tmp);
+      delete subs.value[data.id]
 
+    }else{
+      // Открываем строку: создаем фильтр для загрузки дочерних элементов
+      let tmpfilters = {};
+      delete tmp[data.id];
+      await delExpand(tmp);
+
+      // Фильтруем дочерние элементы по родительскому ID
+      tmpfilters[table_tree.value.parentIdField] = {
+        operator: FilterOperator.AND,
+        constraints: [
+          {
+            value: data[table_tree.value.idField],
+            matchMode: FilterMatchMode.EQUALS,
+          },
+        ],
+      };
+      subfilters.value[data.id] = {...tmpfilters,...filters.value};
+      subs.value[data.id] = {
+        action:'subtables',
+        table:props.table,
+      }
+      
+      tmp[data.id] = true;
+      expandedTableTreeRows.value[data.id] = true
+      expandedRows.value = { ...tmp };
+    }
+  };
+  const subfilters = ref({});
+  const parent_row = ref({})
+  const delExpand = async (tmp) => {
+    expandedRows.value = { ...tmp };
+    parent_row.value = {}
+  };
+  
+  /**
+   * Обрабатывает модификаторы полей в where-условиях
+   * Поддерживает модификаторы: IN, LIKE, NOT LIKE, !=, <, <=, >, >=
+   * @param {string} field - Имя поля с возможным модификатором (например, "id:IN" или "name:LIKE")
+   * @param {any} value - Значение для фильтра
+   * @param {Object} event - Данные строки
+   * @returns {Object} Объект с fieldName, matchMode и filterValue
+   */
+  const processFieldModifier = (field, value, event) => {
+    // Разбиваем поле на имя и модификатор
+    const fieldParts = field.split(':');
+    const fieldName = fieldParts[0];
+    const modifier = fieldParts[1]; // может быть 'IN', 'LIKE', 'NOT LIKE', '!=', '<', '<=', '>', '>=' или undefined
+    
+    let filterValue = value;
+    let matchMode = FilterMatchMode.EQUALS;
+    
+    // Проверяем, является ли значение полем из data_fields
+    if (dataFields.value && dataFields.value.includes(value)) {
+      const dataFieldsValues = getDataFieldsValues(event);
+      if (dataFieldsValues[value]) {
+        try {
+          // Если значение - строка JSON, парсим её
+          filterValue = typeof dataFieldsValues[value] === 'string' 
+            ? JSON.parse(dataFieldsValues[value]) 
+            : dataFieldsValues[value];
+        } catch (e) {
+          filterValue = dataFieldsValues[value];
+        }
+      }
+    }
+    
+    // Устанавливаем matchMode в зависимости от модификатора
+    if (modifier) {
+      switch (modifier.toUpperCase()) {
+        case 'IN':
+          matchMode = FilterMatchMode.IN;
+          // Для IN значение должно быть массивом
+          if (!Array.isArray(filterValue)) {
+            filterValue = filterValue ? [filterValue] : [];
+          }
+          break;
+        case 'LIKE':
+          matchMode = FilterMatchMode.CONTAINS;
+          break;
+        case 'NOT LIKE':
+          matchMode = FilterMatchMode.NOT_CONTAINS;
+          break;
+        case '!=':
+          matchMode = FilterMatchMode.NOT_EQUALS;
+          break;
+        case '<':
+          matchMode = FilterMatchMode.LESS_THAN;
+          break;
+        case '<=':
+          matchMode = FilterMatchMode.LESS_THAN_OR_EQUAL_TO;
+          break;
+        case '>':
+          matchMode = FilterMatchMode.GREATER_THAN;
+          break;
+        case '>=':
+          matchMode = FilterMatchMode.GREATER_THAN_OR_EQUAL_TO;
+          break;
+        default:
+          // Если модификатор не распознан, используем EQUALS
+          matchMode = FilterMatchMode.EQUALS;
+      }
+    }
+    
+    return { fieldName, matchMode, filterValue };
+  };
+  /**
+   * Устанавливает раскрытие строки для подтаблиц или подвкладок из действий
+   * Поддерживает умное переключение: закрывает если та же таблица, переключает если другая
+   * @param {Object} event - Данные строки (объект с id и другими полями)
+   * @param {Object} tmpt - Конфигурация действия (table, action, where, tabs и т.д.)
+   */
+  const setExpandedRow = async (event, tmpt) => {
+    // console.log('tmpt',tmpt)
+    let tmp = { ...expandedRows.value };
+    
+    // Проверяем, раскрыта ли уже эта строка
+    if (tmp.hasOwnProperty(event.id)) {
+      if (subs.value[event.id].table == tmpt.table) {
+        // Та же таблица - закрываем
+        delete tmp[event.id];
+        await delExpand(tmp);
+        return;
+      } else {
+        // Другая таблица - переключаем
+        delete tmp[event.id];
+        await delExpand(tmp);
+        tmp[event.id] = true;
+      }
+    } else {
+      // Открываем новую строку
+      tmp[event.id] = true;
+    }
+    subs.value[event.id] = tmpt;
+
+    // Обработка подтаблиц (subtables)
+    if(tmpt.action == 'subtables'){
+      if (tmpt.hasOwnProperty("where")) {
+        // Создаем фильтры на основе конфигурации where
+        let tmpfilters = {};
+        for (let field in tmpt.where) {
+          // Получаем значение напрямую из event или из where
+          const value = event[tmpt.where[field]] || tmpt.where[field];
+          
+          // Обрабатываем модификатор поля
+          const { fieldName, matchMode, filterValue } = processFieldModifier(field, value, event);
+          
+          tmpfilters[fieldName] = {
+            operator: FilterOperator.AND,
+            constraints: [
+              {
+                value: filterValue,
+                matchMode: matchMode,
+              },
+            ],
+          };
+        }
+        subfilters.value[event.id] = tmpfilters;
+      }
+    }
+    // Обработка подвкладок (subtabs)
+    else if(tmpt.action == 'subtabs'){
+      for(let key in tmpt.tabs){
+        if (tmpt.tabs[key].hasOwnProperty("where")) {
+          // Создаем фильтры для каждой вкладки
+          let tmpfilters = {};
+          for (let field in tmpt.tabs[key].where) {
+            // Получаем значение напрямую из event или из where
+            const value = event[tmpt.tabs[key].where[field]] 
+              ? event[tmpt.tabs[key].where[field]] 
+              : tmpt.tabs[key].where[field];
+            
+            // Обрабатываем модификатор поля
+            const { fieldName, matchMode, filterValue } = processFieldModifier(field, value, event);
+            
+            tmpfilters[fieldName] = {
+              operator: FilterOperator.AND,
+              constraints: [
+                {
+                  value: filterValue,
+                  matchMode: matchMode,
+                },
+              ],
+            };
+          }
+          // console.log('tmpfilters',tmpfilters)
+          if(!subfilters.value.hasOwnProperty(event.id)) subfilters.value[event.id] = {}
+          subfilters.value[event.id][key] = tmpfilters;
+          parent_row.value = { ...event }
+          console.log('parent_row.value',parent_row.value)
+        }
+      }
+    }
+    // console.log('subfilters.value',subfilters.value)
+    expandedRows.value = { ...tmp };
+    // console.log('expandedRows.value',expandedRows.value)
+  };
+
+  // const din_import = async () =>{
+  //   for(let field in fields){
+  //     fields[field].field = field
+  //     switch(fields[field].type){
+  //       case 'textarea':
+  //         await import("primevue/textarea");
+  //       break
+  //     }
+  //   }
+  // }
+  const autocompleteSettings = ref({});
+  const row_setting = ref({});
+  const customFields = ref({});
   const form = ref({});
+  const filterList = ref({});
 
-  // Функции будут созданы после инициализации prepFilters в onMounted
-  let loadLazyData;
-  let onPage;
-  let onSort;
+  const loadLazyData = async (event) => {
+    loading.value = true;
+    lazyParams.value = {
+      ...lazyParams.value,
+      first: event?.first || first.value,
+    };
+    // console.log('lazyParams.value',lazyParams.value)
+    // console.log('event',event)
+    // console.log('filters.value',filters.value)
+    let filters0 = {}
+    for(let field in filters.value){
+      if(filters.value[field].hasOwnProperty('constraints')){
+        if(filters.value[field].constraints[0].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }else{
+        if(filters.value[field].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }
+    }
+    let params = {
+      limit: lazyParams.value.rows,
+      setTotal: 1,
+      offset: lazyParams.value.first,
+      // sortField:lazyParams.value.sortField,
+      // sortOrder:lazyParams.value.sortOrder,
+      multiSortMeta: lazyParams.value.multiSortMeta,
+      filters: filters0,
+    };
+  
+    try {
+      const response = await api.read(params)
+      
+      
+      // Всегда создаем новый массив для гарантированной реактивности
+      lineItems.value = [...rowsHandler(response.data.rows, fields)]
+
+      if(!response.success && response.message){
+        notify('error', { detail: response.message });
+      }
+      if(response.data.autocomplete){
+        for(let af in response.data.autocomplete){
+          autocompleteSettings.value[af] = response.data.autocomplete[af];
+        }
+      }
+      if(response.data.row_setting){
+          row_setting.value = response.data.row_setting
+      }   
+      if(response.data.customFields){
+        customFields.value = response.data.customFields
+      }
+      if(response.data.filter_list){
+        filterList.value = response.data.filter_list
+      }
+      //
+
+      totalRecords.value = response.data.total;
+      loading.value = false;
+    } catch (error) {
+      console.log('error',error)
+      notify('error', { detail: error.message });
+    }
+  };
 
 
   const { cacheAction, cache } = useActionsCaching()
@@ -1138,59 +1583,6 @@
     dt,
     storageKey: `pvtables-virtual-scroll-${props.table}`
   });
-
-  // Навигация по ячейкам
-  const {
-    findCell,
-    findNextEditableColumn,
-    findPrevEditableColumn,
-    onTab,
-    onKeyDown,
-    moveCell
-  } = usePVTableNavigation();
-
-  // Стили таблицы
-  const {
-    op,
-    selectedColumns,
-    darkTheme,
-    toggleDarkMode,
-    getClassBody,
-    getClassTD,
-    getColumnStyle,
-    rowClass,
-    baseRowStyle,
-    toggleSettings,
-    onToggleColomns
-  } = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId);
-
-  // Выделение ячеек
-  const {
-    cellSelectionMode,
-    selectedCells,
-    selectionStart,
-    isSelecting,
-    toggleCellSelectionMode,
-    getCellData,
-    onCellMouseDown,
-    onCellMouseEnter,
-    onCellMouseUp,
-    handleCellCopy,
-    handleKeyDown: handleCellSelectionKeyDown
-  } = usePVTableCellSelection(columns, lineItems, hideId, table_tree);
-
-  // Раскрытие строк
-  const {
-    expandedRows: expandedRowsComposable,
-    expandedTableTreeRows: expandedTableTreeRowsComposable,
-    subs: subsComposable,
-    subfilters: subfiltersComposable,
-    parent_row: parentRowComposable,
-    childComponentRefs: childComponentRefsComposable,
-    toogleExpandRow: toogleExpandRowComposable,
-    setExpandedRow: setExpandedRowComposable,
-    delExpand: delExpandComposable
-  } = usePVTableExpand(table_tree, filters, dataFields, props.table);
 
   const onCellEditComplete = async (event) => {
     let { data, newValue, field } = event;
@@ -1249,14 +1641,14 @@
           row_setting.value[key] = response.data.row_setting[key]
         }
       }
-      if(expandedTableTreeRowsComposable.value[data.id]){
+      if(expandedTableTreeRows.value[data.id]){
         if(data['gtsapi_children_count'] == 0){
-          toogleExpandRowComposable(data)
+          toogleExpandRow(data)
         }else{
-          childComponentRefsComposable.value[data.id].refresh(true);
+          childComponentRefs.value[data.id].refresh(true);
         }
         
-      }
+      } 
     } catch (error) {
       // event.preventDefault(); // При ошибке на gtsAutoComplete не срабатывает. Не понятно что делать???
       console.log('error',error)
@@ -1278,6 +1670,16 @@
     }
     target[lastField] = value;
   }
+  const onPage = async (event) => {
+    lazyParams.value = event;
+    await loadLazyData(event);
+  };
+  const onSort = async (event) => {
+    lazyParams.value = event;
+    await loadLazyData(event);
+  };
+
+
   const lineItem = ref({});
   const submitted = ref(false);
   const lineItemDialog = ref(false);
@@ -1407,6 +1809,17 @@
       notify('error', { detail: error.message });
     }
   };
+  const findIndexById = (id) => {
+    let index = -1;
+    for (let i = 0; i < lineItems.value.length; i++) {
+      if (lineItems.value[i].id == id) {
+        index = i;
+        break;
+      }
+    }
+    return index;
+  };
+
   //add row
   const openNew = (action) => {
     if(action.watch) mywatch.value = {enabled: true, fields: action.watch, table: props.table, action: action.action, filters: prepFilters()};
@@ -1423,7 +1836,20 @@
       return
     }
     
-    let requestData = {filters: prepFilters()}
+    let filters0 = {}
+    for(let field in filters.value){
+      if(filters.value[field].hasOwnProperty('constraints')){
+        if(filters.value[field].constraints[0].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }else{
+        if(filters.value[field].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }
+    }
+    
+    let requestData = {filters: filters0}
     
     // Добавляем data_fields для выбранных строк если они есть
     if (dataFields.value && dataFields.value.length > 0 && selectedlineItems.value && selectedlineItems.value.length > 0) {
@@ -1444,6 +1870,21 @@
       notify('error', { detail: error.message });
     }
   };
+  const prepFilters = () => {
+    let filters0 = {}
+    for(let field in filters.value){
+      if(filters.value[field].hasOwnProperty('constraints')){
+        if(filters.value[field].constraints[0].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }else{
+        if(filters.value[field].value !== null){
+          filters0[field] = filters.value[field]
+        }
+      }
+    }
+    return filters0
+  }
   
   const getDataFieldsValues = (data) => {
     if (!dataFields.value || dataFields.value.length === 0) {
@@ -1565,9 +2006,228 @@
     selectAll.value = false;
   };
 
+  const getClassBody = (col, data) => {
+    let class1 = 'td-body '
+    let class2 = col.type
+    let customReadonly = false
+    if(customFields.value[data.id]){
+      if(customFields.value[data.id][col.field]){
+        if(customFields.value[data.id][col.field].readonly == 1) customReadonly = true
+        if(customFields.value[data.id][col.field].type != class2) class2 = customFields.value[data.id][col.field].type
+      }
+    }
+    if(col.readonly || customReadonly){
+      return class1 + class2 + ' readonly'
+    }
+    return class1 + class2
+  };
+  const getClassTD = (col) => {
+    return col.type
+  };
+  
+  const getColumnStyle = (col) => {
+    let style = {};
+    
+    // Сначала применяем col.style если есть
+    if (col.style) {
+      style = typeof col.style === 'string' ? {} : { ...col.style };
+    }
+    
+    // Затем применяем col.width поверх style
+    if (col.width) {
+      style.width = col.width;
+    }
+    if (col['min-width']) {
+      style['min-width'] = col['min-width'];
+    }
+    // Если style пустое и col.type == datetime, то ширина 120px
+    if (Object.keys(style).length === 0 && col.type === 'datetime') {
+      style['min-width'] = '190px';
+    }
+    if (Object.keys(style).length === 0 && col.type === 'textarea') {
+      style['min-width'] = '190px';
+    }
+
+    return style;
+  };
+  
+  const rowClass = (data) => {
+    if(row_setting.value[data.id] && row_setting.value[data.id].class){
+      return row_setting.value[data.id].class;
+    }
+    if(row_class_trigger.value.field){
+      if(data[row_class_trigger.value.field]) return row_class_trigger.value.class
+    }
+    return
+  };
+
+  const baseRowStyle = (data) => {
+    if(row_setting.value[data.id] && row_setting.value[data.id].style){
+      const style = row_setting.value[data.id].style;
+      // Проверяем, что style - это объект, а не массив
+      if (style && typeof style === 'object' && !Array.isArray(style)) {
+        return style;
+      }
+    }
+    return {};
+  };
+  
   const rowStyle = getVirtualScrollRowStyle(baseRowStyle);
+  
+  const op = ref();
+  const toggleSettings = (event) => {
+    selectedColumns.value = columns.value.filter(col => col.modal_only != true);
+    op.value.toggle(event);
+  }
+  const selectedColumns = ref();
+  const onToggleColomns = (val) => {
+    columns.value.forEach(col => {
+      if(val.includes(col)){
+        col.modal_only = false
+      }else{
+        col.modal_only = true
+      }
+    })
+    selectedColumns.value = columns.value.filter(col => col.modal_only != true);
+  }
   const get_response = (event) => {
     emit('get-response', event)
+  }
+  const findCell = (element) =>{
+    if (element) {
+      var cell = element;
+      // console.log('cell',cell)
+      while (cell && cell.tagName !== "TD") {
+        cell = cell.parentElement;
+      }
+      // console.log('cell2',cell)
+      return cell;
+    } else {
+      return null;
+    }
+  }
+  const findNextEditableColumn = (cell) => {
+    if(!cell) return null;
+    var nextCell = cell.nextElementSibling;
+    if (!nextCell) {
+      var nextRow = cell.parentElement.nextElementSibling;
+      if (nextRow) {
+        nextCell = nextRow.firstElementChild;
+      }
+    }
+    if (nextCell) {
+      // console.log('nextCell1',nextCell)
+      // console.log('nextCell.firstElementChild',nextCell.firstElementChild)  
+      if (nextCell.tagName === "TD" 
+      && !nextCell.firstElementChild.classList.contains('readonly')
+      && nextCell.firstElementChild.classList.contains('td-body')
+      && !nextCell.firstElementChild.classList.contains('view')
+      && !nextCell.firstElementChild.classList.contains('html')
+      ){
+        return nextCell;
+      }else{
+        return findNextEditableColumn(nextCell);
+      } 
+    } else {
+      return null;
+    }
+  }
+
+  const findPrevEditableColumn = (cell) => {
+    if(!cell) return null;
+    var prevCell = cell.previousElementSibling;
+    if (!prevCell) {
+      var prevRow = cell.parentElement.previousElementSibling;
+      if (prevRow) {
+        prevCell = prevRow.lastElementChild;
+      }
+    }
+    if (prevCell) {
+      if (prevCell.tagName === "TD" 
+      && !prevCell.firstElementChild.classList.contains('readonly')
+      && prevCell.firstElementChild.classList.contains('td-body')
+      && !prevCell.firstElementChild.classList.contains('view')
+      && !prevCell.firstElementChild.classList.contains('html')
+      ){
+        return prevCell;
+      }else{
+        return findPrevEditableColumn(prevCell);
+      } 
+    } else {
+      return null;
+    }
+  }
+
+  async function invokeElementMethod(element, methodName, args) {
+    return element[methodName].apply(element, args);
+  }
+  const onTab = (event) => {
+    // console.log('tab event',event)
+    onKeyDown(event)
+  }
+  const onKeyDown = async (event) => {
+    
+    if(event.key == 'Enter' || event.key == 'Tab'){
+      // console.log('Enter',event)
+      if(event.key == 'Enter') {
+        if(event.target.tagName == 'TEXTAREA') {
+          return;
+        }
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      var currentCell = findCell(event.target);
+      var targetCell = event.shiftKey ? findPrevEditableColumn(currentCell) : findNextEditableColumn(currentCell);
+      // console.log('targetCell',targetCell)
+      // if(event.target.classList.contains('pv_show_id')){
+        
+      //   await invokeElementMethod(event.target, "blur");
+      //   setTimeout(()=>{
+      //     moveCell(event,targetCell)
+      //   },1500)
+        
+      // }else{
+        moveCell(event,targetCell)
+      // }
+      
+    }
+  }
+  const moveCell = async (event,targetCell) => {
+    if (targetCell) {
+        
+      if(targetCell.firstElementChild.classList.contains('readonly')){
+        targetCell = findNextEditableColumn(targetCell);
+      }
+      if(targetCell.firstElementChild.classList.contains('boolean')){
+        targetCell = findNextEditableColumn(targetCell);
+      }
+      if(targetCell.firstElementChild.classList.contains('autocomplete')
+      ){
+        if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+        targetCell = targetCell.firstElementChild.firstElementChild
+        targetCell.select()
+        // console.log('targetCell2',targetCell)
+      }
+      if(targetCell.firstElementChild.classList.contains('date')
+      || targetCell.firstElementChild.classList.contains('datetime')
+      ){
+        targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild
+        targetCell.focus()
+      }
+      if(targetCell.firstElementChild.classList.contains('select')){
+        if(targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') await invokeElementMethod(targetCell, "click");
+        targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling
+        invokeElementMethod(targetCell, "click");
+      }else{
+        await invokeElementMethod(targetCell, "click");
+        //найти первый инпут или текстареа в targetCell и сделать селект на нем
+        const input = targetCell.querySelector('input, textarea');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+    }
   }
   // Modal form для кастомных действий
   const modalFormDialog = ref(false);
