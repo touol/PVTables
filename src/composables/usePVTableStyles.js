@@ -9,7 +9,7 @@ import { ref } from 'vue';
  * @returns {Object} Методы для работы со стилями
  */
 export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId) {
-  const op = ref();
+  const op = ref(null);
   const selectedColumns = ref();
   const darkTheme = ref(false);
 

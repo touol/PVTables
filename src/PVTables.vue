@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <Popover ref="op">
-      <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="onToggleColomns"
+      <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"
         placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
     </Popover>
     
@@ -94,7 +94,7 @@
         <Button
           type="button"
           icon="pi pi-cog"
-          @click="toggleSettings"
+          @click="toggleSettings($event, columns)"
         />
         <Button
           type="button"
@@ -775,6 +775,8 @@
   } = usePVTableNavigation();
 
   // Стили таблицы
+  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId);
+  
   const {
     op,
     selectedColumns,
@@ -784,10 +786,17 @@
     getClassTD,
     getColumnStyle,
     rowClass,
-    baseRowStyle,
-    toggleSettings,
-    onToggleColomns
-  } = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId);
+    baseRowStyle
+  } = stylesComposable;
+  
+  // Оборачиваем toggleSettings и onToggleColomns для передачи columns
+  const toggleSettings = (event) => {
+    stylesComposable.toggleSettings(event, columns);
+  };
+  
+  const onToggleColomns = (val) => {
+    stylesComposable.onToggleColomns(val, columns);
+  };
 
   // Выделение ячеек
   const {
@@ -825,8 +834,34 @@
   const modalFormType = ref(''); // 'head' или 'row'
   const modalFormColumns = ref([]);
 
-  // Действия таблицы (будут инициализированы после создания необходимых функций)
-  let defHeadAction, defRowAction, excelExport, getDataFieldsValues, showModalForm, hideModalForm, submitModalForm;
+  // Инициализация composable действий (до CRUD, так как нужен в onMounted)
+  const actionsComposable = usePVTableActions({
+    api,
+    props,
+    prepFilters: () => prepFilters(),
+    refresh,
+    notify,
+    emit,
+    dataFields,
+    selectedlineItems: ref([]), // Временное значение, будет заменено
+    table_tree,
+    filters: () => filters,
+    modalFormDialog,
+    modalFormData,
+    modalFormAction,
+    modalFormRowData,
+    modalFormType,
+    modalFormColumns
+  });
+
+  // Извлекаем функции из composable
+  const defHeadAction = actionsComposable.defHeadAction;
+  const defRowAction = actionsComposable.defRowAction;
+  const excelExport = actionsComposable.excelExport;
+  const getDataFieldsValues = actionsComposable.getDataFieldsValues;
+  const showModalForm = actionsComposable.showModalForm;
+  const hideModalForm = actionsComposable.hideModalForm;
+  const submitModalForm = actionsComposable.submitModalForm;
 
   // Инициализация CRUD composable
   const crudComposable = usePVTableCRUD(
@@ -871,42 +906,11 @@
     onRowUnselect
   } = crudComposable;
 
-  // Инициализация composable действий (после создания необходимых переменных)
-  const actionsComposable = usePVTableActions({
-    api,
-    props,
-    prepFilters: () => prepFilters(),
-    refresh,
-    notify,
-    emit,
-    dataFields,
-    selectedlineItems,
-    table_tree,
-    filters: () => filters,
-    modalFormDialog,
-    modalFormData,
-    modalFormAction,
-    modalFormRowData,
-    modalFormType,
-    modalFormColumns
-  });
-
-  // Извлекаем функции из composable
-  defHeadAction = actionsComposable.defHeadAction;
-  defRowAction = actionsComposable.defRowAction;
-  excelExport = actionsComposable.excelExport;
-  getDataFieldsValues = actionsComposable.getDataFieldsValues;
-  showModalForm = actionsComposable.showModalForm;
-  hideModalForm = actionsComposable.hideModalForm;
-  submitModalForm = actionsComposable.submitModalForm;
+  // Обновляем selectedlineItems в actionsComposable после инициализации CRUD
+  actionsComposable.selectedlineItems = selectedlineItems;
 
   const rowStyle = getVirtualScrollRowStyle(baseRowStyle);
   const get_response = (event) => {
     emit('get-response', event)
   }
 </script>
-
-
-<style>
-
-</style>
