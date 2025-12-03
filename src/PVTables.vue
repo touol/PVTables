@@ -644,7 +644,6 @@
     await loadLazyData();
   };
   const prepFilters = () => {
-    console.log('prepFilters - filters.value:', filters.value);
     let filters0 = {};
     for (let field in filters.value) {
       if (filters.value[field].hasOwnProperty('constraints')) {
@@ -661,13 +660,6 @@
   };
 
   const onFilter = async (event) => {
-    console.log('onFilter event:', event);
-    console.log('onFilter - filters.value after event:', filters.value);
-    console.log('onFilter - filial_id filter:', filters.value?.filial_id);
-    console.log('onFilter - filial_id constraints:', filters.value?.filial_id?.constraints);
-    console.log('onFilter - filial_id value:', filters.value?.filial_id?.constraints?.[0]?.value);
-    // lazyParams.value.filters = filters.value;
-    console.log('onFilter event', event)
     await loadLazyData(event);
   };
   const clearFilter = async () => {

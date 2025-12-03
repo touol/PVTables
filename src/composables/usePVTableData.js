@@ -32,7 +32,6 @@ export function usePVTableData() {
         ...lazyParams.value,
         first: event?.first || first.value,
       };
-      console.log('usePVTableData - filters.value:', filters.value);
       const params = {
         limit: lazyParams.value.rows,
         setTotal: 1,
