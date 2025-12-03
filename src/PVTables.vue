@@ -433,9 +433,6 @@
   import Dialog from "primevue/dialog";
   // import SplitButton from 'primevue/splitbutton';
   // import axios from "axios";
-
-  //import fields component
-  import { FilterMatchMode, FilterOperator } from "@primevue/core/api";
   
   // import InputText from "primevue/inputtext";
   // import Textarea from "primevue/textarea";
