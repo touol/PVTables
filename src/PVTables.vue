@@ -635,6 +635,7 @@
   };
   const onFilter = async (event) => {
     // lazyParams.value.filters = filters.value;
+    console.log('onFilter event', event)
     await loadLazyData(event);
   };
   const clearFilter = async () => {

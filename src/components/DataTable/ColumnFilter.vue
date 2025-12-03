@@ -162,16 +162,6 @@
                         
                         <div :class="cx('filterButtonbar')" v-bind="getColumnPT('filterButtonbar')">
                             <Button
-                                v-if="filterList && filterList[field]"
-                                type="button"
-                                :class="cx('pcFilterApplyButton')"
-                                label="Применить"
-                                @click="applyValueListFilter()"
-                                :unstyled="unstyled"
-                                v-bind="filterButtonProps.popover.apply"
-                                :pt="getColumnPT('pcFilterApplyButton')"
-                            ></Button>
-                            <Button
                                 v-if="!filterClearTemplate && showClearButton"
                                 type="button"
                                 :class="cx('pcFilterClearButton')"
@@ -182,18 +172,18 @@
                                 :pt="getColumnPT('pcFilterClearButton')"
                             ></Button>
                             <component v-else :is="filterClearTemplate" :field="field" :filterModel="filters[field]" :filterCallback="clearFilter" />
-                            <template v-if="showApplyButton && !(filterList && filterList[field])">
+                            <template v-if="showApplyButton">
                                 <Button
                                     v-if="!filterApplyTemplate"
                                     type="button"
                                     :class="cx('pcFilterApplyButton')"
                                     :label="applyButtonLabel"
-                                    @click="applyFilter()"
+                                    @click="applyUnifiedFilter()"
                                     :unstyled="unstyled"
                                     v-bind="filterButtonProps.popover.apply"
                                     :pt="getColumnPT('pcFilterApplyButton')"
                                 ></Button>
-                                <component v-else :is="filterApplyTemplate" :field="field" :filterModel="filters[field]" :filterCallback="applyFilter" />
+                                <component v-else :is="filterApplyTemplate" :field="field" :filterModel="filters[field]" :filterCallback="applyUnifiedFilter" />
                             </template>
                         </div>
                     </template>
@@ -403,7 +393,7 @@ export default {
                         return;
                     }
                 }
-                // По умолчанию выбраны все значения
+                // По умолчанию выбраны все значения (чтобы чекбоксы были готовы к использованию)
                 this.selectedValues = [...this.filterList[this.field]];
             }
         },
@@ -495,6 +485,25 @@ export default {
             this.$emit('apply-click', { field: this.field, constraints: this.filters[this.field] });
             this.$emit('filter-apply');
             this.hide();
+        },
+        applyUnifiedFilter() {
+            // Проверяем, есть ли значение в стандартном фильтре
+            const hasStandardFilterValue = this.filters && this.filters[this.field] && 
+                ((this.filters[this.field].constraints && !this.isFilterBlank(this.filters[this.field].constraints[0].value)) ||
+                 (!this.filters[this.field].constraints && !this.isFilterBlank(this.filters[this.field].value)));
+            
+            // Если есть значение в стандартном фильтре - применяем его, игнорируя чекбоксы
+            if (hasStandardFilterValue) {
+                this.applyFilter();
+            } 
+            // Иначе, если есть filterList - применяем чекбоксы
+            else if (this.filterList && this.filterList[this.field]) {
+                this.applyValueListFilter();
+            }
+            // Иначе применяем стандартный фильтр (может быть пустым)
+            else {
+                this.applyFilter();
+            }
         },
         hasFilter() {
             if (this.filtersStore) {
