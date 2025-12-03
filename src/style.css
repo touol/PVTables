@@ -33,3 +33,121 @@
   -moz-user-select: none;
   -ms-user-select: none;
 }
+  .td-body{
+    width: 100%;
+    height: 100%;
+  }
+  .td-body:not(.date){
+    margin-top: 10px;
+  }
+  .td-body.readonly {
+      background-blend-mode: multiply;
+      background: rgba(190, 164, 164, 0.1);
+  }
+  td.number,td.decimal,td.textarea,td.text{
+    max-width: 100px;
+  }
+  td.number .p-inputtext,td.decimal .p-inputtext,td.textarea textarea,td.text .p-inputtext{
+    width: 100%;
+  }
+  td.autocomplete .p-autocomplete-dropdown, td.autocomplete .p-inputtext
+  ,td.select .p-autocomplete-dropdown, td.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+  .td-body.autocomplete .p-autocomplete-dropdown, .td-body.autocomplete .p-inputtext
+  ,.td-body.select .p-autocomplete-dropdown, .td-body.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+  .p-datatable-column-header-content {
+    flex-wrap: wrap;
+  }
+  
+  
+  html {
+    font-size: 14px;
+  }
+  .p-datatable-resizable-table > .p-datatable-thead > tr > th,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.text,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.textarea,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.html 
+  {
+    white-space: break-spaces !important;
+  }
+  /* .p-datatable textarea{
+    width:136px;
+  } */
+
+  .p-datatable tr.hit{
+    background-color: #60cc2fe6;
+  }
+  .p-datatable tr.attention{
+    background-color: rgba(252, 3, 3, 0.8);
+  }
+  .p-datatable tr.work{
+    background-color: #89d7f1;
+  }
+  .p-datatable tr.outwork{
+    background-color: #eff189;
+  }
+  .p-datatable tr.onsklad{
+    background-color: #f19989;
+  }
+  .p-datatable tr.canceled{
+    background-color: #ff684c;
+  }
+  .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding: 0.375rem 0.5rem;
+  }
+  .p-autocomplete-option:not(.p-autocomplete-option-selected):not(.p-disabled).p-focus {
+    background: #9cabbb;
+    color: var(--p-autocomplete-option-focus-color);
+  }
+  .td-actions .p-speeddial {
+    display: inline;
+  }
+  .td-actions{
+    white-space: nowrap;
+    align-content: center;
+  }
+  .td-actions .p-speeddial-list {
+    position: absolute;
+    right: 0;
+  }
+
+  .p-datatable .p-inputtext{
+    color:black;
+  }
+  .navbar-collapse.collapse {
+     visibility: inherit !important;
+  }
+  .p-datatable-table td, .p-datatable-table th {
+    padding: 8px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
+  }
+  
+  /* Стили для виртуального скроллинга */
+  .p-datatable table {
+    border-collapse: separate !important;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td,
+  .p-datatable table .p-virtualscroller-content th {
+    max-height: inherit;
+    padding: 8px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td .td-body {
+    max-height: inherit;
+    overflow: auto;
+    text-overflow: ellipsis;
+    display: block;
+  }
