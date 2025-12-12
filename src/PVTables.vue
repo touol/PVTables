@@ -1,8 +1,19 @@
 <template>
   <div class="card">
     <Popover ref="op">
-      <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"
-        placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
+      <div style="padding: 1rem;">
+        <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"
+          placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
+        
+        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <Button label="Сбросить локальные стили" icon="pi pi-refresh" 
+            @click="() => resetLocalFieldsStyle(refresh)" size="small" severity="secondary"/>
+          <Button label="Сбросить стили на сервере" icon="pi pi-server" 
+            @click="() => resetServerFieldsStyle(refresh)" size="small" severity="warning"/>
+          <Button label="Сохранить стили на сервере" icon="pi pi-save" 
+            @click="saveFieldsStyleToServer" size="small" severity="success"/>
+        </div>
+      </div>
     </Popover>
     
     <Popover ref="virtualScrollPopover">
@@ -150,6 +161,7 @@
 
       scrollable scrollHeight="85vh"
       resizableColumns columnResizeMode="expand"
+      @column-resize-end="onColumnResizeEnd"
 
       size="small"
 
@@ -666,15 +678,15 @@
         prepFilters = filtersComposable.prepFilters;
         onFilter = filtersComposable.onFilter;
         clearFilter = filtersComposable.clearFilter;
-        
-        // Инициализируем фильтры
-        initFilters();
 
         // Создаем функции загрузки данных
-        loadLazyData = createLoadLazyData(api, fields, filters, prepFilters, notify);
+        loadLazyData = createLoadLazyData(api, fields, filters, () => prepFilters(), notify);
         composableLoadLazyData = loadLazyData; // Связываем прокси с реальной функцией
         onPage = createOnPage(loadLazyData);
         onSort = createOnSort(loadLazyData);
+        
+        // Инициализируем фильтры ПОСЛЕ создания loadLazyData
+        initFilters();
 
         actions1.value = response.data.actions;
 
@@ -697,12 +709,30 @@
         SpeedDialEnabled.value = processedActions.SpeedDialEnabled;
         
         columns.value = cols;
+        
+        // Загружаем стили с сервера (если есть)
+        loadServerFieldsStyle(response.data);
+        
+        // Применяем стили колонок (приоритет: локальные → серверные → дефолтные)
+        // Передаем attributeSelector из DataTable для правильного CSS селектора
+        await loadLazyData();
+        
+        // Применяем стили после загрузки данных, когда таблица отрендерена
+        setTimeout(() => {
+          if (dt.value && dt.value.attributeSelector) {
+            applyColumnWidths(columns, dt.value.attributeSelector);
+          }
+        }, 200);
+      } else {
+        // Поля не пришли с сервера
+        console.error('Fields not received from server', response.data);
+        notify('error', { detail: 'Ошибка: поля таблицы не получены с сервера' }, true);
+        loading.value = false;
       }
-      
-      await loadLazyData();
     } catch (error) {
       console.log('error',error)
       notify('error', { detail: error.message }, true);
+      loading.value = false;
     }
     
     document.addEventListener('keydown', handleCellSelectionKeyDown);
@@ -722,9 +752,18 @@
     }
   }
   
+  const form = ref({});
+
+  // Функции будут созданы после инициализации в onMounted
+  let loadLazyData;
+  let onPage;
+  let onSort;
+  
   const refresh = (from_parent,table) => {
     if(!table || table == props.table){
-      loadLazyData();
+      if(loadLazyData) {
+        loadLazyData();
+      }
       if(!from_parent) emit('refresh-table')
     }else if(table && childComponentRefsComposable.value){
       for(let id in childComponentRefsComposable.value){
@@ -733,13 +772,6 @@
     }
   };
   defineExpose({ refresh });
-
-  const form = ref({});
-
-  // Функции будут созданы после инициализации в onMounted
-  let loadLazyData;
-  let onPage;
-  let onSort;
   
   // Переменные для composable фильтров (будут инициализированы в onMounted)
   let filters, topFilters, initFilters, onSetTopFilter, prepFilters, onFilter, clearFilter;
@@ -775,18 +807,25 @@
   } = usePVTableNavigation();
 
   // Стили таблицы
-  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId);
+  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api, props.table, notify);
   
   const {
     op,
     selectedColumns,
     darkTheme,
+    serverFieldsStyle,
     toggleDarkMode,
     getClassBody,
     getClassTD,
     getColumnStyle,
     rowClass,
-    baseRowStyle
+    baseRowStyle,
+    applyColumnWidths,
+    saveColumnWidthsToLocal,
+    saveFieldsStyleToServer,
+    resetLocalFieldsStyle,
+    resetServerFieldsStyle,
+    loadServerFieldsStyle
   } = stylesComposable;
   
   // Оборачиваем toggleSettings и onToggleColomns для передачи columns
@@ -908,6 +947,18 @@
 
   // Обновляем selectedlineItems в actionsComposable после инициализации CRUD
   actionsComposable.selectedlineItems = selectedlineItems;
+
+  // Обработчик изменения размера колонки
+  const onColumnResizeEnd = (event) => {
+    if (!dt.value || !dt.value.$refs.table) return;
+    
+    saveColumnWidthsToLocal(dt.value.$refs.table, columns);
+    
+    // Переприменяем стили после изменения размера
+    if (dt.value.attributeSelector) {
+      applyColumnWidths(columns, dt.value.attributeSelector);
+    }
+  };
 
   const rowStyle = getVirtualScrollRowStyle(baseRowStyle);
   const get_response = (event) => {

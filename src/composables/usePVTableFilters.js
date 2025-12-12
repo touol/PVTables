@@ -152,7 +152,9 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
   // Наблюдение за изменениями props.filters
   watch(() => props.filters, async () => { 
     initFilters();
-    await loadLazyData();
+    if (loadLazyData) {
+      await loadLazyData();
+    }
   });
 
   return {

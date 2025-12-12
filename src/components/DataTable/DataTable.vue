@@ -381,7 +381,8 @@ export default {
             d_editingMeta: {},
             d_filters: this.cloneFilters(this.filters),
             d_columns: new HelperSet({ type: 'Column' }),
-            d_columnGroups: new HelperSet({ type: 'ColumnGroup' })
+            d_columnGroups: new HelperSet({ type: 'ColumnGroup' }),
+            d_attributeSelector: null
         };
     },
     rowTouched: false,
@@ -2045,7 +2046,10 @@ export default {
             }
         },
         attributeSelector() {
-            return UniqueComponentId();
+            if (!this.d_attributeSelector) {
+                this.d_attributeSelector = UniqueComponentId();
+            }
+            return this.d_attributeSelector;
         },
         groupRowSortField() {
             return this.sortMode === 'single' ? this.sortField : this.d_groupRowsSortMeta ? this.d_groupRowsSortMeta.field : null;
