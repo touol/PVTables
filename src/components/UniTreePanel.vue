@@ -125,7 +125,7 @@
         width: 100%; 
         overflow: auto;
     } */
-    .tree-container .p-tablist-tab-list
+    .tree-outer-container .p-tablist-tab-list
     {
         display: inherit !important;
     }
