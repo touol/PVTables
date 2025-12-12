@@ -99,6 +99,7 @@
                             @column-dragleave="onColumnHeaderDragLeave($event)"
                             @column-drop="onColumnHeaderDrop($event)"
                             @column-resizestart="onColumnResizeStart($event)"
+                            @column-resize-end="onColumnResizeEnd($event)"
                             @checkbox-change="toggleRowsWithCheckbox($event)"
                             :unstyled="unstyled"
                             :pt="pt"
@@ -1273,7 +1274,59 @@ export default {
 
             this.$refs.resizeHelper.style.display = 'block';
         },
-        onColumnResizeEnd() {
+        onColumnResizeEnd(event) {
+            // Если событие пришло из поповера (мобильное устройство)
+            if (event && event.element && event.delta !== undefined) {
+                this.resizeColumnElement = event.element;
+                const delta = event.delta;
+                const columnWidth = this.resizeColumnElement.offsetWidth;
+                const newColumnWidth = columnWidth + delta;
+                const minWidth = this.resizeColumnElement.style.minWidth || 15;
+
+                if (newColumnWidth > parseInt(minWidth, 10)) {
+                    if (this.columnResizeMode === 'fit') {
+                        const nextColumn = this.resizeColumnElement.nextElementSibling;
+                        
+                        if (nextColumn) {
+                            const nextColumnWidth = nextColumn.offsetWidth - delta;
+                            
+                            if (newColumnWidth > 15 && nextColumnWidth > 15) {
+                                this.resizeTableCells(newColumnWidth, nextColumnWidth);
+                            }
+                        }
+                    } else if (this.columnResizeMode === 'expand') {
+                        const tableWidth = this.$refs.table.offsetWidth + delta + 'px';
+
+                        const updateTableWidth = (el) => {
+                            !!el && (el.style.width = el.style.minWidth = tableWidth);
+                        };
+
+                        this.resizeTableCells(newColumnWidth);
+                        updateTableWidth(this.$refs.table);
+
+                        if (!this.virtualScrollerDisabled) {
+                            const body = this.$refs.bodyRef && this.$refs.bodyRef.$el;
+                            const frozenBody = this.$refs.frozenBodyRef && this.$refs.frozenBodyRef.$el;
+
+                            updateTableWidth(body);
+                            updateTableWidth(frozenBody);
+                        }
+                    }
+
+                    this.$emit('column-resize-end', {
+                        element: this.resizeColumnElement,
+                        delta: delta
+                    });
+                }
+
+                if (this.isStateful()) {
+                    this.saveState();
+                }
+                
+                return;
+            }
+
+            // Стандартная логика для десктопа (мышь)
             let delta = this.$refs.resizeHelper.offsetLeft - this.lastResizeHelperX;
             let columnWidth = this.resizeColumnElement.offsetWidth;
             let newColumnWidth = columnWidth + delta;

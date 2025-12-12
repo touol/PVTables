@@ -88,23 +88,27 @@
           @click="toggleCellSelectionMode"
           v-tooltip.bottom="'Режим выделения ячеек (Ctrl+Shift+S)'"
         />
-        <button class="p-button p-component p-button-icon-only " @click="toggleDarkMode">
-          <span :class="['p-button-icon  pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"></span>
-          <span class="p-button-label" data-pc-section="label">&nbsp;</span>
-        </button>
+        <Button
+          :icon="['p-button-icon  pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"
+          v-tooltip.bottom="'Обновить таблицу'"
+          @click="toggleDarkMode"
+        />
         <Button
           icon="pi pi-refresh"
           class=" p-button-success"
+          v-tooltip.bottom="'Обновить таблицу'"
           @click="refresh(false)"
         />
         <Button
           type="button"
           icon="pi pi-filter-slash"
+          v-tooltip.bottom="'Очистить фильтры и сортировку'"
           @click="clearFilter()"
         />
         <Button
           type="button"
           icon="pi pi-cog"
+          v-tooltip.bottom="'Настройка колонок. Скрыть и ширина.'"
           @click="toggleSettings($event, columns)"
         />
         <Button

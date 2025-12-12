@@ -1,5 +1,6 @@
 <template>
     <th
+        ref="headerCell"
         :style="containerStyle"
         :class="containerClass"
         :tabindex="columnProp('sortable') ? '0' : null"
@@ -10,6 +11,9 @@
         @click="onClick"
         @keydown="onKeyDown"
         @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
+        @touchend="onTouchEnd"
+        @touchcancel="onTouchCancel"
         @dragstart="onDragStart"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
@@ -23,6 +27,42 @@
         :data-p-reorderable-column="reorderableColumns"
     >
         <span v-if="resizableColumns && !columnProp('frozen')" :class="cx('columnResizer')" @mousedown="onResizeStart" v-bind="getColumnPT('columnResizer')"></span>
+        
+        <!-- Поповер для изменения ширины колонки на мобильных устройствах -->
+        <Popover ref="columnWidthPopover" :dismissable="true">
+            <div class="column-width-control" style="padding: 1rem; min-width: 280px;">
+                <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem;">{{ columnProp('header') }}</h4>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        Ширина колонки: <strong>{{ currentColumnWidth }}px</strong>
+                    </label>
+                    <div style="touch-action: none;">
+                        <Slider 
+                            v-model="currentColumnWidth" 
+                            :min="50" 
+                            :max="500" 
+                            :step="10"
+                        />
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <Button 
+                        label="Сбросить" 
+                        icon="pi pi-refresh" 
+                        size="small" 
+                        severity="secondary"
+                        @click="resetColumnWidth"
+                    />
+                    <Button 
+                        label="Применить" 
+                        icon="pi pi-check" 
+                        size="small" 
+                        severity="success"
+                        @click="applyColumnWidth"
+                    />
+                </div>
+            </div>
+        </Popover>
         <div :class="cx('columnHeaderContent')" v-bind="getColumnPT('columnHeaderContent')">
             <component v-if="column.children && column.children.header" :is="column.children.header" :column="column" />
             <span v-if="columnProp('header')" :class="cx('columnTitle')" v-bind="getColumnPT('columnTitle')">{{ columnProp('header') }}</span>
@@ -92,6 +132,9 @@ import SortAltIcon from '@primevue/icons/sortalt';
 import SortAmountDownIcon from '@primevue/icons/sortamountdown';
 import SortAmountUpAltIcon from '@primevue/icons/sortamountupalt';
 import Badge from 'primevue/badge';
+import Button from 'primevue/button';
+import Popover from 'primevue/popover';
+import Slider from 'primevue/slider';
 import { mergeProps } from 'vue';
 import ColumnFilter from './ColumnFilter.vue';
 import HeaderCheckbox from './HeaderCheckbox.vue';
@@ -108,6 +151,7 @@ export default {
         'column-dragleave',
         'column-drop',
         'column-resizestart',
+        'column-resize-end',
         'checkbox-change',
         'filter-change',
         'filter-apply',
@@ -198,13 +242,22 @@ export default {
     },
     data() {
         return {
-            styleObject: {}
+            styleObject: {},
+            longPressTimer: null,
+            longPressDelay: 500, // 500ms для долгого нажатия
+            longPressTriggered: false, // Флаг что долгое нажатие сработало
+            currentColumnWidth: 150,
+            originalColumnWidth: 150
         };
     },
     mounted() {
         if (this.columnProp('frozen')) {
             this.updateStickyPosition();
         }
+        // Получаем текущую ширину колонки
+        this.$nextTick(() => {
+            this.updateCurrentColumnWidth();
+        });
     },
     updated() {
         if (this.columnProp('frozen')) {
@@ -317,6 +370,87 @@ export default {
         },
         onHeaderCheckboxChange(event) {
             this.$emit('checkbox-change', event);
+        },
+        updateCurrentColumnWidth() {
+            if (this.$refs.headerCell) {
+                const width = this.$refs.headerCell.offsetWidth;
+                this.currentColumnWidth = width;
+                this.originalColumnWidth = width;
+            }
+        },
+        onTouchStart(event) {
+            // Запускаем таймер для долгого нажатия только если resizableColumns включен
+            if (!this.resizableColumns || this.columnProp('frozen')) {
+                return;
+            }
+            
+            // Сбрасываем флаг
+            this.longPressTriggered = false;
+            
+            // Сохраняем элемент для использования в showColumnWidthPopover
+            const targetElement = event.currentTarget;
+            
+            this.longPressTimer = setTimeout(() => {
+                this.longPressTriggered = true;
+                this.showColumnWidthPopover(targetElement);
+            }, this.longPressDelay);
+        },
+        onTouchEnd(event) {
+            // Отменяем таймер если палец убрали до истечения времени
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+            
+            // Если долгое нажатие сработало, предотвращаем контекстное меню
+            if (this.longPressTriggered) {
+                event.preventDefault();
+                this.longPressTriggered = false;
+            }
+        },
+        onTouchCancel(event) {
+            // Отменяем таймер если касание было отменено
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+            this.longPressTriggered = false;
+        },
+        showColumnWidthPopover(targetElement) {
+            // Обновляем текущую ширину перед показом
+            this.updateCurrentColumnWidth();
+            
+            // Показываем поповер, передавая элемент заголовка как target
+            if (this.$refs.columnWidthPopover && targetElement) {
+                // Используем $nextTick чтобы убедиться что DOM обновлен
+                this.$nextTick(() => {
+                    // Создаем фейковый event объект и передаем targetElement как второй параметр
+                    const fakeEvent = { currentTarget: targetElement };
+                    this.$refs.columnWidthPopover.toggle(fakeEvent, targetElement);
+                });
+            }
+        },
+        applyColumnWidth() {
+            // Вычисляем дельту изменения
+            const delta = this.currentColumnWidth - this.originalColumnWidth;
+            
+            // Эмитим событие column-resize-end с той же структурой, что и при обычном resize
+            this.$emit('column-resize-end', {
+                element: this.$refs.headerCell,
+                delta: delta
+            });
+            
+            // Обновляем оригинальную ширину
+            this.originalColumnWidth = this.currentColumnWidth;
+            
+            // Закрываем поповер
+            if (this.$refs.columnWidthPopover) {
+                this.$refs.columnWidthPopover.hide();
+            }
+        },
+        resetColumnWidth() {
+            // Возвращаем оригинальную ширину
+            this.currentColumnWidth = this.originalColumnWidth;
         }
     },
     computed: {
@@ -373,6 +507,9 @@ export default {
     },
     components: {
         Badge,
+        Button,
+        Popover,
+        Slider,
         DTHeaderCheckbox: HeaderCheckbox,
         DTColumnFilter: ColumnFilter,
         SortAltIcon: SortAltIcon,
