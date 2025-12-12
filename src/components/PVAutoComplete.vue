@@ -161,14 +161,18 @@
   const apiTemplate = ref('');
 
   const default_row = async () => {
-    if(props.field.default_row){
-      try {
-        
-        const response = await api.autocomplete({query:'',ids:''})
-        items.value = response.data.rows;
-        if(response.data.default) model.value = response.data.default
-      } catch (error) {
-        notify('error', { detail: error.message });
+    if(model.value == 0 && props.field.default_row){
+      if(Number(props.options.default_value) > 0){
+        model.value = props.options.default_value
+      }else{
+        try {
+          
+          const response = await api.autocomplete({query:'',ids:''})
+          items.value = response.data.rows;
+          if(response.data.default) model.value = response.data.default
+        } catch (error) {
+          notify('error', { detail: error.message });
+        }
       }
     }
   }
@@ -183,7 +187,7 @@
       if(Number(props.options.default) > 0){
         model.value = props.options.default
       }
-      if(props.field.defaultname){
+      if(model.value == 0 && props.field.defaultname){
         try {
           if(!props.field.ids){
             props.field.ids = ''
