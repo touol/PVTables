@@ -10,7 +10,7 @@ import { ref, computed, watch } from 'vue';
  */
 export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
   // Состояние виртуального скроллинга
-  const virtualScrollEnabled = ref(true); // По умолчанию включен
+  const virtualScrollEnabled = ref(false); // По умолчанию выключен
   const rowHeight = ref(50);
   const calculatedRowHeight = ref(50);
   const virtualScrollPopover = ref(null);
