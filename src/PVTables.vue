@@ -867,7 +867,7 @@
     toogleExpandRow: toogleExpandRowComposable,
     setExpandedRow: setExpandedRowComposable,
     delExpand: delExpandComposable
-  } = usePVTableExpand(table_tree, filters, dataFields, props.table);
+  } = usePVTableExpand(table_tree, () => filters, dataFields, props.table);
 
   // Modal form для кастомных действий
   const modalFormDialog = ref(false);

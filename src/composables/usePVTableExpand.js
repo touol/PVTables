@@ -4,7 +4,7 @@ import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 /**
  * Composable для управления раскрытием строк таблицы
  * @param {Object} table_tree - Настройки древовидной таблицы
- * @param {Object} filters - Фильтры таблицы
+ * @param {Function} filters - Функция, возвращающая фильтры таблицы
  * @param {Object} dataFields - Поля данных
  * @param {String} tableName - Имя таблицы
  * @returns {Object} Методы и состояние для работы с раскрытием строк
@@ -115,6 +115,12 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
    * @param {Object} data - Данные строки
    */
   const toogleExpandRow = async (data) => {
+    // Проверяем наличие table_tree
+    if (!table_tree || !table_tree.value) {
+      console.error('table_tree is not defined');
+      return;
+    }
+
     let tmp = { ...expandedRows.value };
     
     if (expandedTableTreeRows.value[data.id]) {
@@ -137,7 +143,9 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
         ],
       };
       
-      subfilters.value[data.id] = { ...tmpfilters, ...filters.value };
+      // Получаем текущие фильтры через функцию
+      const currentFilters = (typeof filters === 'function' && filters()) ? filters().value : {};
+      subfilters.value[data.id] = { ...tmpfilters, ...currentFilters };
       subs.value[data.id] = {
         action: 'subtables',
         table: tableName,
