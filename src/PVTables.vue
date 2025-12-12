@@ -89,8 +89,8 @@
           v-tooltip.bottom="'Режим выделения ячеек (Ctrl+Shift+S)'"
         />
         <Button
-          :icon="['p-button-icon  pi', { 'pi-moon': darkTheme, 'pi-sun': !darkTheme }]"
-          v-tooltip.bottom="'Обновить таблицу'"
+          :icon="darkTheme ? 'pi pi-moon' : 'pi pi-sun'"
+          v-tooltip.bottom="'Переключить тему'"
           @click="toggleDarkMode"
         />
         <Button
