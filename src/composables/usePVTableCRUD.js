@@ -161,43 +161,7 @@ export function usePVTableCRUD(
     }
   };
 
-  /**
-   * Вставка новой записи
-   */
-  const Insert = async () => {
-    try {
-      const response = await api.action('insert', { filters: prepFilters() });
-      if (!response.success) {
-        notify('error', { detail: response.message }, true);
-      }
-      refresh(false);
-    } catch (error) {
-      console.log('error', error);
-      notify('error', { detail: error.message });
-    }
-  };
 
-  /**
-   * Вставка дочерней записи
-   * @param {Object} data - Родительская запись
-   */
-  const Insert_child = async (data) => {
-    try {
-      const response = await api.action('insert_child', {
-        [table_tree.value.parentIdField]: data[table_tree.value.idField],
-        filters: prepFilters()
-      });
-
-      if (!response.success) {
-        notify('error', { detail: response.message }, true);
-      }
-
-      refresh(false);
-    } catch (error) {
-      console.log('error', error);
-      notify('error', { detail: error.message });
-    }
-  };
 
   /**
    * Подтверждение удаления записи
@@ -387,8 +351,6 @@ export function usePVTableCRUD(
     editLineItem,
     hideDialog,
     saveLineItem,
-    Insert,
-    Insert_child,
     confirmDeleteLineItem,
     deleteLineItem,
     confirmDeleteSelected,

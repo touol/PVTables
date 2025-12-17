@@ -494,18 +494,9 @@ export function usePVTableActions({
    * Вставка новой записи
    */
   const Insert = async () => {
-    let filters0 = {}
-    for(let field in filters.value){
-      if(filters.value[field].hasOwnProperty('constraints')){
-        if(filters.value[field].constraints[0].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }else{
-        if(filters.value[field].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }
-    }
+    // Получаем фильтры через функцию prepFilters
+    const filters0 = (typeof prepFilters === 'function') ? prepFilters() : {};
+    
     try {
       const response = await api.action('insert',{filters: filters0})
       if (!response.success) {
@@ -523,18 +514,8 @@ export function usePVTableActions({
    * @param {Object} data - Данные родительской строки
    */
   const Insert_child = async (data) => {
-    let filters0 = {}
-    for(let field in filters.value){
-      if(filters.value[field].hasOwnProperty('constraints')){
-        if(filters.value[field].constraints[0].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }else{
-        if(filters.value[field].value !== null){
-          filters0[field] = filters.value[field]
-        }
-      }
-    }
+    // Получаем фильтры через функцию prepFilters
+    const filters0 = (typeof prepFilters === 'function') ? prepFilters() : {};
     
     try {
       const response = await api.action('insert_child',{[table_tree.value.parentIdField]:data[table_tree.value.idField],filters: filters0})
