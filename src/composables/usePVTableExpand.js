@@ -115,6 +115,7 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
    * @param {Object} data - Данные строки
    */
   const toogleExpandRow = async (data) => {
+
     // Проверяем наличие table_tree
     if (!table_tree || !table_tree.value) {
       console.error('table_tree is not defined');
@@ -142,10 +143,11 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
           },
         ],
       };
-      
+
       // Получаем текущие фильтры через функцию
       const currentFilters = (typeof filters === 'function' && filters()) ? filters().value : {};
-      subfilters.value[data.id] = { ...tmpfilters, ...currentFilters };
+      subfilters.value[data.id] = { ...currentFilters, ...tmpfilters };
+
       subs.value[data.id] = {
         action: 'subtables',
         table: tableName,
