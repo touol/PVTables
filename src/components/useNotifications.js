@@ -11,6 +11,11 @@ const messageTypes  = {
     severity: 'error',
     summary: 'Ошибка',
     life: 3000
+  },
+  info: {
+    severity: 'info',
+    summary: 'Инфо',
+    life: 3000
   }
 }
 
