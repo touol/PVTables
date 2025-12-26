@@ -3,12 +3,12 @@
     <span v-if="show_id_enable">{{ show_id }}</span>
     <span v-else-if="!field.hide_id">{{ model }}</span> {{ selectedItem.content }}
   </span>
-  <InputGroup v-else @keydown.tab.stop>
+  <InputGroup v-else @keydown.tab.stop ref="inputGroupRef">
     <InputText 
       v-if="show_id_enable"
       v-model="show_id" 
-      @blur="onUserInputEndShowId" 
-      @keydown.enter="onUserInputEndShowId" 
+      @blur="onUserInputEndShowId($event,'blur')" 
+      @keydown.enter.stop="onUserInputEndShowId($event,'enter')" 
       class="gts-ac__id-field pv_show_id"
       :disabled="disabled"/>
     <InputText 
@@ -79,6 +79,7 @@
   const emit = defineEmits(['update:id', 'set-value', 'tab']);
 
   const { notify } = useNotifications()
+  const inputGroupRef = ref(null)
   const onTab = (e) => {
     emit('tab',e)
   }
@@ -182,6 +183,7 @@
   
 
   watchEffect(async () => {
+    // if(props.field.field == 'product_id') console.log('watchEffect: model.value=', model.value, 'props.field.field', props.field.field, 'show_id=', show_id.value, 'selectedItem=', selectedItem.value)
     
     if (props.options && Number(model.value) == 0){
       if(Number(props.options.default) > 0){
@@ -344,7 +346,7 @@
 
     emit('set-value')
   }
-  const onUserInputEndShowId = async ($evt) => {
+  const onUserInputEndShowId = async ($evt,key) => {
     const userInput = $evt.target.value
 
     if (userInput === '' || userInput === '0') {
@@ -376,6 +378,19 @@
     }
 
     emit('set-value')
+    
+    // Отправляем нативное событие Enter на родительский элемент InputGroup
+    if (key == 'enter' && inputGroupRef.value && inputGroupRef.value.$el) {
+      const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true
+      });
+      inputGroupRef.value.$el.dispatchEvent(enterEvent);
+    }
   }
   const onAutocompleteItemSelect = ($evt) => {
     model.value = $evt.value.id;
