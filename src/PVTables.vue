@@ -5,6 +5,17 @@
         <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"
           placeholder="Выберете столбцы" :maxSelectedLabels="3"/>
         
+        <div class="field-checkbox" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <ToggleSwitch v-model="autoFitHeight" @change="onAutoFitHeightToggle" inputId="auto-fit-toggle" />
+          <label for="auto-fit-toggle" style="margin: 0;">Автоматически подгонять высоту под экран</label>
+        </div>
+        
+        <div class="field" style="margin-top: 1rem;">
+          <label for="table-height" style="display: block; margin-bottom: 0.5rem;">Высота таблицы</label>
+          <InputText v-model="tableScrollHeight" inputId="table-height" style="width: 100%;" placeholder="85vh" :disabled="autoFitHeight" />
+          <small class="block mt-1" style="color: #666;">Например: 85vh, 600px, calc(100vh - 200px)</small>
+        </div>
+        
         <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
           <Button label="Сбросить локальные стили" icon="pi pi-refresh" 
             @click="() => resetLocalFieldsStyle(refresh)" size="small" severity="secondary"/>
@@ -163,7 +174,8 @@
       v-model:expandedRows="expandedRowsComposable"
       showGridlines
 
-      scrollable scrollHeight="85vh"
+      scrollable 
+      :scrollHeight="tableScrollHeight"
       resizableColumns columnResizeMode="expand"
       @column-resize-end="onColumnResizeEnd"
 
@@ -450,7 +462,7 @@
   // import SplitButton from 'primevue/splitbutton';
   // import axios from "axios";
   
-  // import InputText from "primevue/inputtext";
+  import InputText from "primevue/inputtext";
   // import Textarea from "primevue/textarea";
   // import InputNumber from "primevue/inputnumber";
   // import ToggleSwitch from 'primevue/toggleswitch';
@@ -503,6 +515,14 @@
     styleTable: {
       type: String,
       default: 'pro' // 'init' или 'pro'
+    },
+    scrollHeight: {
+      type: String,
+      default: '85vh'
+    },
+    autoFitHeight: {
+      type: Boolean,
+      default: false
     }
   });
   const emit = defineEmits(['get-response','refresh-table'])
@@ -556,6 +576,78 @@
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
+  
+  // Реактивная переменная для высоты таблицы
+  const tableScrollHeight = ref(props.scrollHeight)
+  const autoFitHeight = ref(props.autoFitHeight)
+  
+  // Отслеживаем изменения props.scrollHeight
+  watch(() => props.scrollHeight, (newValue) => {
+    if (!autoFitHeight.value) {
+      tableScrollHeight.value = newValue
+    }
+  })
+  
+  // Отслеживаем изменения props.autoFitHeight
+  watch(() => props.autoFitHeight, (newValue) => {
+    autoFitHeight.value = newValue
+    if (newValue) {
+      calculateTableHeight()
+    } else {
+      tableScrollHeight.value = props.scrollHeight
+    }
+  })
+  
+  // Функция расчета высоты таблицы
+  const calculateTableHeight = () => {
+    if (!autoFitHeight.value || !dt.value) return
+    
+    setTimeout(() => {
+      try {
+        const dataTableEl = dt.value.$el
+        if (!dataTableEl) return
+        
+        // Получаем высоту окна
+        const windowHeight = window.innerHeight
+        
+        // Получаем позицию начала таблицы относительно viewport
+        const tableRect = dataTableEl.getBoundingClientRect()
+        const tableTop = tableRect.top
+        
+        // Находим элементы заголовка и пагинатора внутри DataTable
+        const tableHeader = dataTableEl.querySelector('.p-datatable-header')
+        const tablePaginator = dataTableEl.querySelector('.p-paginator')
+        
+        // Получаем высоты элементов
+        const headerHeight = tableHeader ? tableHeader.offsetHeight : 0
+        const paginatorHeight = tablePaginator ? tablePaginator.offsetHeight : 0
+        
+        // Резервируем немного места снизу (отступ)
+        const bottomPadding = 20
+        
+        // Рассчитываем доступную высоту для скроллируемой области
+        const availableHeight = windowHeight - tableTop - headerHeight - paginatorHeight - bottomPadding
+        
+        // Устанавливаем высоту (минимум 200px)
+        const calculatedHeight = Math.max(200, availableHeight)
+        tableScrollHeight.value = `${calculatedHeight}px`
+      } catch (error) {
+        console.error('Error calculating table height:', error)
+      }
+    }, 100)
+  }
+  
+  // Обработчик переключения auto-fit
+  const onAutoFitHeightToggle = () => {
+    if (autoFitHeight.value) {
+      calculateTableHeight()
+      // Пересчитываем при изменении размера окна
+      window.addEventListener('resize', calculateTableHeight)
+    } else {
+      tableScrollHeight.value = props.scrollHeight
+      window.removeEventListener('resize', calculateTableHeight)
+    }
+  }
 
   onMounted(async () => {
     loading.value = true;
@@ -726,6 +818,12 @@
           if (dt.value && dt.value.attributeSelector) {
             applyColumnWidths(columns, dt.value.attributeSelector);
           }
+          
+          // Если включен auto-fit, рассчитываем высоту таблицы
+          if (autoFitHeight.value) {
+            calculateTableHeight()
+            window.addEventListener('resize', calculateTableHeight)
+          }
         }, 200);
       } else {
         // Поля не пришли с сервера
@@ -747,6 +845,7 @@
   onBeforeUnmount(() => {
     document.removeEventListener('keydown', handleCellSelectionKeyDown);
     document.removeEventListener('mouseup', onCellMouseUp);
+    window.removeEventListener('resize', calculateTableHeight);
   });
   const PVTablesMenuAction = (event,data, columns,table,filters) => {
     if(nemu_actions.value[event.action]){
@@ -775,7 +874,7 @@
       }
     }
   };
-  defineExpose({ refresh });
+  defineExpose({ refresh, recalculateHeight: calculateTableHeight });
   
   // Переменные для composable фильтров (будут инициализированы в onMounted)
   let filters, topFilters, initFilters, onSetTopFilter, prepFilters, onFilter, clearFilter;
