@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 
 /**
  * Composable для управления стилями таблицы
@@ -9,13 +9,32 @@ import { ref } from 'vue';
  * @param {Object} api - API для работы с сервером
  * @param {String} table - Название таблицы
  * @param {Function} notify - Функция уведомлений
+ * @param {Object} props - Props компонента (для scrollHeight и autoFitHeight)
+ * @param {Object} dt - Ref на DataTable компонент
  * @returns {Object} Методы для работы со стилями
  */
-export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api = null, table = '', notify = null) {
+export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api = null, table = '', notify = null, props = null, dt = null) {
   const op = ref(null);
   const selectedColumns = ref();
   const darkTheme = ref(false);
   const serverFieldsStyle = ref(null);
+  
+  // Управление высотой таблицы
+  const tableScrollHeight = ref(props?.scrollHeight || '85vh');
+  const autoFitHeight = ref(props?.autoFitHeight || false);
+  
+  // Управление размером шрифта
+  const fontSize = ref(13);
+  
+  // Загружаем сохраненный размер шрифта
+  const savedFontSize = localStorage.getItem('pvtables-font-size');
+  if (savedFontSize) {
+    const size = parseInt(savedFontSize);
+    if (size >= 10 && size <= 20) {
+      fontSize.value = size;
+      document.documentElement.style.fontSize = `${size}px`;
+    }
+  }
 
   /**
    * Переключение темной темы
@@ -407,6 +426,97 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     }
   };
 
+  /**
+   * Расчет высоты таблицы для автоматической подгонки под экран
+   */
+  const calculateTableHeight = () => {
+    if (!autoFitHeight.value || !dt || !dt.value) return;
+    
+    setTimeout(() => {
+      try {
+        const dataTableEl = dt.value.$el;
+        if (!dataTableEl) return;
+        
+        // Получаем высоту окна
+        const windowHeight = window.innerHeight;
+        
+        // Получаем позицию начала таблицы относительно viewport
+        const tableRect = dataTableEl.getBoundingClientRect();
+        const tableTop = tableRect.top;
+        
+        // Находим элементы заголовка и пагинатора внутри DataTable
+        const tableHeader = dataTableEl.querySelector('.p-datatable-header');
+        const tablePaginator = dataTableEl.querySelector('.p-paginator');
+        
+        // Получаем высоты элементов
+        const headerHeight = tableHeader ? tableHeader.offsetHeight : 0;
+        const paginatorHeight = tablePaginator ? tablePaginator.offsetHeight : 0;
+        
+        // Резервируем немного места снизу (отступ)
+        const bottomPadding = 20;
+        
+        // Рассчитываем доступную высоту для скроллируемой области
+        const availableHeight = windowHeight - tableTop - headerHeight - paginatorHeight - bottomPadding;
+        
+        // Устанавливаем высоту (минимум 200px)
+        const calculatedHeight = Math.max(200, availableHeight);
+        tableScrollHeight.value = `${calculatedHeight}px`;
+      } catch (error) {
+        console.error('Error calculating table height:', error);
+      }
+    }, 100);
+  };
+  
+  /**
+   * Обработчик переключения auto-fit высоты
+   */
+  const onAutoFitHeightToggle = () => {
+    if (autoFitHeight.value) {
+      calculateTableHeight();
+      // Пересчитываем при изменении размера окна
+      window.addEventListener('resize', calculateTableHeight);
+    } else {
+      tableScrollHeight.value = props?.scrollHeight || '85vh';
+      window.removeEventListener('resize', calculateTableHeight);
+    }
+  };
+  
+  /**
+   * Обработчик изменения размера шрифта
+   * @param {Number} value - Новый размер шрифта
+   */
+  const onFontSizeChange = (value) => {
+    if (value && value >= 10 && value <= 20) {
+      document.documentElement.style.fontSize = `${value}px`;
+      localStorage.setItem('pvtables-font-size', value.toString());
+    }
+  };
+  
+  // Watchers для отслеживания изменений props
+  if (props) {
+    watch(() => props.scrollHeight, (newValue) => {
+      if (!autoFitHeight.value) {
+        tableScrollHeight.value = newValue;
+      }
+    });
+    
+    watch(() => props.autoFitHeight, (newValue) => {
+      autoFitHeight.value = newValue;
+      if (newValue) {
+        calculateTableHeight();
+        window.addEventListener('resize', calculateTableHeight);
+      } else {
+        tableScrollHeight.value = props.scrollHeight;
+        window.removeEventListener('resize', calculateTableHeight);
+      }
+    });
+  }
+  
+  // Очистка при размонтировании
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', calculateTableHeight);
+  });
+
   return {
     op,
     selectedColumns,
@@ -425,6 +535,14 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     saveFieldsStyleToServer,
     resetLocalFieldsStyle,
     resetServerFieldsStyle,
-    loadServerFieldsStyle
+    loadServerFieldsStyle,
+    // Управление высотой таблицы
+    tableScrollHeight,
+    autoFitHeight,
+    calculateTableHeight,
+    onAutoFitHeightToggle,
+    // Управление размером шрифта
+    fontSize,
+    onFontSizeChange
   };
 }

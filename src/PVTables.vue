@@ -16,6 +16,12 @@
           <small class="block mt-1" style="color: #666;">Например: 85vh, 600px, calc(100vh - 200px)</small>
         </div>
         
+        <div class="field" style="margin-top: 1rem;">
+          <label for="font-size" style="display: block; margin-bottom: 0.5rem;">Размер шрифта (px)</label>
+          <InputNumber v-model="fontSize" inputId="font-size" :min="10" :max="20" style="width: 100%;" @update:modelValue="onFontSizeChange" />
+          <small class="block mt-1" style="color: #666;">По умолчанию: 13px</small>
+        </div>
+        
         <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
           <Button label="Сбросить локальные стили" icon="pi pi-refresh" 
             @click="() => resetLocalFieldsStyle(refresh)" size="small" severity="secondary"/>
@@ -576,78 +582,6 @@
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
-  
-  // Реактивная переменная для высоты таблицы
-  const tableScrollHeight = ref(props.scrollHeight)
-  const autoFitHeight = ref(props.autoFitHeight)
-  
-  // Отслеживаем изменения props.scrollHeight
-  watch(() => props.scrollHeight, (newValue) => {
-    if (!autoFitHeight.value) {
-      tableScrollHeight.value = newValue
-    }
-  })
-  
-  // Отслеживаем изменения props.autoFitHeight
-  watch(() => props.autoFitHeight, (newValue) => {
-    autoFitHeight.value = newValue
-    if (newValue) {
-      calculateTableHeight()
-    } else {
-      tableScrollHeight.value = props.scrollHeight
-    }
-  })
-  
-  // Функция расчета высоты таблицы
-  const calculateTableHeight = () => {
-    if (!autoFitHeight.value || !dt.value) return
-    
-    setTimeout(() => {
-      try {
-        const dataTableEl = dt.value.$el
-        if (!dataTableEl) return
-        
-        // Получаем высоту окна
-        const windowHeight = window.innerHeight
-        
-        // Получаем позицию начала таблицы относительно viewport
-        const tableRect = dataTableEl.getBoundingClientRect()
-        const tableTop = tableRect.top
-        
-        // Находим элементы заголовка и пагинатора внутри DataTable
-        const tableHeader = dataTableEl.querySelector('.p-datatable-header')
-        const tablePaginator = dataTableEl.querySelector('.p-paginator')
-        
-        // Получаем высоты элементов
-        const headerHeight = tableHeader ? tableHeader.offsetHeight : 0
-        const paginatorHeight = tablePaginator ? tablePaginator.offsetHeight : 0
-        
-        // Резервируем немного места снизу (отступ)
-        const bottomPadding = 20
-        
-        // Рассчитываем доступную высоту для скроллируемой области
-        const availableHeight = windowHeight - tableTop - headerHeight - paginatorHeight - bottomPadding
-        
-        // Устанавливаем высоту (минимум 200px)
-        const calculatedHeight = Math.max(200, availableHeight)
-        tableScrollHeight.value = `${calculatedHeight}px`
-      } catch (error) {
-        console.error('Error calculating table height:', error)
-      }
-    }, 100)
-  }
-  
-  // Обработчик переключения auto-fit
-  const onAutoFitHeightToggle = () => {
-    if (autoFitHeight.value) {
-      calculateTableHeight()
-      // Пересчитываем при изменении размера окна
-      window.addEventListener('resize', calculateTableHeight)
-    } else {
-      tableScrollHeight.value = props.scrollHeight
-      window.removeEventListener('resize', calculateTableHeight)
-    }
-  }
 
   onMounted(async () => {
     loading.value = true;
@@ -874,7 +808,6 @@
       }
     }
   };
-  defineExpose({ refresh, recalculateHeight: calculateTableHeight });
   
   // Переменные для composable фильтров (будут инициализированы в onMounted)
   let filters, topFilters, initFilters, onSetTopFilter, prepFilters, onFilter, clearFilter;
@@ -909,8 +842,8 @@
     moveCell
   } = usePVTableNavigation();
 
-  // Стили таблицы
-  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api, props.table, notify);
+  // Стили таблицы (передаем props и dt для управления высотой)
+  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api, props.table, notify, props, dt);
   
   const {
     op,
@@ -928,7 +861,15 @@
     saveFieldsStyleToServer,
     resetLocalFieldsStyle,
     resetServerFieldsStyle,
-    loadServerFieldsStyle
+    loadServerFieldsStyle,
+    // Управление высотой таблицы
+    tableScrollHeight,
+    autoFitHeight,
+    calculateTableHeight,
+    onAutoFitHeightToggle,
+    // Управление размером шрифта
+    fontSize,
+    onFontSizeChange
   } = stylesComposable;
   
   // Оборачиваем toggleSettings и onToggleColomns для передачи columns
@@ -1067,4 +1008,10 @@
   const get_response = (event) => {
     emit('get-response', event)
   }
+  
+  // Экспортируем методы для внешнего использования
+  defineExpose({ 
+    refresh, 
+    recalculateHeight: calculateTableHeight 
+  });
 </script>
