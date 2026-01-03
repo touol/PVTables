@@ -66,12 +66,6 @@
             const rect = containerRef.value.getBoundingClientRect();
             const topOffset = rect.top;
             const newHeight = window.innerHeight - topOffset - 20;
-            console.log('updateContainerHeight:', {
-                topOffset,
-                windowHeight: window.innerHeight,
-                newHeight,
-                rect
-            });
             containerRef.value.style.height = `${newHeight}px`;
         }
     };
