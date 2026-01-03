@@ -146,7 +146,11 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
 
       // Получаем текущие фильтры через функцию
       const currentFilters = (typeof filters === 'function' && filters()) ? filters().value : {};
-      subfilters.value[data.id] = { ...currentFilters, ...tmpfilters };
+      
+      // Убираем фильтр на id если есть
+      const { id, ...filtersWithoutId } = currentFilters;
+      
+      subfilters.value[data.id] = { ...filtersWithoutId, ...tmpfilters };
 
       subs.value[data.id] = {
         action: 'subtables',
