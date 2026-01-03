@@ -645,8 +645,20 @@
     .uni-tree{
         height: 100%; 
         width: 100%; 
-        overflow: auto;
+        display: flex;
+        flex-direction: column;
     }
+    
+    .uni-tree .p-inputgroup {
+        flex-shrink: 0;
+    }
+    
+    .uni-tree .sl-vue-tree-next-root {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
+    }
+    
     .node-icon {
         display: inline-flex;
         align-items: center;

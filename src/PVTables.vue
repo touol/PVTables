@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card pvtables">
     <Popover ref="op">
       <div style="padding: 1rem;">
         <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"

@@ -1,95 +1,97 @@
 <template>
-  <v-runtime-template 
-    v-if="form && form.template" 
-    :template="form.template"
-    :template-props="templateProps"
-  />
-  <Tabs v-else-if="form && form.tabs" v-model:value="activeTab">
-    <TabList>
-      <Tab v-for="(tab, key) in form.tabs" :key="key" :value="key">{{ tab.label }}</Tab>
-      <Tab v-if="additionalFields.length > 0" value="additional">Дополнительно</Tab>
-    </TabList>
-    <TabPanels>
-      <TabPanel v-for="(tab, key) in form.tabs" :key="key" :value="key">
-        <div :class="{'flex flex-wrap gap-4':inline}">
-          <template v-for="col of getTabFields(tab.fields)">
-            <div class="flex flex-wrap items-start gap-4 mb-4">
-              <label :for="col.field" class="font-semibold w-24 pt-2">
-                {{ col.label }}
-                <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-              </label>
-              <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-                <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-                  <EditField
-                    :field="col"
-                    v-model="model[col.field]"
-                    :data="model"
-                    :use_data="true"
-                    :autocompleteSettings="autocompleteSettings[col.field]"
-                    :selectSettings="selectSettings2[col.field]"
-                    @set-value="setValue()"
-                  />
+  <div class="pvform">
+    <v-runtime-template 
+      v-if="form && form.template" 
+      :template="form.template"
+      :template-props="templateProps"
+    />
+    <Tabs v-else-if="form && form.tabs" v-model:value="activeTab">
+      <TabList>
+        <Tab v-for="(tab, key) in form.tabs" :key="key" :value="key">{{ tab.label }}</Tab>
+        <Tab v-if="additionalFields.length > 0" value="additional">Дополнительно</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel v-for="(tab, key) in form.tabs" :key="key" :value="key">
+          <div :class="{'flex flex-wrap gap-4':inline}">
+            <template v-for="col of getTabFields(tab.fields)">
+              <div class="flex flex-wrap items-start gap-4 mb-4">
+                <label :for="col.field" class="font-semibold w-24 pt-2">
+                  {{ col.label }}
+                  <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
+                  <div :class="{ 'p-invalid': isFieldInvalid(col) }">
+                    <EditField
+                      :field="col"
+                      v-model="model[col.field]"
+                      :data="model"
+                      :use_data="true"
+                      :autocompleteSettings="autocompleteSettings[col.field]"
+                      :selectSettings="selectSettings2[col.field]"
+                      @set-value="setValue()"
+                    />
+                  </div>
+                  <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
+                  <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
                 </div>
-                <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-                <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
               </div>
-            </div>
-          </template>
-        </div>
-      </TabPanel>
-      <TabPanel v-if="additionalFields.length > 0" value="additional">
-        <div :class="{'flex flex-wrap gap-4':inline}">
-          <template v-for="col of additionalFields">
-            <div class="flex flex-wrap items-start gap-4 mb-4">
-              <label :for="col.field" class="font-semibold w-24 pt-2">
-                {{ col.label }}
-                <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-              </label>
-              <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-                <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-                  <EditField
-                    :field="col"
-                    v-model="model[col.field]"
-                    :data="model"
-                    :use_data="true"
-                    :autocompleteSettings="autocompleteSettings[col.field]"
-                    :selectSettings="selectSettings2[col.field]"
-                    @set-value="setValue()"
-                  />
-                </div>
-                <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-                <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
-              </div>
-            </div>
-          </template>
-        </div>
-      </TabPanel>
-    </TabPanels>
-  </Tabs>
-  <div v-else :class="{'flex flex-wrap gap-4':inline}">
-    <template v-for="col of columns2.filter((x) => x.table_only != true && x.type != 'hidden')">
-      <div class="flex flex-wrap items-start gap-4 mb-4">
-        <label :for="col.field" class="font-semibold w-24 pt-2">
-          {{ col.label }}
-          <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-        </label>
-        <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-          <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-            <EditField
-              :field="col"
-              v-model="model[col.field]"
-              :data="model"
-              :use_data="true"
-              :autocompleteSettings="autocompleteSettings[col.field]"
-              :selectSettings="selectSettings2[col.field]"
-              @set-value="setValue()"
-            />
+            </template>
           </div>
-          <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-          <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
+        </TabPanel>
+        <TabPanel v-if="additionalFields.length > 0" value="additional">
+          <div :class="{'flex flex-wrap gap-4':inline}">
+            <template v-for="col of additionalFields">
+              <div class="flex flex-wrap items-start gap-4 mb-4">
+                <label :for="col.field" class="font-semibold w-24 pt-2">
+                  {{ col.label }}
+                  <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
+                  <div :class="{ 'p-invalid': isFieldInvalid(col) }">
+                    <EditField
+                      :field="col"
+                      v-model="model[col.field]"
+                      :data="model"
+                      :use_data="true"
+                      :autocompleteSettings="autocompleteSettings[col.field]"
+                      :selectSettings="selectSettings2[col.field]"
+                      @set-value="setValue()"
+                    />
+                  </div>
+                  <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
+                  <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
+                </div>
+              </div>
+            </template>
+          </div>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
+    <div v-else :class="{'flex flex-wrap gap-4':inline}">
+      <template v-for="col of columns2.filter((x) => x.table_only != true && x.type != 'hidden')">
+        <div class="flex flex-wrap items-start gap-4 mb-4">
+          <label :for="col.field" class="font-semibold w-24 pt-2">
+            {{ col.label }}
+            <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
+          </label>
+          <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
+            <div :class="{ 'p-invalid': isFieldInvalid(col) }">
+              <EditField
+                :field="col"
+                v-model="model[col.field]"
+                :data="model"
+                :use_data="true"
+                :autocompleteSettings="autocompleteSettings[col.field]"
+                :selectSettings="selectSettings2[col.field]"
+                @set-value="setValue()"
+              />
+            </div>
+            <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
+            <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
+          </div>
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 </template>
 
