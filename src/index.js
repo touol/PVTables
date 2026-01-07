@@ -67,6 +67,10 @@ import InputGroup from "primevue/inputgroup";
 import Tree from 'primevue/tree';
 import Select from 'primevue/select';
 import Menubar from 'primevue/menubar';
+import Card from 'primevue/card';
+import Panel from 'primevue/panel';
+import Badge from 'primevue/badge';
+import Tag from 'primevue/tag';
 
 export default {
     install: (app, options) => {
@@ -175,4 +179,8 @@ export {
     Tree as Tree,
     Select as Select,
     Menubar as Menubar,
+    Card as Card,
+    Panel as Panel,
+    Badge as Badge,
+    Tag as Tag,
 }
