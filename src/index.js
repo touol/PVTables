@@ -40,6 +40,7 @@ import PrimeVue from "primevue/config";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import ToggleSwitch from 'primevue/toggleswitch';
+import Checkbox from 'primevue/checkbox';
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
@@ -157,6 +158,7 @@ export {
     Button as Button,
     Dialog as Dialog,
     ToggleSwitch as ToggleSwitch,
+    Checkbox as Checkbox,
     InputText as InputText,
     Textarea as Textarea,
     InputNumber as InputNumber,

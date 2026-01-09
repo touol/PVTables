@@ -80,12 +80,13 @@
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
-    <ToggleSwitch 
+    <Checkbox
         v-else-if="col.type == 'boolean'"
-        v-model="model" 
+        v-model="model"
         @keydown.tab.stop
         @change="setValue()"
         :disabled="use_readonly && col.readonly"
+        :binary="true"
     />
     <Textarea 
         v-else-if="col.type == 'textarea'" 
@@ -119,8 +120,7 @@
     import Textarea from "primevue/textarea";
     import InputNumber from "primevue/inputnumber";
 
-    import ToggleSwitch from 'primevue/toggleswitch';
-    // import Checkbox from 'primevue/checkbox';
+    import Checkbox from 'primevue/checkbox';
 
     import GTSDate from "./gtsDate.vue";
     import PVDateTime from "./PVDateTime.vue";

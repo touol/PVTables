@@ -64,12 +64,13 @@
         @update:modelValue="($event) => { updateValue($event); stopEditing(); }"
         :disabled="use_readonly && col.readonly"
     />
-    <ToggleSwitch 
+    <Checkbox
         v-else-if="col.type == 'boolean'"
-        v-model="model" 
+        v-model="model"
         @keydown.tab.stop
         @change="setValue(); stopEditing()"
         :disabled="use_readonly && col.readonly"
+        :binary="true"
     />
     <FileSelector
         v-else-if="col.type == 'file'"
@@ -95,7 +96,7 @@
     // import Textarea from "primevue/textarea";
     // import InputNumber from "primevue/inputnumber";
     import ToggleSwitch from 'primevue/toggleswitch';
-    // import Checkbox from 'primevue/checkbox';
+    import Checkbox from 'primevue/checkbox';
 
     import GTSDate from "./gtsDate.vue";
     import PVDateTime from "./PVDateTime.vue";
