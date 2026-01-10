@@ -237,7 +237,7 @@
                 @set-value="
                   onCellEditComplete({ data, field, newValue: $event })
                 "
-                :customFields="customFields[data._rowKey]"
+                :customFields="customFields[data.id]"
                 />
             </div>
           </template>
@@ -251,7 +251,7 @@
               :use_data="true"
               :autocompleteSettings="autocompleteSettings[field]"
               :selectSettings="selectSettings[field]"
-              :customFields="customFields[data._rowKey]"
+              :customFields="customFields[data.id]"
               @tab="onTab"
               />
             </template>
