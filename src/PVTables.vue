@@ -205,7 +205,7 @@
       <Column v-if="table_tree" headerStyle="width: 3rem">
         <template #body="{ data }">
           <template v-if="data['gtsapi_children_count'] > 0">
-            <Button v-if="expandedTableTreeRowsComposable[data.id]" icon="pi pi-angle-down" class="p-button-text" @click="toogleExpandRowComposable(data)"/>
+            <Button v-if="expandedTableTreeRowsComposable[data._rowKey]" icon="pi pi-angle-down" class="p-button-text" @click="toogleExpandRowComposable(data)"/>
             <Button v-else icon="pi pi-angle-right" class="p-button-text" @click="toogleExpandRowComposable(data)"/>
           </template>
         </template>
@@ -237,7 +237,7 @@
                 @set-value="
                   onCellEditComplete({ data, field, newValue: $event })
                 "
-                :customFields="customFields[data.id]"
+                :customFields="customFields[data._rowKey]"
                 />
             </div>
           </template>
@@ -251,7 +251,7 @@
               :use_data="true"
               :autocompleteSettings="autocompleteSettings[field]"
               :selectSettings="selectSettings[field]"
-              :customFields="customFields[data.id]"
+              :customFields="customFields[data._rowKey]"
               @tab="onTab"
               />
             </template>
@@ -303,26 +303,26 @@
         </template>
       </Column>
       <template #expansion="slotProps">
-        <div v-if="subsComposable[slotProps.data.id].action == 'subtables'" class="p-3">
+        <div v-if="subsComposable[slotProps.data._rowKey].action == 'subtables'" class="p-3">
           <PVTables
-            :table="subsComposable[slotProps.data.id].table"
+            :table="subsComposable[slotProps.data._rowKey].table"
             :actions="actions"
-            :filters="subfiltersComposable[slotProps.data.id]"
+            :filters="subfiltersComposable[slotProps.data._rowKey]"
             @refresh-table="refresh(false)"
             :child="true"
-            :ref="el => { if (el) childComponentRefsComposable[slotProps.data.id] = el }"
+            :ref="el => { if (el) childComponentRefsComposable[slotProps.data._rowKey] = el }"
             @get-response="get_response($event)"
             />
         </div>
-        <div v-if="subsComposable[slotProps.data.id].action == 'subtabs'" class="p-3">
-          <PVTabs 
-            :tabs="subsComposable[slotProps.data.id].tabs"
+        <div v-if="subsComposable[slotProps.data._rowKey].action == 'subtabs'" class="p-3">
+          <PVTabs
+            :tabs="subsComposable[slotProps.data._rowKey].tabs"
             :actions="actions"
             :parent_row="parentRowComposable"
-            :filters="subfiltersComposable[slotProps.data.id]"
+            :filters="subfiltersComposable[slotProps.data._rowKey]"
             @refresh-table="refresh(false)"
             :child="true"
-            :ref="el => { if (el) childComponentRefsComposable[slotProps.data.id] = el }"
+            :ref="el => { if (el) childComponentRefsComposable[slotProps.data._rowKey] = el }"
             @get-response="get_response($event)"
             />
         </div>
@@ -340,7 +340,7 @@
         :columns="columns" 
         :autocompleteSettings="autocompleteSettings" 
         :selectSettings="selectSettings"
-        :customFields="customFields[lineItem.id]"
+        :customFields="customFields[lineItem._rowKey]"
         :mywatch="mywatch"
         :form="form"
       />

@@ -124,14 +124,14 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
 
     let tmp = { ...expandedRows.value };
     
-    if (expandedTableTreeRows.value[data.id]) {
-      delete expandedTableTreeRows.value[data.id];
-      delete tmp[data.id];
+    if (expandedTableTreeRows.value[data._rowKey]) {
+      delete expandedTableTreeRows.value[data._rowKey];
+      delete tmp[data._rowKey];
       await delExpand(tmp);
-      delete subs.value[data.id];
+      delete subs.value[data._rowKey];
     } else {
       let tmpfilters = {};
-      delete tmp[data.id];
+      delete tmp[data._rowKey];
       await delExpand(tmp);
 
       tmpfilters[table_tree.value.parentIdField] = {
@@ -150,15 +150,15 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
       // Убираем фильтр на id если есть
       const { id, ...filtersWithoutId } = currentFilters;
       
-      subfilters.value[data.id] = { ...filtersWithoutId, ...tmpfilters };
+      subfilters.value[data._rowKey] = { ...filtersWithoutId, ...tmpfilters };
 
-      subs.value[data.id] = {
+      subs.value[data._rowKey] = {
         action: 'subtables',
         table: tableName,
       };
 
-      tmp[data.id] = true;
-      expandedTableTreeRows.value[data.id] = true;
+      tmp[data._rowKey] = true;
+      expandedTableTreeRows.value[data._rowKey] = true;
       expandedRows.value = { ...tmp };
     }
   };
@@ -171,21 +171,21 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
   const setExpandedRow = async (event, tmpt) => {
     let tmp = { ...expandedRows.value };
 
-    if (tmp.hasOwnProperty(event.id)) {
-      if (subs.value[event.id].table == tmpt.table) {
-        delete tmp[event.id];
+    if (tmp.hasOwnProperty(event._rowKey)) {
+      if (subs.value[event._rowKey].table == tmpt.table) {
+        delete tmp[event._rowKey];
         await delExpand(tmp);
         return;
       } else {
-        delete tmp[event.id];
+        delete tmp[event._rowKey];
         await delExpand(tmp);
-        tmp[event.id] = true;
+        tmp[event._rowKey] = true;
       }
     } else {
-      tmp[event.id] = true;
+      tmp[event._rowKey] = true;
     }
     
-    subs.value[event.id] = tmpt;
+    subs.value[event._rowKey] = tmpt;
 
     if (tmpt.action == 'subtables') {
       if (tmpt.hasOwnProperty('where')) {
@@ -204,7 +204,7 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
             ],
           };
         }
-        subfilters.value[event.id] = tmpfilters;
+        subfilters.value[event._rowKey] = tmpfilters;
       }
     } else if (tmpt.action == 'subtabs') {
       for (let key in tmpt.tabs) {
@@ -228,10 +228,10 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
             };
           }
           
-          if (!subfilters.value.hasOwnProperty(event.id)) {
-            subfilters.value[event.id] = {};
+          if (!subfilters.value.hasOwnProperty(event._rowKey)) {
+            subfilters.value[event._rowKey] = {};
           }
-          subfilters.value[event.id][key] = tmpfilters;
+          subfilters.value[event._rowKey][key] = tmpfilters;
           parent_row.value = { ...event };
         }
       }
