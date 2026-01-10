@@ -158,10 +158,14 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
 
   // Computed для стиля строк с фиксированной высотой
   const getVirtualScrollRowStyle = (existingRowStyle) => {
+    // Если existingRowStyle не функция, преобразуем в функцию
+    const styleFunction = typeof existingRowStyle === 'function'
+      ? existingRowStyle
+      : () => (existingRowStyle || {});
+    
     return (data) => {
-      const baseStyle = typeof existingRowStyle === 'function' 
-        ? existingRowStyle(data) 
-        : (existingRowStyle || {});
+      // Всегда вызываем как функцию с data
+      const baseStyle = styleFunction(data);
       
       if (virtualScrollEnabled.value) {
         return {

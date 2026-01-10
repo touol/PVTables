@@ -136,8 +136,30 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
   const baseRowStyle = (data) => {
     if (row_setting.value[data.id] && row_setting.value[data.id].style) {
       const style = row_setting.value[data.id].style;
+      
+      // Если style - это объект, возвращаем его как есть
       if (style && typeof style === 'object' && !Array.isArray(style)) {
         return style;
+      }
+      
+      // Если style - это строка, парсим её в объект
+      if (typeof style === 'string') {
+        const styleObj = {};
+        // Разбиваем строку по точке с запятой
+        style.split(';').forEach(rule => {
+          const trimmedRule = rule.trim();
+          if (trimmedRule) {
+            const colonIndex = trimmedRule.indexOf(':');
+            if (colonIndex > 0) {
+              const property = trimmedRule.substring(0, colonIndex).trim();
+              const value = trimmedRule.substring(colonIndex + 1).trim();
+              // Преобразуем CSS свойство в camelCase для Vue
+              const camelProperty = property.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+              styleObj[camelProperty] = value;
+            }
+          }
+        });
+        return styleObj;
       }
     }
     return {};
