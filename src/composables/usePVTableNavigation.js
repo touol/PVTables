@@ -151,28 +151,31 @@ export function usePVTableNavigation() {
         targetCell = targetCell.firstElementChild.firstElementChild;
         targetCell.select();
       }
-      
-      if (
-        targetCell.firstElementChild.classList.contains('date') ||
-        targetCell.firstElementChild.classList.contains('datetime')
-      ) {
-        targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild;
-        targetCell.focus();
-      }
-      
-      if (targetCell.firstElementChild.classList.contains('select')) {
-        if (targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') {
+      if(targetCell.firstElementChild){
+        if (
+          targetCell.firstElementChild.classList.contains('date') ||
+          targetCell.firstElementChild.classList.contains('datetime')
+        ) {
+          targetCell = targetCell.firstElementChild.firstElementChild.firstElementChild;
+          targetCell.focus();
+        }
+        
+        if (targetCell.firstElementChild.classList.contains('select')) {
+          if (targetCell.firstElementChild.firstElementChild.tagName == 'SPAN') {
+            await invokeElementMethod(targetCell, 'click');
+          }
+          targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling;
+          invokeElementMethod(targetCell, 'click');
+        } else {
           await invokeElementMethod(targetCell, 'click');
+          const input = targetCell.querySelector('input, textarea');
+          if (input) {
+            input.focus();
+            input.select();
+          }
         }
-        targetCell = targetCell.firstElementChild.firstElementChild.nextElementSibling;
-        invokeElementMethod(targetCell, 'click');
-      } else {
-        await invokeElementMethod(targetCell, 'click');
-        const input = targetCell.querySelector('input, textarea');
-        if (input) {
-          input.focus();
-          input.select();
-        }
+      }else{
+        console.log('moveCell targetCell',targetCell)
       }
     }
   };

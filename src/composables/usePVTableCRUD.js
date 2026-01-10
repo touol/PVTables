@@ -15,6 +15,7 @@ import { ref } from 'vue';
  * @param {Object} table_tree - Настройки древовидной таблицы
  * @param {Object} expandedTableTreeRows - Раскрытые строки дерева
  * @param {Object} childComponentRefs - Ссылки на дочерние компоненты
+ * @param {Object} emptyRowsHelpers - Вспомогательные функции для пустых строк
  * @returns {Object} Методы и состояние для CRUD операций
  */
 export function usePVTableCRUD(
@@ -30,8 +31,10 @@ export function usePVTableCRUD(
   row_setting,
   table_tree,
   expandedTableTreeRows,
-  childComponentRefs
+  childComponentRefs,
+  emptyRowsHelpers = {}
 ) {
+  const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
   const lineItem = ref({});
   const submitted = ref(false);
   const lineItemDialog = ref(false);
@@ -247,8 +250,90 @@ export function usePVTableCRUD(
       target[lastField] = value;
     };
 
+    // Проверяем, является ли это пустой строкой ПЕРЕД проверкой на изменение значения
+    if (isEmptyRow && isEmptyRow(data.id)) {
+      // Проверяем, является ли эта пустая строка редактируемой (используем _rowKey)
+      if (!isEditableEmptyRow || !isEditableEmptyRow(data._rowKey)) {
+        notify('error', { detail: 'Эта пустая строка недоступна для редактирования' }, true);
+        return;
+      }
+      
+      // Обновляем значение в пустой строке
+      setField(data, field, newValue);
+      
+      // Вызываем Insert для создания новой записи
+      try {
+        // Создаем payload только с измененными данными
+        const insertPayload = {};
+        // Копируем только непустые поля из data
+        for (let key in data) {
+          if (key !== 'id' && data[key] !== null && data[key] !== undefined && data[key] !== '') {
+            insertPayload[key] = data[key];
+          }
+        }
+        // Устанавливаем измененное поле
+        insertPayload[field] = newValue;
+        insertPayload.filters = prepFilters();
+        
+        const response = await api.action('insert', insertPayload);
+        
+        emit('get-response', {
+          table: props.table,
+          action: 'insert',
+          response: response
+        });
+        
+        if (!response.success) {
+          notify('error', { detail: response.message }, true);
+          return;
+        }
+        
+        // Получаем новый ID из ответа
+        if (response.data && response.data.object && response.data.object.id) {
+          const oldId = data.id;
+          const newData = response.data.object;
+          
+          // Обновляем пустую строку на реальную
+          if (updateEmptyRow) {
+            // Создаем объект полей из ключей newData
+            const fields = {};
+            for (let key in newData) {
+              fields[key] = null;
+            }
+            
+            await updateEmptyRow(oldId, newData, fields);
+          } else {
+            console.error('updateEmptyRow function is not available');
+          }
+          
+          if (response.data.customFields) {
+            for (let key in response.data.customFields) {
+              customFields.value[key] = response.data.customFields[key];
+            }
+          }
+          
+          if (response.data.row_setting) {
+            for (let key in response.data.row_setting) {
+              row_setting.value[key] = response.data.row_setting[key];
+            }
+          }
+          
+          // Не вызываем refresh - данные уже обновлены реактивно через updateEmptyRow
+        } else {
+          // Если ID не получен, обновляем таблицу
+          refresh(false);
+        }
+      } catch (error) {
+        console.log('error', error);
+        notify('error', { detail: error.message }, true);
+      }
+      return;
+    }
+    
+    // Проверка на изменение значения для обычных строк
     if (getField(data, field) == newValue) return;
 
+    // Обычное обновление для существующих строк
     const payload = {
       id: data.id,
       [field]: newValue,
@@ -281,12 +366,23 @@ export function usePVTableCRUD(
       }
 
       if (response.data.object) {
-        lineItems.value[findIndexById(Number(payload.id))] = response.data.object;
+        const idx = findIndexById(Number(payload.id));
+        const oldRowKey = lineItems.value[idx]?._rowKey;
+        
+        // Сохраняем _rowKey если его нет в новых данных
+        if (!response.data.object._rowKey && oldRowKey) {
+          response.data.object._rowKey = oldRowKey;
+        }
+        
+        lineItems.value[idx] = response.data.object;
       } else if (response.data.defvalues) {
-        lineItems.value[findIndexById(Number(payload.id))] = {
-          ...lineItems.value[findIndexById(Number(payload.id))],
+        const idx = findIndexById(Number(payload.id));
+        const oldRow = lineItems.value[idx];
+        const newRow = {
+          ...oldRow,
           ...response.data.defvalues
         };
+        lineItems.value[idx] = newRow;
       }
 
       if (response.data.row_setting) {
@@ -338,6 +434,22 @@ export function usePVTableCRUD(
     selectAll.value = false;
   };
 
+  /**
+   * Вставка новой записи (заглушка, реальная логика в usePVTableActions)
+   */
+  const Insert = async () => {
+    // Эта функция будет переопределена в usePVTableActions
+    console.warn('Insert function should be provided by usePVTableActions');
+  };
+
+  /**
+   * Вставка дочерней записи (заглушка, реальная логика в usePVTableActions)
+   */
+  const Insert_child = async () => {
+    // Эта функция будет переопределена в usePVTableActions
+    console.warn('Insert_child function should be provided by usePVTableActions');
+  };
+
   return {
     lineItem,
     submitted,
@@ -351,6 +463,8 @@ export function usePVTableCRUD(
     editLineItem,
     hideDialog,
     saveLineItem,
+    Insert,
+    Insert_child,
     confirmDeleteLineItem,
     deleteLineItem,
     confirmDeleteSelected,

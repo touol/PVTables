@@ -156,7 +156,7 @@
       currentPageReportTemplate="{first} to {last} of {totalRecords}"
 
       ref="dt"
-      dataKey="id"
+      dataKey="_rowKey"
       :totalRecords="totalRecords"
       :loading="loading"
       @page="onPage($event)"
@@ -241,7 +241,8 @@
                 />
             </div>
           </template>
-          <template v-if="!['multiautocomplete', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field }">
+          <template v-if="!['multiautocomplete', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field, index }">
+            <template v-if="!isRowReadonly(index)">
             
             <EditField
               :field="col"
@@ -252,7 +253,8 @@
               :selectSettings="selectSettings[field]"
               :customFields="customFields[data.id]"
               @tab="onTab"
-            />
+              />
+            </template>
           </template>
           <template #filter="{ filterModel }">
             <EditField
@@ -529,6 +531,10 @@
     autoFitHeight: {
       type: Boolean,
       default: false
+    },
+    emptyRowsCount: {
+      type: Number,
+      default: 0
     }
   });
   const emit = defineEmits(['get-response','refresh-table'])
@@ -562,8 +568,12 @@
     createLoadLazyData,
     createOnPage,
     createOnSort,
-    findIndexById
-  } = usePVTableData();
+    findIndexById,
+    emptyRowsState,
+    updateEmptyRow,
+    isEmptyRow,
+    isEditableEmptyRow
+  } = usePVTableData(props.emptyRowsCount);
 
   const rowsPerPage = ref(10);
   const dt = ref();
@@ -960,7 +970,13 @@
     row_setting,
     table_tree,
     expandedTableTreeRowsComposable,
-    childComponentRefsComposable
+    childComponentRefsComposable,
+    {
+      updateEmptyRow,
+      isEmptyRow,
+      isEditableEmptyRow,
+      emptyRowsState
+    }
   );
 
   // Извлекаем функции и переменные из CRUD composable
@@ -977,8 +993,6 @@
     editLineItem,
     hideDialog,
     saveLineItem,
-    Insert,
-    Insert_child,
     confirmDeleteLineItem,
     deleteLineItem,
     confirmDeleteSelected,
@@ -988,6 +1002,42 @@
     onRowSelect,
     onRowUnselect
   } = crudComposable;
+  
+  // Получаем Insert и Insert_child из actionsComposable
+  const Insert = actionsComposable.Insert;
+  const Insert_child = actionsComposable.Insert_child;
+  
+  /**
+   * Проверка, является ли строка readonly (для пустых строк)
+   * @param {Number} rowIndex - Индекс строки
+   * @returns {Boolean}
+   */
+  const isRowReadonly = (rowIndex) => {
+    if (rowIndex === undefined || rowIndex === null) {
+      return false;
+    }
+    
+    if (!isEmptyRow || !isEditableEmptyRow || !lineItems.value) {
+      return false;
+    }
+    
+    const rowData = lineItems.value[rowIndex];
+    if (!rowData || !rowData.id || !rowData._rowKey) {
+      return false;
+    }
+    
+    const isEmpty = isEmptyRow(rowData.id);
+    
+    // Если это не пустая строка, разрешаем редактирование
+    if (!isEmpty) {
+      return false;
+    }
+    
+    // Для пустых строк проверяем, является ли она редактируемой по _rowKey
+    const isEditable = isEditableEmptyRow(rowData._rowKey);
+    
+    return !isEditable;
+  };
 
   // Обновляем selectedlineItems в actionsComposable после инициализации CRUD
   actionsComposable.selectedlineItems = selectedlineItems;
