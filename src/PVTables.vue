@@ -927,6 +927,9 @@
   const modalFormType = ref(''); // 'head' или 'row'
   const modalFormColumns = ref([]);
 
+  // Создаем ref для selectedlineItems заранее
+  const selectedlineItems = ref([]);
+
   // Инициализация composable действий (до CRUD, так как нужен в onMounted)
   const actionsComposable = usePVTableActions({
     api,
@@ -936,7 +939,7 @@
     notify,
     emit,
     dataFields,
-    selectedlineItems: ref([]), // Временное значение, будет заменено
+    selectedlineItems, // Передаем реальный ref
     table_tree,
     filters: () => filters,
     modalFormDialog,
@@ -976,17 +979,17 @@
       isEmptyRow,
       isEditableEmptyRow,
       emptyRowsState
-    }
+    },
+    selectedlineItems // Передаем существующий ref
   );
 
-  // Извлекаем функции и переменные из CRUD composable
+  // Извлекаем функции и переменные из CRUD composable (без selectedlineItems)
   const {
     lineItem,
     submitted,
     lineItemDialog,
     deleteLineItemDialog,
     deleteLineItemsDialog,
-    selectedlineItems,
     selectAll,
     mywatch,
     openNew,
@@ -1038,9 +1041,6 @@
     
     return !isEditable;
   };
-
-  // Обновляем selectedlineItems в actionsComposable после инициализации CRUD
-  actionsComposable.selectedlineItems = selectedlineItems;
 
   // Обработчик изменения размера колонки
   const onColumnResizeEnd = (event) => {

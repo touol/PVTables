@@ -376,7 +376,6 @@ export function usePVTableActions({
         requestData.ids = selectedlineItems.value.map(item => item.id).join(',');
       }
     }
-    
     try {
       const resp = await api.action(modalFormAction.value.action, requestData);
       emit('get-response', {table: props.table, action: modalFormAction.value.action, response: resp});

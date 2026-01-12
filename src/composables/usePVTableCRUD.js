@@ -16,6 +16,7 @@ import { ref } from 'vue';
  * @param {Object} expandedTableTreeRows - Раскрытые строки дерева
  * @param {Object} childComponentRefs - Ссылки на дочерние компоненты
  * @param {Object} emptyRowsHelpers - Вспомогательные функции для пустых строк
+ * @param {Ref} selectedlineItemsRef - Ref для выбранных строк (опционально)
  * @returns {Object} Методы и состояние для CRUD операций
  */
 export function usePVTableCRUD(
@@ -32,7 +33,8 @@ export function usePVTableCRUD(
   table_tree,
   expandedTableTreeRows,
   childComponentRefs,
-  emptyRowsHelpers = {}
+  emptyRowsHelpers = {},
+  selectedlineItemsRef = null
 ) {
   const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
   const lineItem = ref({});
@@ -40,7 +42,7 @@ export function usePVTableCRUD(
   const lineItemDialog = ref(false);
   const deleteLineItemDialog = ref(false);
   const deleteLineItemsDialog = ref(false);
-  const selectedlineItems = ref();
+  const selectedlineItems = selectedlineItemsRef || ref();
   const selectAll = ref(false);
   const mywatch = ref({
     enabled: false,
