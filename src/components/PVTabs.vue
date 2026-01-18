@@ -56,11 +56,12 @@
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
         ></component>
         <template v-else-if="tab.type=='tables'">
-          <PVTables 
+          <PVTables
             v-for="table in tab.tables"
             :table="table.table"
             :actions="actions"
             :filters="filters[table.key]"
+            :sorting="sorting[table.key] || []"
             :reload="false"
             :key="table.key"
             @refresh-table="refresh(false)"
@@ -70,11 +71,12 @@
             @get-response="get_response($event)"
           />
         </template>
-        <PVTables 
+        <PVTables
           v-else
           :table="tab.table"
           :actions="actions"
           :filters="filters[tab.key]"
+          :sorting="sorting[tab.key] || []"
           :reload="false"
           :key="tab.key"
           @refresh-table="refresh(false)"
@@ -116,6 +118,10 @@
     filters: {
       type: Object,
       default: {},
+    },
+    sorting: {
+      type: Object,
+      default: {}
     },
     parent_row:{
       type: Object,

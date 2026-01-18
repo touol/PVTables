@@ -516,6 +516,10 @@
       type: Object,
       default: {},
     },
+    sorting: {
+      type: Array,
+      default: () => []
+    },
     child:{
       type: Boolean, //и не понятно зачем это. Вроде нет использования переменной.
       default: false
@@ -720,7 +724,7 @@
         clearFilter = filtersComposable.clearFilter;
 
         // Создаем функции загрузки данных
-        loadLazyData = createLoadLazyData(api, fields, filters, () => prepFilters(), notify);
+        loadLazyData = createLoadLazyData(api, fields, filters, () => prepFilters(), notify, () => props.sorting);
         composableLoadLazyData = loadLazyData; // Связываем прокси с реальной функцией
         onPage = createOnPage(loadLazyData);
         onSort = createOnSort(loadLazyData);

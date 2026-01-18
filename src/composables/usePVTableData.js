@@ -62,20 +62,31 @@ export function usePVTableData(emptyRowsCount = 0) {
    * @param {Object} filters - Ref с фильтрами таблицы
    * @param {Function} prepFilters - Функция подготовки фильтров из usePVTableFilters
    * @param {Function} notify - Функция уведомлений
+   * @param {Function} getSorting - Функция, возвращающая текущую сортировку из пропсов
    * @returns {Function} Функция загрузки данных
    */
-  const createLoadLazyData = (api, fields, filters, prepFilters, notify) => {
+  const createLoadLazyData = (api, fields, filters, prepFilters, notify, getSorting = () => []) => {
     return async (event) => {
       loading.value = true;
       lazyParams.value = {
         ...lazyParams.value,
         first: event?.first || first.value,
       };
+      
+      // Получаем текущую сортировку из пропсов
+      const propsSorting = getSorting();
+      
+      // Определяем сортировку: если есть пропс sorting и он не пустой, используем его
+      let sortMeta = lazyParams.value.multiSortMeta;
+      if (propsSorting && propsSorting.length > 0) {
+        sortMeta = propsSorting;
+      }
+      
       const params = {
         limit: lazyParams.value.rows,
         setTotal: 1,
         offset: lazyParams.value.first,
-        multiSortMeta: lazyParams.value.multiSortMeta,
+        multiSortMeta: sortMeta,
         filters: prepFilters(),
       };
 
