@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrimeVue Checkbox Example</title>
+    <style type="text/css" data-primevue-style-id="global-style">@layer primevue{*{box-sizing:border-box;}.p-connected-overlay{opacity:0;transform:scaleY(0.8);transition:transform 0.12s cubic-bezier(0,0,0.2,1),opacity 0.12s cubic-bezier(0,0,0.2,1);}.p-connected-overlay-visible{opacity:1;transform:scaleY(1);}.p-connected-overlay-hidden{opacity:0;transform:scaleY(1);transition:opacity 0.1s linear;}.p-connected-overlay-enter-from{opacity:0;transform:scaleY(0.8);}.p-connected-overlay-leave-to{opacity:0;}.p-connected-overlay-enter-active{transition:transform 0.12s cubic-bezier(0,0,0.2,1),opacity 0.12s cubic-bezier(0,0,0.2,1);}.p-connected-overlay-leave-active{transition:opacity 0.1s linear;}.p-toggleable-content-enter-from,.p-toggleable-content-leave-to{max-height:0;}.p-toggleable-content-enter-to,.p-toggleable-content-leave-from{max-height:1000px;}.p-toggleable-content-leave-active{overflow:hidden;transition:max-height 0.45s cubic-bezier(0,1,0,1);}.p-toggleable-content-enter-active{overflow:hidden;transition:max-height 1s ease-in-out;}.p-disabled,.p-disabled *{cursor:default;pointer-events:none;user-select:none;}.p-disabled,.p-component:disabled{opacity:var(--p-disabled-opacity);}.pi{font-size:var(--p-icon-size);}.p-icon{width:var(--p-icon-size);height:var(--p-icon-size);}.p-overlay-mask{background:var(--p-mask-background);color:var(--p-mask-color);position:fixed;top:0;left:0;width:100%;height:100%;}.p-overlay-mask-enter{animation:p-overlay-mask-enter-animation var(--p-mask-transition-duration) forwards;}.p-overlay-mask-leave{animation:p-overlay-mask-leave-animation var(--p-mask-transition-duration) forwards;}@keyframes p-overlay-mask-enter-animation{from{background:transparent;}to{background:var(--p-mask-background);}}@keyframes p-overlay-mask-leave-animation{from{background:var(--p-mask-background);}to{background:transparent;}}}</style>
+    <style type="text/css" data-primevue-style-id="checkbox-variables">
+        @layer primevue {
+            :root {
+                --p-checkbox-border-radius: var(--p-border-radius-sm);
+                --p-checkbox-width: 1.5rem;
+                --p-checkbox-height: 1.5rem;
+                --p-checkbox-background: var(--p-form-field-background);
+                --p-checkbox-checked-background: var(--p-primary-color);
+                --p-checkbox-checked-hover-background: var(--p-primary-hover-color);
+                --p-checkbox-disabled-background: var(--p-form-field-disabled-background);
+                --p-checkbox-filled-background: var(--p-form-field-filled-background);
+                --p-checkbox-border-color: var(--p-form-field-border-color);
+                --p-checkbox-hover-border-color: var(--p-form-field-hover-border-color);
+                --p-checkbox-focus-border-color: var(--p-form-field-focus-border-color);
+                --p-checkbox-checked-border-color: var(--p-primary-color);
+                --p-checkbox-checked-hover-border-color: var(--p-primary-hover-color);
+                --p-checkbox-checked-focus-border-color: var(--p-primary-color);
+                --p-checkbox-checked-disabled-border-color: var(--p-form-field-border-color);
+                --p-checkbox-invalid-border-color: var(--p-form-field-invalid-border-color);
+                --p-checkbox-shadow: var(--p-form-field-shadow);
+                --p-checkbox-focus-ring-width: var(--p-form-field-focus-ring-width);
+                --p-checkbox-focus-ring-style: var(--p-form-field-focus-ring-style);
+                --p-checkbox-focus-ring-color: var(--p-form-field-focus-ring-color);
+                --p-checkbox-focus-ring-offset: var(--p-form-field-focus-ring-offset);
+                --p-checkbox-focus-ring-shadow: var(--p-form-field-focus-ring-shadow);
+                --p-checkbox-transition-duration: var(--p-form-field-transition-duration);
+                --p-checkbox-icon-size: 1rem;
+                --p-checkbox-icon-color: var(--p-form-field-color);
+                --p-checkbox-icon-checked-color: var(--p-primary-contrast-color);
+                --p-checkbox-icon-checked-hover-color: var(--p-primary-contrast-color);
+                --p-checkbox-icon-disabled-color: var(--p-form-field-disabled-color);
+            }
+        }
+    </style>
+    <style type="text/css" data-vite-dev-id="V:/OSPanel/home/modx28.loc/public/Extras/PVTables/src/style.css">@layer tailwind-base, primevue, tailwind-utilities;
+
+@layer tailwind-base {
+  *, ::before, ::after{
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x:  ;
+    --tw-pan-y:  ;
+    --tw-pinch-zoom:  ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position:  ;
+    --tw-gradient-via-position:  ;
+    --tw-gradient-to-position:  ;
+    --tw-ordinal:  ;
+    --tw-slashed-zero:  ;
+    --tw-numeric-figure:  ;
+    --tw-numeric-spacing:  ;
+    --tw-numeric-fraction:  ;
+    --tw-ring-inset:  ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur:  ;
+    --tw-brightness:  ;
+    --tw-contrast:  ;
+    --tw-grayscale:  ;
+    --tw-hue-rotate:  ;
+    --tw-invert:  ;
+    --tw-saturate:  ;
+    --tw-sepia:  ;
+    --tw-drop-shadow:  ;
+    --tw-backdrop-blur:  ;
+    --tw-backdrop-brightness:  ;
+    --tw-backdrop-contrast:  ;
+    --tw-backdrop-grayscale:  ;
+    --tw-backdrop-hue-rotate:  ;
+    --tw-backdrop-invert:  ;
+    --tw-backdrop-opacity:  ;
+    --tw-backdrop-saturate:  ;
+    --tw-backdrop-sepia:  ;
+    --tw-contain-size:  ;
+    --tw-contain-layout:  ;
+    --tw-contain-paint:  ;
+    --tw-contain-style:  ;
+  }
+  ::backdrop{
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x:  ;
+    --tw-pan-y:  ;
+    --tw-pinch-zoom:  ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position:  ;
+    --tw-gradient-via-position:  ;
+    --tw-gradient-to-position:  ;
+    --tw-ordinal:  ;
+    --tw-slashed-zero:  ;
+    --tw-numeric-figure:  ;
+    --tw-numeric-spacing:  ;
+    --tw-numeric-fraction:  ;
+    --tw-ring-inset:  ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur:  ;
+    --tw-brightness:  ;
+    --tw-contrast:  ;
+    --tw-grayscale:  ;
+    --tw-hue-rotate:  ;
+    --tw-invert:  ;
+    --tw-saturate:  ;
+    --tw-sepia:  ;
+    --tw-drop-shadow:  ;
+    --tw-backdrop-blur:  ;
+    --tw-backdrop-brightness:  ;
+    --tw-backdrop-contrast:  ;
+    --tw-backdrop-grayscale:  ;
+    --tw-backdrop-hue-rotate:  ;
+    --tw-backdrop-invert:  ;
+    --tw-backdrop-opacity:  ;
+    --tw-backdrop-saturate:  ;
+    --tw-backdrop-sepia:  ;
+    --tw-contain-size:  ;
+    --tw-contain-layout:  ;
+    --tw-contain-paint:  ;
+    --tw-contain-style:  ;
+  }
+  /*
+! tailwindcss v3.4.13 | MIT License | https://tailwindcss.com
+*//*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box; /* 1 */
+  border-width: 0; /* 2 */
+  border-style: solid; /* 2 */
+  border-color: #e5e7eb; /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5; /* 1 */
+  -webkit-text-size-adjust: 100%; /* 2 */
+  -moz-tab-size: 4; /* 3 */
+  -o-tab-size: 4;
+     tab-size: 4; /* 3 */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* 4 */
+  font-feature-settings: normal; /* 5 */
+  font-variation-settings: normal; /* 6 */
+  -webkit-tap-highlight-color: transparent; /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0; /* 1 */
+  line-height: inherit; /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0; /* 1 */
+  color: inherit; /* 2 */
+  border-top-width: 1px; /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  -webkit-text-decoration: underline dotted;
+          text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
+  font-feature-settings: normal; /* 2 */
+  font-variation-settings: normal; /* 3 */
+  font-size: 1em; /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0; /* 1 */
+  border-color: inherit; /* 2 */
+  border-collapse: collapse; /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* 1 */
+  font-feature-settings: inherit; /* 1 */
+  font-variation-settings: inherit; /* 1 */
+  font-size: 100%; /* 1 */
+  font-weight: inherit; /* 1 */
+  line-height: inherit; /* 1 */
+  letter-spacing: inherit; /* 1 */
+  color: inherit; /* 1 */
+  margin: 0; /* 2 */
+  padding: 0; /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield; /* 1 */
+  outline-offset: -2px; /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button; /* 1 */
+  font: inherit; /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::-moz-placeholder, textarea::-moz-placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1; /* 1 */
+  color: #9ca3af; /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* 1 */
+  vertical-align: middle; /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden] {
+  display: none;
+}
+}
+
+@layer tailwind-utilities {
+  .mb-2{
+    margin-bottom: 0.5rem;
+  }
+  .ml-auto{
+    margin-left: auto;
+  }
+  .mt-2{
+    margin-top: 0.5rem;
+  }
+  .inline{
+    display: inline;
+  }
+  .flex{
+    display: flex;
+  }
+  .table{
+    display: table;
+  }
+  .grid{
+    display: grid;
+  }
+  .w-full{
+    width: 100%;
+  }
+  .flex-shrink{
+    flex-shrink: 1;
+  }
+  .transform{
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  }
+  .flex-wrap{
+    flex-wrap: wrap;
+  }
+  .items-center{
+    align-items: center;
+  }
+  .justify-center{
+    justify-content: center;
+  }
+  .gap-2{
+    gap: 0.5rem;
+  }
+  .gap-3{
+    gap: 0.75rem;
+  }
+  .rounded{
+    border-radius: 0.25rem;
+  }
+  .border{
+    border-width: 1px;
+  }
+  .bg-blue-500{
+    --tw-bg-opacity: 1;
+    background-color: rgb(59 130 246 / var(--tw-bg-opacity));
+  }
+  .bg-gray-500{
+    --tw-bg-opacity: 1;
+    background-color: rgb(107 114 128 / var(--tw-bg-opacity));
+  }
+  .p-2{
+    padding: 0.5rem;
+  }
+  .px-4{
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .py-2{
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .font-semibold{
+    font-weight: 600;
+  }
+  .text-white{
+    --tw-text-opacity: 1;
+    color: rgb(255 255 255 / var(--tw-text-opacity));
+  }
+  .underline{
+    text-decoration-line: underline;
+  }
+  .filter{
+    filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+  }
+  .transition{
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+}
+.p-inputgroup {
+  width: auto;
+}
+
+/* Выделенная ячейка */
+.cell-selected {
+  border: 2px solid #4A90E2 !important;
+  background-color: rgba(74, 144, 226, 0.1) !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Курсор в режиме выделения */
+.p-datatable[data-cell-selection-mode="true"] td:not([data-p-selection-column="true"]) {
+  cursor: cell;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* Отключение выделения текста при drag */
+.p-datatable[data-cell-selection-mode="true"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+  .td-body{
+    width: 100%;
+    height: 100%;
+  }
+  .td-body:not(.date){
+    margin-top: 2px;
+  }
+  .td-body.readonly {
+      background-blend-mode: multiply;
+      background: rgba(190, 164, 164, 0.1);
+  }
+  td.number,td.decimal,td.textarea,td.text{
+    max-width: 100px;
+  }
+  td.number .p-inputtext,td.decimal .p-inputtext,td.textarea textarea,td.text .p-inputtext{
+    width: 100%;
+  }
+  td.autocomplete .p-autocomplete-dropdown, td.autocomplete .p-inputtext
+  ,td.select .p-autocomplete-dropdown, td.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+  .td-body.autocomplete .p-autocomplete-dropdown, .td-body.autocomplete .p-inputtext
+  ,.td-body.select .p-autocomplete-dropdown, .td-body.select .p-inputtext
+  {
+    background: inherit;
+    border: none;
+  }
+  .p-datatable-column-header-content {
+    flex-wrap: wrap;
+  }
+  
+  
+  html {
+    font-size: 13px;
+  }
+  .p-datatable-resizable-table > .p-datatable-thead > tr > th,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.text,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.textarea,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.html,
+  .p-datatable-resizable-table > .p-datatable-tbody > tr > td.autocomplete
+  {
+    white-space: break-spaces !important;
+  }
+  /* .p-datatable textarea{
+    width:136px;
+  } */
+
+  .p-datatable tr.hit{
+    background-color: #60cc2fe6;
+  }
+  .p-datatable tr.attention{
+    background-color: rgba(252, 3, 3, 0.8);
+  }
+  .p-datatable tr.work{
+    background-color: #89d7f1;
+  }
+  .p-datatable tr.outwork{
+    background-color: #eff189;
+  }
+  .p-datatable tr.onsklad{
+    background-color: #f19989;
+  }
+  .p-datatable tr.canceled{
+    background-color: #ff684c;
+  }
+  .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding: 0.2rem 0.5rem;
+  }
+  .p-autocomplete-option:not(.p-autocomplete-option-selected):not(.p-disabled).p-focus {
+    background: #9cabbb;
+    color: var(--p-autocomplete-option-focus-color);
+  }
+  .td-actions .p-speeddial {
+    display: inline;
+  }
+  .td-actions{
+    white-space: nowrap;
+    align-content: center;
+  }
+  .td-actions .p-speeddial-list {
+    position: absolute;
+    right: 0;
+  }
+
+  .p-datatable .p-inputtext{
+    color:black;
+  }
+  .navbar-collapse.collapse {
+     visibility: inherit !important;
+  }
+  .p-datatable-table td, .p-datatable-table th {
+    padding: 4px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
+  }
+  
+  /* Стили для виртуального скроллинга */
+  .p-datatable table {
+    border-collapse: separate !important;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td,
+  .p-datatable table .p-virtualscroller-content th {
+    max-height: inherit;
+    padding: 4px;
+    border: 1px solid #555;
+    vertical-align: top;
+    color: #000;
+  }
+  
+  .p-datatable table .p-virtualscroller-content td .td-body {
+    max-height: inherit;
+    overflow: auto;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  
+  @media (min-width: 768px){
+
+  .md\:w-56{
+    width: 14rem;
+  }
+}
+</style>
+    <style type="text/css" data-primevue-style-id="checkbox-style">
+        @layer primevue {
+            .p-checkbox {
+                position: relative;
+                display: inline-flex;
+                user-select: none;
+                vertical-align: bottom;
+                width: var(--p-checkbox-width);
+                height: var(--p-checkbox-height);
+            }
+            .p-checkbox-input {
+                cursor: pointer;
+                appearance: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                margin: 0;
+                opacity: 0;
+                z-index: 1;
+                outline: 0 none;
+                border: 1px solid transparent;
+                border-radius: var(--p-checkbox-border-radius);
+            }
+            .p-checkbox-box {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: var(--p-checkbox-border-radius);
+                border: 1px solid var(--p-checkbox-border-color);
+                background: var(--p-checkbox-background);
+                width: var(--p-checkbox-width);
+                height: var(--p-checkbox-height);
+                transition: background var(--p-checkbox-transition-duration), color var(--p-checkbox-transition-duration), border-color var(--p-checkbox-transition-duration), box-shadow var(--p-checkbox-transition-duration), outline-color var(--p-checkbox-transition-duration);
+                outline-color: transparent;
+                box-shadow: var(--p-checkbox-shadow);
+            }
+            .p-checkbox-icon {
+                transition-duration: var(--p-checkbox-transition-duration);
+                color: var(--p-checkbox-icon-color);
+                font-size: var(--p-checkbox-icon-size);
+                width: var(--p-checkbox-icon-size);
+                height: var(--p-checkbox-icon-size);
+            }
+            .p-checkbox:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box {
+                border-color: var(--p-checkbox-hover-border-color);
+            }
+            .p-checkbox-checked .p-checkbox-box {
+                border-color: var(--p-checkbox-checked-border-color);
+                background: var(--p-checkbox-checked-background);
+            }
+            .p-checkbox-checked .p-checkbox-icon {
+                color: var(--p-checkbox-icon-checked-color);
+            }
+            .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box {
+                background: var(--p-checkbox-checked-hover-background);
+                border-color: var(--p-checkbox-checked-hover-border-color);
+            }
+            .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-icon {
+                color: var(--p-checkbox-icon-checked-hover-color);
+            }
+            .p-checkbox:not(.p-disabled):has(.p-checkbox-input:focus-visible) .p-checkbox-box {
+                border-color: var(--p-checkbox-focus-border-color);
+                box-shadow: var(--p-checkbox-focus-ring-shadow);
+                outline: var(--p-checkbox-focus-ring-width) var(--p-checkbox-focus-ring-style) var(--p-checkbox-focus-ring-color);
+                outline-offset: var(--p-checkbox-focus-ring-offset);
+            }
+            .p-checkbox-checked:not(.p-disabled):has(.p-checkbox-input:focus-visible) .p-checkbox-box {
+                border-color: var(--p-checkbox-checked-focus-border-color);
+            }
+            .p-checkbox.p-invalid > .p-checkbox-box {
+                border-color: var(--p-checkbox-invalid-border-color);
+            }
+            .p-checkbox.p-variant-filled .p-checkbox-box {
+                background: var(--p-checkbox-filled-background);
+            }
+            .p-checkbox-checked.p-variant-filled .p-checkbox-box {
+                background: var(--p-checkbox-checked-background);
+            }
+            .p-checkbox-checked.p-variant-filled:not(.p-disabled):has(.p-checkbox-input:hover) .p-checkbox-box {
+                background: var(--p-checkbox-checked-hover-background);
+            }
+            .p-checkbox.p-disabled {
+                opacity: 1;
+            }
+            .p-checkbox.p-disabled .p-checkbox-box {
+                background: var(--p-checkbox-disabled-background);
+                border-color: var(--p-checkbox-checked-disabled-border-color);
+            }
+            .p-checkbox.p-disabled .p-checkbox-box .p-checkbox-icon {
+                color: var(--p-checkbox-icon-disabled-color);
+            }
+        }
+    </style>
+    <style>
+        /* Дополнительные стили для увеличения и улучшения видимости чекбокса */
+        .p-checkbox {
+            --p-checkbox-width: 2.5rem !important;
+            --p-checkbox-height: 2.5rem !important;
+            --p-checkbox-icon-size: 1.8rem !important;
+        }
+        
+        .p-checkbox-box {
+            border-width: 2px !important;
+            border-color: #333 !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        .p-checkbox-checked .p-checkbox-box {
+            background: #2196F3 !important;
+            border-color: #1976D2 !important;
+        }
+        
+        .p-checkbox-icon {
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+        
+        /* Для disabled состояния - делаем более контрастным */
+        .p-checkbox.p-disabled .p-checkbox-box {
+            background: #e0e0e0 !important;
+            border-color: #666 !important;
+            opacity: 0.8;
+        }
+        
+        .p-checkbox-checked.p-disabled .p-checkbox-box {
+            background: #64B5F6 !important;
+            border-color: #42A5F5 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="td-body boolean readonly">
+        <!-- Кастомный Vue шаблон, если указан и не в режиме редактирования -->
+        <div class="p-checkbox p-component p-checkbox-checked p-disabled" 
+             data-pc-name="checkbox" 
+             data-pc-section="root" 
+             data-p-checked="true" 
+             data-p-disabled="true" 
+             pc156="">
+            <input type="checkbox" 
+                   class="p-checkbox-input" 
+                   checked="" 
+                   disabled="" 
+                   data-pc-section="input">
+            <div class="p-checkbox-box" data-pc-section="box">
+                <svg width="14" 
+                     height="14" 
+                     viewBox="0 0 14 14" 
+                     fill="none" 
+                     xmlns="http://www.w3.org/2000/svg" 
+                     class="p-icon p-checkbox-icon" 
+                     aria-hidden="true" 
+                     data-pc-section="icon">
+                    <path d="M4.86199 11.5948C4.78717 11.5923 4.71366 11.5745 4.64596 11.5426C4.57826 11.5107 4.51779 11.4652 4.46827 11.4091L0.753985 7.69483C0.683167 7.64891 0.623706 7.58751 0.580092 7.51525C0.536478 7.44299 0.509851 7.36177 0.502221 7.27771C0.49459 7.19366 0.506156 7.10897 0.536046 7.03004C0.565935 6.95111 0.613367 6.88 0.674759 6.82208C0.736151 6.76416 0.8099 6.72095 0.890436 6.69571C0.970973 6.67046 1.05619 6.66385 1.13966 6.67635C1.22313 6.68886 1.30266 6.72017 1.37226 6.76792C1.44186 6.81567 1.4997 6.8786 1.54141 6.95197L4.86199 10.2503L12.6397 2.49483C12.7444 2.42694 12.8689 2.39617 12.9932 2.40745C13.1174 2.41873 13.2343 2.47141 13.3251 2.55705C13.4159 2.64268 13.4753 2.75632 13.4938 2.87973C13.5123 3.00315 13.4888 3.1292 13.4271 3.23768L5.2557 11.4091C5.20618 11.4652 5.14571 11.5107 5.07801 11.5426C5.01031 11.5745 4.9368 11.5923 4.86199 11.5948Z" 
+                          fill="currentColor"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

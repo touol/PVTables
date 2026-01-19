@@ -413,6 +413,49 @@
     }
   })
 
+  // Функция для поиска точного совпадения по content
+  const findExactMatchByContent = (query, items) => {
+    if (!query || !items || items.length === 0) {
+      return null;
+    }
+    
+    const normalizedQuery = query.trim().toLowerCase();
+    
+    return items.find(item => {
+      if (!item.content) {
+        return false;
+      }
+      
+      const normalizedContent = String(item.content).trim().toLowerCase();
+      return normalizedContent === normalizedQuery;
+    });
+  };
+
+  // Функция для автоматического выбора элемента
+  const autoSelectItem = (item) => {
+    if (!item) return;
+    
+    selectedItem.value = item;
+    model.value = item.id;
+    
+    // Обработка show_id если настроено
+    if (props.field.show_id) {
+      if (item[props.field.show_id] && item[props.field.show_id] > 0) {
+        show_id.value = item[props.field.show_id];
+      } else {
+        show_id.value = model.value;
+      }
+    }
+    
+    // Автоматически заполняем поля поиска на основе выбранного значения
+    fillSearchFieldsFromOption(item);
+    
+    // Уведомляем родительский компонент
+    emit('set-value');
+    
+    // ВАЖНО: Список остается открытым, пользователь может выбрать другой элемент
+  };
+
   const search = async ({ query }) => {
     try {
       // Сбрасываем пагинацию при новом поиске
@@ -463,6 +506,16 @@
       if (response.data.template) {
         apiTemplate.value = response.data.template;
       }
+      
+      // ========== НОВАЯ ЛОГИКА: Автовыбор при точном совпадении ==========
+      if (items.value.length > 0 && query.trim() !== '') {
+        const exactMatch = findExactMatchByContent(query, items.value);
+        if (exactMatch) {
+          autoSelectItem(exactMatch);
+          // Список остается открытым для возможности выбора другого элемента
+        }
+      }
+      // ===================================================================
       
       // Разрешаем ленивую загрузку только после успешного поиска
       setTimeout(() => {

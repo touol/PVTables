@@ -152,3 +152,33 @@
     text-overflow: ellipsis;
     display: block;
   }
+  /* Дополнительные стили для увеличения и улучшения видимости чекбокса */
+  .p-checkbox {
+      --p-checkbox-width: 2rem !important;
+      --p-checkbox-height: 2rem !important;
+      --p-checkbox-icon-size: 1.4rem !important;
+  }
+  
+  .p-checkbox-box {
+      border-width: 2px !important;
+      border-color: #333 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  .p-checkbox-icon {
+      color: #ffffff !important;
+      font-weight: bold;
+      stroke-width: 2px;
+      filter: drop-shadow(0 0 1px currentColor);
+  }
+  
+  /* Для disabled состояния - делаем более контрастным */
+  .p-checkbox.p-disabled .p-checkbox-box {
+      background: #e0e0e0 !important;
+      border-color: #666 !important;
+      opacity: 0.8;
+  }
+  
+  .p-checkbox-checked.p-disabled .p-checkbox-icon {
+      color: #1191fa !important;
+  }

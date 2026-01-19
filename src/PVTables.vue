@@ -225,6 +225,8 @@
           :class="getClassTD(col)"
           :style="getColumnStyle(col)"
           :pt="{ bodyCell: { onKeydown: onKeyDown } }"
+          :frozen="col.frozen === 'left' || col.frozen === 'right'"
+          :alignFrozen="col.frozen === 'left' ? 'left' : col.frozen === 'right' ? 'right' : undefined"
           >
           <template #body="{ data, field }">
             <div :class="getClassBody(col,data)">
@@ -272,6 +274,8 @@
         v-if="actions_row"
         :exportable="false"
         class="td-actions"
+        :frozen="actionsFrozen === 'left' || actionsFrozen === 'right'"
+        :alignFrozen="actionsFrozen === 'left' ? 'left' : actionsFrozen === 'right' ? 'right' : undefined"
         >
         <template #body="slotProps">
           <template v-for="action in cur_actions.filter((x) => x.row && x.menu !== 1)" :key="action.action">
@@ -596,6 +600,7 @@
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
+  const actionsFrozen = ref(null)
 
   onMounted(async () => {
     loading.value = true;
@@ -635,6 +640,9 @@
         if (response.data.hasOwnProperty("rowGroupMode")) {
           rowGroupMode.value = response.data.rowGroupMode
           groupRowsBy.value = response.data.groupRowsBy
+        }
+        if (response.data.hasOwnProperty("actions_frozen")) {
+          actionsFrozen.value = response.data.actions_frozen;
         }
 
         let filter_fields = [];
