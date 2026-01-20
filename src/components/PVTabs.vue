@@ -46,16 +46,17 @@
           :page-size="20"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           />
-        <component
-          v-else-if="tab.type=='component'"
-          :is="resolveComponentName(tab.name_component)"
-          :parent_row="parent_row"
-          :parent-id="current_id"
-          :filters="filters[tab.key]"
-          :sorting="sorting[tab.key] || []"
-          @refresh="refresh(false)"
-          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
-        ></component>
+        <div v-else-if="tab.type=='component'">
+          <component
+            :is="resolveComponentName(tab.name_component)"
+            :parent_row="parent_row"
+            :parent-id="current_id"
+            :filters="filters[tab.key]"
+            :sorting="sorting[tab.key] || []"
+            @refresh="refresh(false)"
+            :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          ></component>
+        </div>
         <template v-else-if="tab.type=='tables'">
           <PVTables
             v-for="table in tab.tables"
