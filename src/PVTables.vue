@@ -10,6 +10,16 @@
           <label for="auto-fit-toggle" style="margin: 0;">Автоматически подгонять высоту под экран</label>
         </div>
         
+        <div class="field-checkbox" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <ToggleSwitch v-model="stretchTableMode" @change="onStretchTableModeToggle" inputId="stretch-table-toggle" />
+          <label for="stretch-table-toggle" style="margin: 0;">Растянуть таблицу для масштабирования на мобильных</label>
+        </div>
+        
+        <div class="field-checkbox" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <ToggleSwitch v-model="disableVerticalScroll" @change="onDisableVerticalScrollToggle" inputId="disable-vscroll-toggle" />
+          <label for="disable-vscroll-toggle" style="margin: 0;">Отключить вертикальный скролл</label>
+        </div>
+        
         <div class="field" style="margin-top: 1rem;">
           <label for="table-height" style="display: block; margin-bottom: 0.5rem;">Высота таблицы</label>
           <InputText v-model="tableScrollHeight" inputId="table-height" style="width: 100%;" placeholder="85vh" :disabled="autoFitHeight" />
@@ -50,7 +60,11 @@
           <small class="block mt-1" style="color: #666;">Автоопределенная: {{ calculatedRowHeight }}px</small>
         </div>
         
-        <Button label="Пересчитать" icon="pi pi-refresh" @click="recalculateRowHeight" size="small" :disabled="!virtualScrollEnabled" />
+        <div style="display: flex; gap: 0.5rem;">
+          <Button label="Пересчитать" icon="pi pi-refresh" @click="recalculateRowHeight" size="small" :disabled="!virtualScrollEnabled" />
+          <Button label="Сбросить" icon="pi pi-undo" @click="resetVirtualScrollSettings" size="small" severity="secondary"
+            v-tooltip.bottom="'Сбросить настройки в браузере и применить конфиг таблицы'" />
+        </div>
       </div>
     </Popover>
     <Toolbar class="p-mb-4">
@@ -601,6 +615,7 @@
   const dataFields = ref([])
   const hideId = ref(false)
   const actionsFrozen = ref(null)
+  const enableVirtScroll = ref(false)
 
   onMounted(async () => {
     loading.value = true;
@@ -643,6 +658,9 @@
         }
         if (response.data.hasOwnProperty("actions_frozen")) {
           actionsFrozen.value = response.data.actions_frozen;
+        }
+        if (response.data.hasOwnProperty("enable_virt_scroll")) {
+          enableVirtScroll.value = response.data.enable_virt_scroll;
         }
 
         let filter_fields = [];
@@ -780,6 +798,16 @@
             calculateTableHeight()
             window.addEventListener('resize', calculateTableHeight)
           }
+          
+          // Применяем режим растягивания если он был включен
+          if (stretchTableMode.value) {
+            applyStretchTableStyles();
+          }
+          
+          // Применяем режим отключения вертикального скролла если он был включен
+          if (disableVerticalScroll.value) {
+            applyVerticalScrollStyles();
+          }
         }, 200);
       } else {
         // Поля не пришли с сервера
@@ -846,12 +874,14 @@
     onVirtualScrollToggle,
     toggleVirtualScrollSettings,
     recalculateRowHeight,
-    getVirtualScrollRowStyle
+    getVirtualScrollRowStyle,
+    resetSettings: resetVirtualScrollSettings
   } = useVirtualScroll({
     columns,
     lineItems,
     dt,
-    storageKey: `pvtables-virtual-scroll-${props.table}`
+    storageKey: `pvtables-virtual-scroll-${props.table}`,
+    enableVirtScroll
   });
 
   // Навигация по ячейкам
@@ -891,7 +921,15 @@
     onAutoFitHeightToggle,
     // Управление размером шрифта
     fontSize,
-    onFontSizeChange
+    onFontSizeChange,
+    // Режим растягивания таблицы
+    stretchTableMode,
+    onStretchTableModeToggle,
+    applyStretchTableStyles,
+    // Режим отключения вертикального скролла
+    disableVerticalScroll,
+    onDisableVerticalScrollToggle,
+    applyVerticalScrollStyles
   } = stylesComposable;
   
   // Оборачиваем toggleSettings и onToggleColomns для передачи columns

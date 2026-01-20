@@ -35,6 +35,30 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
       document.documentElement.style.fontSize = `${size}px`;
     }
   }
+  
+  // Режим растягивания таблицы
+  const stretchTableMode = ref(false);
+  
+  // Загрузка сохраненного значения из localStorage
+  const savedStretchMode = localStorage.getItem(`pvtables-${table}-stretch-mode`);
+  if (savedStretchMode !== null) {
+    stretchTableMode.value = savedStretchMode === 'true';
+  }
+  
+  // Режим отключения вертикального скролла
+  const disableVerticalScroll = ref(false);
+  let savedScrollHeight = null; // Для сохранения значения высоты при переключении режима
+  
+  // Загрузка сохраненного значения из localStorage
+  const savedDisableScroll = localStorage.getItem(`pvtables-${table}-disable-vscroll`);
+  if (savedDisableScroll !== null) {
+    disableVerticalScroll.value = savedDisableScroll === 'true';
+    // Если режим был включен, сразу устанавливаем null для высоты
+    if (disableVerticalScroll.value) {
+      savedScrollHeight = tableScrollHeight.value;
+      tableScrollHeight.value = null;
+    }
+  }
 
   /**
    * Переключение темной темы
@@ -514,10 +538,229 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     }
   };
   
+  /**
+   * Обработчик переключения режима растягивания таблицы
+   */
+  const onStretchTableModeToggle = () => {
+    // Сохраняем в localStorage
+    localStorage.setItem(`pvtables-${table}-stretch-mode`, stretchTableMode.value.toString());
+    
+    // Применяем или убираем стили растягивания
+    // Используем setTimeout чтобы дать таблице отрендериться
+    setTimeout(() => {
+      applyStretchTableStyles();
+    }, 100);
+    
+    // Уведомление пользователя
+    if (notify) {
+      const message = stretchTableMode.value
+        ? 'Режим растягивания включен. Теперь можно масштабировать таблицу на мобильных устройствах.'
+        : 'Режим растягивания выключен.';
+      notify('info', { detail: message });
+    }
+  };
+  
+  /**
+   * Обработчик переключения режима отключения вертикального скролла
+   */
+  const onDisableVerticalScrollToggle = () => {
+    // Сохраняем в localStorage
+    localStorage.setItem(`pvtables-${table}-disable-vscroll`, disableVerticalScroll.value.toString());
+    
+    // Управление высотой таблицы
+    if (disableVerticalScroll.value) {
+      // При включении режима - убираем ограничение по высоте
+      savedScrollHeight = tableScrollHeight.value; // Сохраняем текущее значение
+      tableScrollHeight.value = null;
+    } else {
+      // При выключении - восстанавливаем сохраненное значение
+      tableScrollHeight.value = savedScrollHeight || props?.scrollHeight || '85vh';
+    }
+    
+    // Применяем стили для вертикального скролла
+    applyVerticalScrollStyles();
+    
+    // Уведомление пользователя
+    if (notify) {
+      const message = disableVerticalScroll.value
+        ? 'Вертикальный скролл отключен.'
+        : 'Вертикальный скролл включен.';
+      notify('info', { detail: message });
+    }
+  };
+  
+  // Style элемент для режима растягивания
+  let stretchTableStyleElement = null;
+  
+  /**
+   * Создание style элемента для режима растягивания
+   */
+  const createStretchTableStyleElement = () => {
+    if (!stretchTableStyleElement) {
+      stretchTableStyleElement = document.createElement('style');
+      stretchTableStyleElement.type = 'text/css';
+      stretchTableStyleElement.id = `pvtables-stretch-mode-${table}`;
+      document.head.appendChild(stretchTableStyleElement);
+    }
+    
+    // Добавляем уникальный класс к элементу таблицы
+    if (dt && dt.value && dt.value.$el) {
+      dt.value.$el.classList.add(`pvtables-stretch-${table}`);
+    }
+  };
+  
+  /**
+   * Уничтожение style элемента для режима растягивания
+   */
+  const destroyStretchTableStyleElement = () => {
+    if (stretchTableStyleElement) {
+      document.head.removeChild(stretchTableStyleElement);
+      stretchTableStyleElement = null;
+    }
+    
+    // Убираем уникальный класс с элемента таблицы
+    if (dt && dt.value && dt.value.$el) {
+      dt.value.$el.classList.remove(`pvtables-stretch-${table}`);
+    }
+  };
+  
+  /**
+   * Применение стилей для режима растягивания таблицы
+   */
+  const applyStretchTableStyles = () => {
+    if (!stretchTableMode.value) {
+      destroyStretchTableStyleElement();
+      return;
+    }
+    
+    createStretchTableStyleElement();
+    
+    // Получаем реальную ширину таблицы из DOM
+    let minTableWidth = '300vw'; // Значение по умолчанию
+    
+    if (dt && dt.value && dt.value.$el) {
+      const tableElement = dt.value.$el.querySelector('table');
+      if (tableElement) {
+        // Получаем реальную ширину таблицы
+        const tableWidth = tableElement.scrollWidth || tableElement.offsetWidth;
+        if (tableWidth > 0) {
+          // Добавляем небольшой запас (5%)
+          const calculatedWidth = Math.ceil(tableWidth * 1.05);
+          minTableWidth = `${calculatedWidth}px`;
+        }
+      }
+    }
+    
+    // Используем уникальный класс для конкретной таблицы
+    const tableClass = `pvtables-stretch-${table}`;
+    
+    const innerHTML = `
+      /* Растягиваем главный контейнер таблицы */
+      .${tableClass}.pvtables {
+        min-width: ${minTableWidth} !important;
+        width: ${minTableWidth} !important;
+      }
+      
+      /* Растягиваем card внутри */
+      .${tableClass}.pvtables.card {
+        min-width: ${minTableWidth} !important;
+        width: ${minTableWidth} !important;
+      }
+      
+      /* Растягиваем wrapper таблицы */
+      .${tableClass} .p-datatable-wrapper {
+        min-width: ${minTableWidth} !important;
+        width: ${minTableWidth} !important;
+      }
+      
+      /* Растягиваем саму таблицу */
+      .${tableClass} .p-datatable-wrapper table {
+        min-width: ${minTableWidth} !important;
+        width: ${minTableWidth} !important;
+      }
+      
+      /* Растягиваем контейнер таблицы */
+      .${tableClass} [data-pc-section="tablecontainer"] {
+        min-width: ${minTableWidth} !important;
+        width: ${minTableWidth} !important;
+      }
+    `;
+    
+    stretchTableStyleElement.innerHTML = innerHTML;
+  };
+  
+  // Style элемент для отключения вертикального скролла
+  let verticalScrollStyleElement = null;
+  
+  /**
+   * Создание style элемента для отключения вертикального скролла
+   */
+  const createVerticalScrollStyleElement = () => {
+    if (!verticalScrollStyleElement) {
+      verticalScrollStyleElement = document.createElement('style');
+      verticalScrollStyleElement.type = 'text/css';
+      verticalScrollStyleElement.id = `pvtables-vscroll-${table}`;
+      document.head.appendChild(verticalScrollStyleElement);
+    }
+    
+    // Добавляем уникальный класс к элементу таблицы
+    if (dt && dt.value && dt.value.$el) {
+      dt.value.$el.classList.add(`pvtables-vscroll-${table}`);
+    }
+  };
+  
+  /**
+   * Уничтожение style элемента для отключения вертикального скролла
+   */
+  const destroyVerticalScrollStyleElement = () => {
+    if (verticalScrollStyleElement) {
+      document.head.removeChild(verticalScrollStyleElement);
+      verticalScrollStyleElement = null;
+    }
+    
+    // Убираем уникальный класс с элемента таблицы
+    if (dt && dt.value && dt.value.$el) {
+      dt.value.$el.classList.remove(`pvtables-vscroll-${table}`);
+    }
+  };
+  
+  /**
+   * Применение стилей для отключения вертикального скролла
+   */
+  const applyVerticalScrollStyles = () => {
+    if (!disableVerticalScroll.value) {
+      destroyVerticalScrollStyleElement();
+      return;
+    }
+    
+    createVerticalScrollStyleElement();
+    
+    // Используем уникальный класс для конкретной таблицы
+    const tableClass = `pvtables-vscroll-${table}`;
+    
+    const innerHTML = `
+      /* Убираем ограничения по высоте для wrapper */
+      .${tableClass} .p-datatable-wrapper {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      
+      /* Убираем вертикальный скролл */
+      .${tableClass} .p-datatable-scrollable-body {
+        overflow-y: visible !important;
+        max-height: none !important;
+      }
+    `;
+    
+    verticalScrollStyleElement.innerHTML = innerHTML;
+  };
+  
   // Watchers для отслеживания изменений props
   if (props) {
     watch(() => props.scrollHeight, (newValue) => {
-      if (!autoFitHeight.value) {
+      // Не обновляем высоту если включен режим отключения вертикального скролла или автоподгонка
+      if (!autoFitHeight.value && !disableVerticalScroll.value) {
         tableScrollHeight.value = newValue;
       }
     });
@@ -537,6 +780,8 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
   // Очистка при размонтировании
   onBeforeUnmount(() => {
     window.removeEventListener('resize', calculateTableHeight);
+    destroyStretchTableStyleElement();
+    destroyVerticalScrollStyleElement();
   });
 
   return {
@@ -565,6 +810,14 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     onAutoFitHeightToggle,
     // Управление размером шрифта
     fontSize,
-    onFontSizeChange
+    onFontSizeChange,
+    // Режим растягивания таблицы
+    stretchTableMode,
+    onStretchTableModeToggle,
+    applyStretchTableStyles,
+    // Режим отключения вертикального скролла
+    disableVerticalScroll,
+    onDisableVerticalScrollToggle,
+    applyVerticalScrollStyles
   };
 }

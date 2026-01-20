@@ -68,7 +68,7 @@
             :key="table.key"
             @refresh-table="refresh(false)"
             :child="true"
-            :scrollHeight="tableScrollHeights[table.key] || '400px'"
+            :scrollHeight="autoUpdateHeights ? (tableScrollHeights[table.key] || '400px') : undefined"
             :ref="el => { if (el) childComponentRefs[table.key] = el }"
             @get-response="get_response($event)"
           />
@@ -83,7 +83,7 @@
           :key="tab.key"
           @refresh-table="refresh(false)"
           :child="true"
-          :scrollHeight="tableScrollHeights[tab.key] || '400px'"
+          :scrollHeight="autoUpdateHeights ? (tableScrollHeights[tab.key] || '400px') : undefined"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           @get-response="get_response($event)"
         />
@@ -140,6 +140,10 @@
     class_key:{
       type: [String],
       default: ''
+    },
+    autoUpdateHeights:{
+      type: Boolean,
+      default: false
     }
   });
   const key0 = ref()
@@ -247,17 +251,23 @@
   
   // Следим за изменением активной вкладки
   watch(key0, () => {
-    updateTableHeights()
+    if (props.autoUpdateHeights) {
+      updateTableHeights()
+    }
   })
   
   // Lifecycle hooks
   onMounted(() => {
-    window.addEventListener('resize', updateTableHeights)
-    updateTableHeights()
+    if (props.autoUpdateHeights) {
+      window.addEventListener('resize', updateTableHeights)
+      updateTableHeights()
+    }
   })
   
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', updateTableHeights)
+    if (props.autoUpdateHeights) {
+      window.removeEventListener('resize', updateTableHeights)
+    }
   })
   
   watch(

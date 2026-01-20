@@ -17,12 +17,13 @@
                 <div class="tree-panel-container" style="width:100%;">
                     <h1>{{ title }} {{ current_id }}</h1>
                     <div >
-                        <PVTabs 
+                        <PVTabs
                             :tabs="paneltabs"
                             :actions="{}"
                             :filters="filters"
                             :current_id="current_id"
                             :class_key="class_key"
+                            :autoUpdateHeights="true"
                             @update-treenode-title="updateTreeNodeTitle"
                             ref="childComponentRefPanel"
                         />

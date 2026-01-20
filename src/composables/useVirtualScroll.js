@@ -7,8 +7,9 @@ import { ref, computed, watch } from 'vue';
  * @param {Ref} params.lineItems - Реактивная ссылка на данные строк
  * @param {Ref} params.dt - Реактивная ссылка на компонент DataTable
  * @param {String} params.storageKey - Ключ для localStorage
+ * @param {Ref} params.enableVirtScroll - Настройка из конфига таблицы
  */
-export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
+export function useVirtualScroll({ columns, lineItems, dt, storageKey, enableVirtScroll }) {
   // Состояние виртуального скроллинга
   const virtualScrollEnabled = ref(false); // По умолчанию выключен
   const rowHeight = ref(50);
@@ -21,8 +22,19 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const settings = JSON.parse(saved);
-        virtualScrollEnabled.value = settings.enabled !== undefined ? settings.enabled : true;
+        // Если в localStorage есть явное отключение (enabled: false), учитываем его
+        // Иначе используем настройку из конфига
+        if (settings.enabled === false) {
+          virtualScrollEnabled.value = false;
+        } else if (enableVirtScroll && enableVirtScroll.value) {
+          virtualScrollEnabled.value = true;
+        } else {
+          virtualScrollEnabled.value = settings.enabled !== undefined ? settings.enabled : false;
+        }
         rowHeight.value = settings.rowHeight || 50;
+      } else if (enableVirtScroll && enableVirtScroll.value) {
+        // Если нет сохраненных настроек, но в конфиге включен виртуальный скроллинг
+        virtualScrollEnabled.value = true;
       }
     } catch (e) {
       console.error('Ошибка загрузки настроек виртуального скроллинга:', e);
@@ -39,6 +51,22 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
       localStorage.setItem(storageKey, JSON.stringify(settings));
     } catch (e) {
       console.error('Ошибка сохранения настроек виртуального скроллинга:', e);
+    }
+  };
+
+  // Сброс настроек в localStorage и применение конфига
+  const resetSettings = () => {
+    try {
+      localStorage.removeItem(storageKey);
+      // Применяем настройку из конфига или выключаем
+      if (enableVirtScroll && enableVirtScroll.value) {
+        virtualScrollEnabled.value = true;
+        recalculateRowHeight();
+      } else {
+        virtualScrollEnabled.value = false;
+      }
+    } catch (e) {
+      console.error('Ошибка сброса настроек виртуального скроллинга:', e);
     }
   };
 
@@ -190,6 +218,30 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
   // Инициализация при монтировании
   loadSettings();
 
+  // Отслеживание изменений настройки из конфига
+  if (enableVirtScroll) {
+    watch(enableVirtScroll, (newValue) => {
+      // Проверяем, не отключил ли пользователь виртуальный скроллинг вручную
+      const saved = localStorage.getItem(storageKey);
+      let userDisabled = false;
+      
+      if (saved) {
+        try {
+          const settings = JSON.parse(saved);
+          userDisabled = settings.enabled === false;
+        } catch (e) {
+          // Игнорируем ошибки парсинга
+        }
+      }
+      
+      // Если пользователь не отключал вручную и в конфиге включено - включаем
+      if (!userDisabled && newValue) {
+        virtualScrollEnabled.value = true;
+        recalculateRowHeight();
+      }
+    }, { immediate: false });
+  }
+
   // Автоматический пересчет при загрузке данных
   watch([lineItems, columns], () => {
     if (virtualScrollEnabled.value && lineItems.value && lineItems.value.length > 0) {
@@ -214,6 +266,7 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey }) {
     recalculateRowHeight,
     getVirtualScrollRowStyle,
     loadSettings,
-    saveSettings
+    saveSettings,
+    resetSettings
   };
 }
