@@ -864,7 +864,7 @@
 
   const { cacheAction, cache } = useActionsCaching()
 
-  // Виртуальный скроллинг
+  // Виртуальный скроллинг (инициализируем ПЕРЕД usePVTableStyles)
   const {
     virtualScrollEnabled,
     rowHeight,
@@ -894,8 +894,8 @@
     moveCell
   } = usePVTableNavigation();
 
-  // Стили таблицы (передаем props и dt для управления высотой)
-  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api, props.table, notify, props, dt);
+  // Стили таблицы (передаем props, dt и virtualScrollEnabled для управления высотой и виртуальным скроллингом)
+  const stylesComposable = usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api, props.table, notify, props, dt, virtualScrollEnabled);
   
   const {
     op,

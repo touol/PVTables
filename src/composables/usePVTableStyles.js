@@ -11,9 +11,10 @@ import { ref, watch, onBeforeUnmount } from 'vue';
  * @param {Function} notify - Функция уведомлений
  * @param {Object} props - Props компонента (для scrollHeight и autoFitHeight)
  * @param {Object} dt - Ref на DataTable компонент
+ * @param {Object} virtualScrollEnabled - Ref на состояние виртуального скроллинга
  * @returns {Object} Методы для работы со стилями
  */
-export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api = null, table = '', notify = null, props = null, dt = null) {
+export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api = null, table = '', notify = null, props = null, dt = null, virtualScrollEnabled = null) {
   const op = ref(null);
   const selectedColumns = ref();
   const darkTheme = ref(false);
@@ -572,6 +573,11 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
       // При включении режима - убираем ограничение по высоте
       savedScrollHeight = tableScrollHeight.value; // Сохраняем текущее значение
       tableScrollHeight.value = null;
+      
+      // Отключаем виртуальный скроллинг
+      if (virtualScrollEnabled && virtualScrollEnabled.value) {
+        virtualScrollEnabled.value = false;
+      }
     } else {
       // При выключении - восстанавливаем сохраненное значение
       tableScrollHeight.value = savedScrollHeight || props?.scrollHeight || '85vh';
@@ -583,7 +589,7 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     // Уведомление пользователя
     if (notify) {
       const message = disableVerticalScroll.value
-        ? 'Вертикальный скролл отключен.'
+        ? 'Вертикальный скролл отключен. Виртуальный скроллинг также отключен.'
         : 'Вертикальный скролл включен.';
       notify('info', { detail: message });
     }
