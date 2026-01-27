@@ -7,9 +7,11 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
  * @param {Object} hideId - Флаг скрытия ID
  * @param {Object} table_tree - Флаг наличия древовидной структуры
  * @param {Function} onCellEditCompleteCallback - Callback для сохранения изменений
+ * @param {Object} customFields - Кастомные поля для проверки readonly
+ * @param {Function} notify - Функция уведомлений
  * @returns {Object} Методы и состояние для работы с выделением ячеек
  */
-export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditCompleteCallback) {
+export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditCompleteCallback, customFields, notify) {
   const cellSelectionMode = ref(false);
   const selectedCells = ref([]);
   const selectionStart = ref(null);
@@ -261,6 +263,36 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
   };
 
   /**
+   * Проверка, является ли поле readonly
+   * @param {Object} rowData - Данные строки
+   * @param {String} field - Имя поля
+   * @returns {Boolean}
+   */
+  const isFieldReadonly = (rowData, field) => {
+    // Находим колонку по полю
+    const column = columns.value.find(c => c.field === field);
+    if (!column) return false;
+    
+    // Проверяем readonly в самой колонке
+    if (column.readonly === true || column.readonly === 1) {
+      return true;
+    }
+    
+    // Проверяем customFields для этой строки
+    if (customFields && customFields.value && rowData.id) {
+      const rowCustomFields = customFields.value[rowData.id];
+      if (rowCustomFields && rowCustomFields[field]) {
+        const customField = rowCustomFields[field];
+        if (customField.readonly === true || customField.readonly === 1) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  /**
    * Применение значения из fill handle к выделенным ячейкам
    */
   const applyFillHandle = async () => {
@@ -273,11 +305,24 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
     const sourceValue = fillHandleStart.value.value;
     const sourceField = fillHandleStart.value.field;
     
+    let hasReadonlyErrors = false;
+    const readonlyCells = [];
+    
     // Обрабатываем каждую ячейку в диапазоне
     for (const cell of fillHandleRange.value) {
       if (cell.field === sourceField) {
         const rowData = lineItems.value[cell.rowIndex];
         if (rowData) {
+          // Проверяем, является ли поле readonly
+          if (isFieldReadonly(rowData, sourceField)) {
+            hasReadonlyErrors = true;
+            readonlyCells.push({
+              row: cell.rowIndex + 1,
+              field: cell.label
+            });
+            continue;
+          }
+          
           // Вызываем callback для каждой ячейки
           await onCellEditCompleteCallback({
             data: rowData,
@@ -286,6 +331,12 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
           });
         }
       }
+    }
+    
+    // Показываем ошибку, если были readonly ячейки
+    if (hasReadonlyErrors && notify) {
+      const errorMessage = `Следующие ячейки недоступны для редактирования:\n${readonlyCells.map(c => `Строка ${c.row}, поле "${c.field}"`).join('\n')}`;
+      notify('error', { detail: errorMessage }, true);
     }
     
     // Очищаем fill handle range

@@ -1049,7 +1049,7 @@
   } = crudComposable;
 
   // Инициализируем выделение ячеек ПОСЛЕ CRUD, чтобы передать onCellEditComplete
-  cellSelectionComposable = usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditComplete);
+  cellSelectionComposable = usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditComplete, customFields, notify);
   
   const {
     cellSelectionMode,
