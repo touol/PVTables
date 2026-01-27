@@ -95,9 +95,22 @@ export function usePVTableData(emptyRowsCount = 0) {
 
         // Всегда создаем новый массив для гарантированной реактивности
         const processedRows = rowsHandler(response.data.rows, fields);
-        // Добавляем _rowKey к каждой строке
+        
+        // Создаем Map существующих строк по ID для быстрого поиска
+        const existingRowsMap = new Map();
+        lineItems.value.forEach(row => {
+          if (row.id && row._rowKey) {
+            existingRowsMap.set(row.id, row._rowKey);
+          }
+        });
+        
+        // Добавляем _rowKey к каждой строке, сохраняя существующие ключи
         processedRows.forEach(row => {
-          if (!row._rowKey) {
+          if (row.id && existingRowsMap.has(row.id)) {
+            // Используем существующий _rowKey для сохранения состояния раскрытия
+            row._rowKey = existingRowsMap.get(row.id);
+          } else if (!row._rowKey) {
+            // Создаем новый _rowKey только для новых строк
             row._rowKey = `row_${++rowKeyCounter}`;
           }
         });
