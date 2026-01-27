@@ -94,15 +94,30 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
 
     const adjustedColIndex = visibleColumns.findIndex(c => c.field === fieldName);
 
-    let displayValue = bodyDiv ? bodyDiv.textContent.trim() : row[col.field];
+    // Для разных типов полей берем значение по-разному
+    let displayValue;
+    let actualValue;
+    
+    // Для select, autocomplete и других полей с ID берем значение из данных строки
+    const fieldsWithId = ['select', 'autocomplete', 'multiautocomplete'];
+    if (fieldsWithId.includes(col.type)) {
+      // Берем ID из данных строки
+      actualValue = row[col.field];
+      displayValue = bodyDiv ? bodyDiv.textContent.trim() : actualValue;
+    } else {
+      // Для остальных полей берем значение из данных строки
+      actualValue = row[col.field];
+      displayValue = bodyDiv ? bodyDiv.textContent.trim() : actualValue;
+    }
 
     const isSummable = col.type === 'decimal' || col.type === 'number';
 
     if (isSummable) {
-      const numStr = displayValue.replace(/\s/g, '').replace(',', '.');
+      const numStr = String(displayValue).replace(/\s/g, '').replace(',', '.');
       const num = parseFloat(numStr);
       if (!isNaN(num)) {
         displayValue = num;
+        actualValue = num;
       }
     }
 
@@ -110,9 +125,11 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
       rowIndex,
       colIndex: adjustedColIndex,
       field: col.field,
-      value: displayValue,
+      value: actualValue, // Используем actualValue для сохранения
+      displayValue: displayValue, // Для отображения
       label: col.label,
-      summable: isSummable
+      summable: isSummable,
+      type: col.type
     };
 
     return cellData;
@@ -304,6 +321,15 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
     
     const sourceValue = fillHandleStart.value.value;
     const sourceField = fillHandleStart.value.field;
+    
+    // Запрещаем копирование поля id
+    if (sourceField === 'id') {
+      if (notify) {
+        notify('error', { detail: 'Копирование поля ID запрещено' }, true);
+      }
+      fillHandleRange.value = [];
+      return;
+    }
     
     let hasReadonlyErrors = false;
     const readonlyCells = [];
