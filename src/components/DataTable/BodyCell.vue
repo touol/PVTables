@@ -19,6 +19,12 @@
         :data-p-cell-editing="d_editing"
         :data-p-frozen-column="columnProp('frozen')"
     >
+        <!-- Fill Handle для режима выделения ячеек -->
+        <div
+            v-if="showFillHandle"
+            class="cell-fill-handle"
+            @mousedown="onFillHandleMouseDown"
+        ></div>
         <component
             v-if="column.children && column.children.body && !d_editing"
             :is="column.children.body"
@@ -552,6 +558,16 @@ export default {
             if (this.cellSelectionMode && this.cellSelectionState && this.cellSelectionState.onCellMouseEnter) {
                 this.cellSelectionState.onCellMouseEnter(this.rowIndex, this.index, event);
             }
+            
+            // Обработка протягивания fill handle
+            if (this.cellSelectionState?.isFillHandleDragging && this.cellSelectionState?.onFillHandleMouseEnter) {
+                this.cellSelectionState.onFillHandleMouseEnter(this.rowIndex, this.index);
+            }
+        },
+        onFillHandleMouseDown(event) {
+            if (this.cellSelectionState && this.cellSelectionState.onFillHandleMouseDown) {
+                this.cellSelectionState.onFillHandleMouseDown(event);
+            }
         }
     },
     computed: {
@@ -570,12 +586,39 @@ export default {
                 cell => cell.rowIndex === this.rowIndex && cell.field === this.field
             );
         },
+        showFillHandle() {
+            // Показываем fill handle только если:
+            // 1. Включен режим выделения ячеек
+            // 2. Выделена ровно одна ячейка
+            // 3. Эта ячейка - текущая
+            // 4. Не идет процесс протягивания
+            if (!this.cellSelectionMode || !this.cellSelectionState) return false;
+            
+            const selectedCells = this.cellSelectionState.selectedCells;
+            if (!selectedCells || selectedCells.length !== 1) return false;
+            
+            const selectedCell = selectedCells[0];
+            const isThisCell = selectedCell.rowIndex === this.rowIndex && selectedCell.field === this.field;
+            
+            return isThisCell && !this.cellSelectionState.isFillHandleDragging;
+        },
+        isFillHandleRange() {
+            // Проверяем, находится ли ячейка в диапазоне fill handle
+            if (!this.cellSelectionState?.fillHandleRange) return false;
+            
+            return this.cellSelectionState.fillHandleRange.some(
+                cell => cell.rowIndex === this.rowIndex && cell.field === this.field
+            );
+        },
         containerClass() {
             return [
-                this.columnProp('bodyClass'), 
-                this.columnProp('class'), 
+                this.columnProp('bodyClass'),
+                this.columnProp('class'),
                 this.cx('bodyCell'),
-                { 'cell-selected': this.isCellSelected }
+                {
+                    'cell-selected': this.isCellSelected,
+                    'cell-fill-handle-range': this.isFillHandleRange
+                }
             ];
         },
         containerStyle() {

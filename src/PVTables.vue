@@ -209,11 +209,15 @@
       
       :data-cell-selection-mode="cellSelectionMode"
       :cellSelectionMode="cellSelectionMode"
-      :cellSelectionState="{ 
-        isSelecting, 
-        selectedCells, 
-        onCellMouseDown, 
-        onCellMouseEnter 
+      :cellSelectionState="{
+        isSelecting,
+        selectedCells,
+        isFillHandleDragging,
+        fillHandleRange,
+        onCellMouseDown,
+        onCellMouseEnter,
+        onFillHandleMouseDown,
+        onFillHandleMouseEnter
       }"
       >
       <Column v-if="table_tree" headerStyle="width: 3rem">
@@ -941,20 +945,8 @@
     stylesComposable.onToggleColomns(val, columns);
   };
 
-  // Выделение ячеек
-  const {
-    cellSelectionMode,
-    selectedCells,
-    selectionStart,
-    isSelecting,
-    toggleCellSelectionMode,
-    getCellData,
-    onCellMouseDown,
-    onCellMouseEnter,
-    onCellMouseUp,
-    handleCellCopy,
-    handleKeyDown: handleCellSelectionKeyDown
-  } = usePVTableCellSelection(columns, lineItems, hideId, table_tree);
+  // Выделение ячеек (инициализируем после CRUD, чтобы передать onCellEditComplete)
+  let cellSelectionComposable;
 
   // Раскрытие строк
   const {
@@ -1055,6 +1047,27 @@
     onRowSelect,
     onRowUnselect
   } = crudComposable;
+
+  // Инициализируем выделение ячеек ПОСЛЕ CRUD, чтобы передать onCellEditComplete
+  cellSelectionComposable = usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditComplete);
+  
+  const {
+    cellSelectionMode,
+    selectedCells,
+    selectionStart,
+    isSelecting,
+    isFillHandleDragging,
+    fillHandleRange,
+    toggleCellSelectionMode,
+    getCellData,
+    onCellMouseDown,
+    onCellMouseEnter,
+    onCellMouseUp,
+    handleCellCopy,
+    handleKeyDown: handleCellSelectionKeyDown,
+    onFillHandleMouseDown,
+    onFillHandleMouseEnter
+  } = cellSelectionComposable;
   
   // Получаем Insert и Insert_child из actionsComposable
   const Insert = actionsComposable.Insert;

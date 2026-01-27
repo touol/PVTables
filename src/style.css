@@ -20,6 +20,34 @@
   z-index: 1;
 }
 
+/* Fill handle - квадратик в правом нижнем углу */
+.cell-fill-handle {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  background-color: #4A90E2;
+  border: 1px solid #fff;
+  cursor: crosshair;
+  z-index: 10;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.cell-fill-handle:hover {
+  background-color: #357ABD;
+  width: 10px;
+  height: 10px;
+  bottom: -2px;
+  right: -2px;
+}
+
+/* Ячейки в диапазоне fill handle */
+.cell-fill-handle-range {
+  border: 1px dashed #4A90E2 !important;
+  background-color: rgba(74, 144, 226, 0.05) !important;
+}
+
 /* Курсор в режиме выделения */
 .p-datatable[data-cell-selection-mode="true"] td:not([data-p-selection-column="true"]) {
   cursor: cell;
