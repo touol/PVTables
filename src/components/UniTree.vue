@@ -425,8 +425,14 @@
                 Item.value = {
                     parent_id: event.node.data.id,
                     form: 'UniTree',
-                    table: event.table
+                    table: event.table,
+                    action: event.action
                 };
+                if(event.action == 'copy'){
+                    
+                    Item.value.parent_id = event.node.data.parent;
+                    Item.value.ids = event.node.data.id;
+                }
                 if(action.label) ItemDialogLabel.value = action.label
                 ItemDialog.value = true;
             }
@@ -448,16 +454,37 @@
     const saveItem = async () => {
         try {
             if(Item.value.form == 'UniTree'){
-                const response = await api.create(Item.value,{})
+                let response;
+                if(Item.value.action == 'copy'){
+                    response = await api.action('copy', Item.value);
+                } else {
+                    response = await api.create(Item.value,{});
+                }
+                
+                // Проверка на пустой ответ
+                if (!response) {
+                    notify('error', { detail: 'Получен пустой ответ от сервера' }, true);
+                    ItemDialog.value = false;
+                    return;
+                }
+                
                 if (!response.success) {
                     notify('error', { detail: response.message }, true);
+                } else {
+                    notify('success', { detail: Item.value.action == 'copy' ? 'Запись успешно скопирована' : 'Запись успешно создана' });
                 }
                 Item.value = {};
                 ItemDialog.value = false;
                 loadTree()
             }
         } catch (error) {
-            notify('error', { detail: error.message });
+            const errorMessage = error?.message || error?.toString() || 'Произошла ошибка при сохранении';
+            notify('error', { detail: errorMessage });
+            ItemDialog.value = false;
+        } finally {
+            Item.value = {};
+            ItemDialog.value = false;
+            loadTree()
         }
     };
     const deleteItem = async () => {

@@ -35,15 +35,23 @@ export default (tableName, timeout = 60000) => {
 
   instance.interceptors.response.use(
     ({data}) => {
-      if (!data.success && Object.keys(data.data).length === 0) {
-        throw new Error(data.message);
+      // Если success === 0 или false, выбрасываем ошибку
+      if (data && data.success === 0) {
+        throw new Error(data.message || 'Ошибка сервера');
+      }
+      
+      // Если нет success поля и data.data пустой
+      if (data && !data.success && data.data && Object.keys(data.data).length === 0) {
+        throw new Error(data.message || 'Ошибка сервера');
       }
 
       return data
     },
-    ({message, response}) => {
-      console.log('notify2',message)
-      notify('error', { detail: message })
+    (error) => {
+      const message = error.message || 'Произошла ошибка при запросе';
+      console.log('notify2', message);
+      notify('error', { detail: message });
+      return Promise.reject(error);
     }
   )
 

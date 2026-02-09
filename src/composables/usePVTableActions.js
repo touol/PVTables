@@ -209,6 +209,16 @@ export function usePVTableActions({
           if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
           break;
           
+        case "copy":
+          if (!tmp.hasOwnProperty("row")) tmp.row = true;
+          if (!tmp.hasOwnProperty("head")) tmp.head = true;
+          if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-copy";
+          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-info";
+          if (!tmp.hasOwnProperty("click")) tmp.click = (data) => Copy(data, tmp);
+          if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => CopySelected(tmp);
+          if (!tmp.hasOwnProperty("label")) tmp.label = "Копировать";
+          break;
+          
         case "subtables":
           addtmp = false;
           for (let tmptable in actions0[action]) {
@@ -528,12 +538,106 @@ export function usePVTableActions({
     }
   };
 
+  /**
+   * Копирование одной записи
+   * @param {Object} data - Данные строки для копирования
+   * @param {Object} action - Объект действия
+   */
+  const Copy = async (data, action) => {
+    // Если есть modal_form, показываем форму
+    if (action.modal_form) {
+      showModalForm(action, data, 'row')
+      return
+    }
+    
+    const filters0 = (typeof prepFilters === 'function') ? prepFilters() : {};
+    
+    let requestData = {
+      ids: data.id,
+      filters: filters0
+    };
+    
+    // Добавляем дополнительные поля из формы если они есть
+    if (action.form && action.form.row) {
+      for (let field in action.form.row) {
+        if (action.form.row[field].default !== undefined) {
+          requestData[field] = action.form.row[field].default;
+        }
+      }
+    }
+    
+    try {
+      const response = await api.action('copy', requestData);
+      emit('get-response', {table: props.table, action: 'copy', response: response});
+      
+      if (!response.success) {
+        notify('error', { detail: response.message }, true);
+      } else {
+        notify('success', { detail: 'Запись успешно скопирована' });
+        refresh(false);
+      }
+    } catch (error) {
+      console.log('error', error);
+      notify('error', { detail: error.message });
+    }
+  };
+
+  /**
+   * Копирование выбранных записей
+   * @param {Object} action - Объект действия
+   */
+  const CopySelected = async (action) => {
+    // Если есть modal_form, показываем форму
+    if (action.modal_form) {
+      showModalForm(action, null, 'head')
+      return
+    }
+    
+    if (!selectedlineItems.value || selectedlineItems.value.length === 0) {
+      notify('error', { detail: 'Не выбраны записи для копирования' });
+      return;
+    }
+    
+    const filters0 = (typeof prepFilters === 'function') ? prepFilters() : {};
+    
+    let requestData = {
+      ids: selectedlineItems.value.map(item => item.id).join(','),
+      filters: filters0
+    };
+    
+    // Добавляем дополнительные поля из формы если они есть
+    if (action.form && action.form.row) {
+      for (let field in action.form.row) {
+        if (action.form.row[field].default !== undefined) {
+          requestData[field] = action.form.row[field].default;
+        }
+      }
+    }
+    
+    try {
+      const response = await api.action('copy', requestData);
+      emit('get-response', {table: props.table, action: 'copy', response: response});
+      
+      if (!response.success) {
+        notify('error', { detail: response.message }, true);
+      } else {
+        notify('success', { detail: `Скопировано записей: ${selectedlineItems.value.length}` });
+        refresh(false);
+      }
+    } catch (error) {
+      console.log('error', error);
+      notify('error', { detail: error.message });
+    }
+  };
+
   return {
     defHeadAction,
     defRowAction,
     excelExport,
     Insert,
     Insert_child,
+    Copy,
+    CopySelected,
     getDataFieldsValues,
     showModalForm,
     hideModalForm,
