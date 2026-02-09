@@ -2,7 +2,7 @@
     <span v-if="loading">Загрузка</span>
     <Menubar v-else :model="menuItems" class="pv-menu">
         <template #item="{ item, props, hasSubmenu }">
-            <a class="flex align-items-center" v-bind="props.action">
+            <a class="flex align-items-center" v-bind="props.action" :href="item.url">
                 <span v-if="item.iconSvg" class="menu-icon" v-html="item.iconSvg"></span>
                 <i v-else-if="item.icon" :class="item.icon"></i>
                 <span class="ml-2">{{ item.label }}</span>
