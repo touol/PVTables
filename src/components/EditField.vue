@@ -88,9 +88,9 @@
         :disabled="use_readonly && col.readonly"
         :binary="true"
     />
-    <Textarea 
-        v-else-if="col.type == 'textarea'" 
-        v-model="model"
+    <Textarea
+        v-else-if="col.type == 'textarea'"
+        v-model="textareaModel"
         @change="setValue()"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
@@ -183,6 +183,28 @@
         },
         set(value) {
             model.value = value;
+        }
+    });
+    
+    // Computed свойство для преобразования объекта в JSON с отступами для Textarea
+    const textareaModel = computed({
+        get() {
+            if (col.value.type === 'textarea' && typeof model.value === 'object' && model.value !== null) {
+                return JSON.stringify(model.value, null, 2);
+            }
+            return model.value;
+        },
+        set(value) {
+            // Пытаемся распарсить JSON, если не получается - сохраняем как строку
+            if (col.value.type === 'textarea') {
+                try {
+                    model.value = JSON.parse(value);
+                } catch (e) {
+                    model.value = value;
+                }
+            } else {
+                model.value = value;
+            }
         }
     });
     
