@@ -262,7 +262,13 @@ export function usePVTableCRUD(
       
       // Обновляем значение в пустой строке
       setField(data, field, newValue);
-      
+
+      // Проверяем, что значение не пустое и не равно 0
+      if (newValue === '' || newValue === null || newValue === undefined || newValue === 0) {
+        // Не создаем запись для пустых значений или 0
+        return;
+      }
+
       // Вызываем Insert для создания новой записи
       try {
         // Создаем payload только с измененными данными
