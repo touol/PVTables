@@ -70,7 +70,7 @@
     <Toolbar class="p-mb-4">
       <template #start>
         <Button
-          v-for="action in cur_actions.filter((x) => x.head)"
+          v-for="action in headActions"
           :icon="action.icon"
           :label="action.label"
           :class="action.class"
@@ -235,7 +235,7 @@
       <!-- Стиль таблицы: pro (по умолчанию) -->
       <template>
         <Column
-          v-for="col of columns.filter((x) => x.modal_only != true && x.type != 'hidden' && !(hideId && x.field == 'id'))"
+          v-for="col of visibleColumns"
           :field="col.field"
           :header="col.label"
           sortable
@@ -248,7 +248,24 @@
           >
           <template #body="{ data, field }">
             <div :class="getClassBody(col,data)">
+              <!-- Fast path: inline для простых типов без customFields и template -->
+              <template v-if="isSimpleField(col, data)">
+                <template v-if="col.field === 'id'">{{ data[field] }}</template>
+                <template v-else-if="col.type === 'decimal'">{{ formatDecimal(getFieldValue(data, field), col.FractionDigits) }}</template>
+                <template v-else-if="col.type === 'number' || col.type === 'view'">{{ getFieldValue(data, field) }}</template>
+                <template v-else-if="col.type === 'autocomplete'"><span v-if="!col.hide_id">{{ getFieldValue(data, field) }}</span> {{ getACContent(field, getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'select'">{{ getSelectContent(field, getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'html'"><span v-html="getFieldValue(data, field)"></span></template>
+                <template v-else-if="col.type === 'boolean'"><Checkbox :modelValue="getFieldValue(data, field) == 1 || getFieldValue(data, field) === true" :binary="true" disabled /></template>
+                <template v-else-if="col.type === 'date'">{{ formatDate(getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'datetime'">{{ formatDateTime(getFieldValue(data, field)) }}</template>
+                <template v-else>
+                  <span :title="col.truncate && getFieldValue(data, field) && String(getFieldValue(data, field)).length > col.truncate ? getFieldValue(data, field) : ''">{{ col.truncate && getFieldValue(data, field) ? truncateText(getFieldValue(data, field), col.truncate) : getFieldValue(data, field) }}</span>
+                </template>
+              </template>
+              <!-- Slow path: Field компонент для сложных случаев -->
               <Field
+                v-else
                 :field="col"
                 :data="data"
                 :use_data="true"
@@ -261,7 +278,7 @@
                 />
             </div>
           </template>
-          <template v-if="!['multiautocomplete', 'boolean', 'date' , 'datetime', 'html', 'view', 'file'].includes(col.type) && !col.readonly" #editor="{ data, field, index }">
+          <template v-if="!noEditorTypes.has(col.type) && !col.readonly" #editor="{ data, field, index }">
             <template v-if="!isRowReadonly(index)">
             
             <EditField
@@ -296,7 +313,7 @@
         :alignFrozen="actionsFrozen === 'left' ? 'left' : actionsFrozen === 'right' ? 'right' : undefined"
         >
         <template #body="slotProps">
-          <template v-for="action in cur_actions.filter((x) => x.row && x.menu !== 1)" :key="action.action">
+          <template v-for="action in rowActions" :key="action.action">
             <!-- Кастомный Vue шаблон для действия, если указан -->
             <component 
               v-if="action.compiledTemplate" 
@@ -496,7 +513,7 @@
   // import Textarea from "primevue/textarea";
   // import InputNumber from "primevue/inputnumber";
   // import ToggleSwitch from 'primevue/toggleswitch';
-  // import Checkbox from 'primevue/checkbox';
+  import Checkbox from 'primevue/checkbox';
   import MultiSelect from 'primevue/multiselect'
   import Popover from 'primevue/popover';
   import ToggleSwitch from 'primevue/toggleswitch';
@@ -606,6 +623,8 @@
   const columns = ref([{ field: "id", label: "ID" }]);
   let fields = {};
   let cur_actions = ref([]);
+  const headActions = computed(() => cur_actions.value.filter(x => x.head));
+  const rowActions = computed(() => cur_actions.value.filter(x => x.row && x.menu !== 1));
   const actions_row = ref(false);
   const globalFilterFields = ref([]);
   const selectSettings = ref({});
@@ -618,6 +637,10 @@
   const groupRowsBy = ref(null)
   const dataFields = ref([])
   const hideId = ref(false)
+  const visibleColumns = computed(() =>
+    columns.value.filter(x => x.modal_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id'))
+  );
+  const noEditorTypes = new Set(['multiautocomplete', 'boolean', 'date', 'datetime', 'html', 'view', 'file']);
   const actionsFrozen = ref(null)
   const enableVirtScroll = ref(false)
 
@@ -1103,6 +1126,87 @@
     const isEditable = isEditableEmptyRow(rowData._rowKey);
     
     return !isEditable;
+  };
+
+  // --- Быстрый рендер ячеек (без создания компонента Field) ---
+
+  /** Проверяет, можно ли рендерить ячейку inline (без Field) */
+  const isSimpleField = (col, data) => {
+    if (col.template) return false;
+    if (customFields.value[data.id]?.[col.field]) return false;
+    const simple = ['view', 'text', 'number', 'decimal', 'autocomplete', 'select', 'html'];
+    if (col.field === 'id' || simple.includes(col.type) || !col.type) return true;
+    // readonly boolean/date/datetime — тоже можно инлайнить
+    if (col.readonly && (col.type === 'boolean' || col.type === 'date' || col.type === 'datetime')) return true;
+    return false;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    return value.split('-').reverse().join('.');
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (!match) return value;
+    const [, y, m, d, h = '', min = ''] = match;
+    const date = `${d}.${m}.${y}`;
+    return h ? `${date} ${h}:${min}` : date;
+  };
+
+  const getFieldValue = (data, field) => {
+    if (!field.includes('.')) return data[field];
+    return field.split('.').reduce((acc, curr) => acc?.[curr], data);
+  };
+
+  const formatDecimal = (text, fractionDigits) => {
+    if (text === '' || text == null) text = 0;
+    const parts = parseFloat(text).toFixed(fractionDigits).toString().split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return parts.join(',');
+  };
+
+  // Предрассчитанные Map для O(1) lookup вместо find()
+  const acMaps = computed(() => {
+    const maps = {};
+    for (const field in autocompleteSettings.value) {
+      const rows = autocompleteSettings.value[field]?.rows;
+      if (rows && Array.isArray(rows)) {
+        const m = new Map();
+        for (const o of rows) m.set(String(o.id), o.content);
+        maps[field] = m;
+      }
+    }
+    return maps;
+  });
+
+  const selectMaps = computed(() => {
+    const maps = {};
+    for (const field in selectSettings.value) {
+      const rows = selectSettings.value[field]?.rows;
+      if (rows && Array.isArray(rows)) {
+        const m = new Map();
+        for (const o of rows) m.set(String(o.id), o.content);
+        maps[field] = m;
+      }
+    }
+    return maps;
+  });
+
+  const getACContent = (field, value) => {
+    return acMaps.value[field]?.get(String(value)) ?? '';
+  };
+
+  const getSelectContent = (field, value) => {
+    return selectMaps.value[field]?.get(String(value)) ?? '';
+  };
+
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    const str = String(text);
+    if (str.length <= maxLength) return str;
+    return str.substring(0, maxLength) + '...';
   };
 
   // Обработчик изменения размера колонки
