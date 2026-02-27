@@ -54,10 +54,14 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
   const savedDisableScroll = localStorage.getItem(`pvtables-${table}-disable-vscroll`);
   if (savedDisableScroll !== null) {
     disableVerticalScroll.value = savedDisableScroll === 'true';
-    // Если режим был включен, сразу устанавливаем null для высоты
+    // Если режим был включен, сразу устанавливаем null для высоты и отключаем виртуальный скроллинг
     if (disableVerticalScroll.value) {
       savedScrollHeight = tableScrollHeight.value;
       tableScrollHeight.value = null;
+      // Отключаем виртуальный скроллинг
+      if (virtualScrollEnabled && virtualScrollEnabled.value) {
+        virtualScrollEnabled.value = false;
+      }
     }
   }
 
@@ -574,9 +578,18 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
       savedScrollHeight = tableScrollHeight.value; // Сохраняем текущее значение
       tableScrollHeight.value = null;
       
-      // Отключаем виртуальный скроллинг
+      // Отключаем виртуальный скроллинг и сохраняем в его localStorage
       if (virtualScrollEnabled && virtualScrollEnabled.value) {
         virtualScrollEnabled.value = false;
+        // Сохраняем состояние в localStorage виртуального скроллинга,
+        // чтобы watcher на enableVirtScroll не включил его обратно при загрузке
+        try {
+          const vsKey = `pvtables-virtual-scroll-${table}`;
+          const savedVS = localStorage.getItem(vsKey);
+          const vsSettings = savedVS ? JSON.parse(savedVS) : {};
+          vsSettings.enabled = false;
+          localStorage.setItem(vsKey, JSON.stringify(vsSettings));
+        } catch (e) { /* ignore */ }
       }
     } else {
       // При выключении - восстанавливаем сохраненное значение
@@ -746,16 +759,29 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     
     const innerHTML = `
       /* Убираем ограничения по высоте для wrapper */
-      .${tableClass} .p-datatable-wrapper {
+      .${tableClass} .p-datatable-wrapper,
+      .${tableClass} [data-pc-section="tablecontainer"] {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
       }
-      
+
       /* Убираем вертикальный скролл */
       .${tableClass} .p-datatable-scrollable-body {
         overflow-y: visible !important;
         max-height: none !important;
+      }
+
+      /* Приклеиваем заголовок к верху viewport при скролле страницы */
+      .${tableClass} .p-datatable-thead {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 2 !important;
+      }
+
+      /* Непрозрачный фон для заголовка чтобы тело таблицы не просвечивало */
+      .${tableClass} .p-datatable-thead th {
+        background-color: #ffffff !important;
       }
     `;
     

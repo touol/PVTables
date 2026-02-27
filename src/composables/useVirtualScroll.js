@@ -234,8 +234,12 @@ export function useVirtualScroll({ columns, lineItems, dt, storageKey, enableVir
         }
       }
       
-      // Если пользователь не отключал вручную и в конфиге включено - включаем
-      if (!userDisabled && newValue) {
+      // Проверяем, не отключен ли вертикальный скролл (при отключении виртуальный тоже должен быть выключен)
+      const tableName = storageKey.replace('pvtables-virtual-scroll-', '');
+      const verticalScrollDisabled = localStorage.getItem(`pvtables-${tableName}-disable-vscroll`) === 'true';
+
+      // Если пользователь не отключал вручную, вертикальный скролл не отключен, и в конфиге включено - включаем
+      if (!userDisabled && !verticalScrollDisabled && newValue) {
         virtualScrollEnabled.value = true;
         recalculateRowHeight();
       }
