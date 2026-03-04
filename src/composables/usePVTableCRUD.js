@@ -182,7 +182,7 @@ export function usePVTableCRUD(
    */
   const deleteLineItem = async () => {
     try {
-      await api.delete({ ids: lineItem.value.id });
+      await api.delete({ ids: lineItem.value.id, filters: prepFilters() });
 
       lineItems.value = lineItems.value.filter(
         (val) => val.id !== lineItem.value.id
@@ -212,7 +212,7 @@ export function usePVTableCRUD(
     const ids = selectedlineItems.value.map((line) => line.id).join(',');
 
     try {
-      await api.delete({ ids });
+      await api.delete({ ids, filters: prepFilters() });
 
       lineItems.value = lineItems.value.filter(
         (val) => !selectedlineItems.value.includes(val)
