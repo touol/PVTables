@@ -52,13 +52,7 @@ const loadPVPrint = async () => {
     await componentLoader.loadComponent('PVPrint')
     isPVPrintLoaded.value = true
   } catch (error) {
-    // Проверяем, является ли это ошибкой "компонент не найден"
-    if (error.message && (error.message.includes('Component not found') || error.message.includes('Component not available'))) {
-      console.warn('Компонент PVPrint недоступен')
-    } else {
-      console.error('Ошибка загрузки компонента PVPrint:', error)
-      emit('print-error', error)
-    }
+    // PVPrint не установлен — это нормальная ситуация, не спамим в консоль
   }
 }
 

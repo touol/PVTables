@@ -65,7 +65,6 @@ export class ComponentLoader {
       // Модуль уже сохранен в _doLoadComponent через .set()
     } catch (error) {
       this.failedComponents.add(componentName)
-      throw error
     } finally {
       this.loadingComponents.delete(componentName)
     }
