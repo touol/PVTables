@@ -37,6 +37,7 @@ export function usePVTableCRUD(
   selectedlineItemsRef = null
 ) {
   const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
+  const insertPromises = new Map(); // _rowKey → Promise<realId>
   const lineItem = ref({});
   const submitted = ref(false);
   const lineItemDialog = ref(false);
@@ -259,87 +260,111 @@ export function usePVTableCRUD(
         notify('error', { detail: 'Эта пустая строка недоступна для редактирования' }, true);
         return;
       }
-      
+
       // Обновляем значение в пустой строке
       setField(data, field, newValue);
 
       // Проверяем, что значение не пустое и не равно 0
       if (newValue === '' || newValue === null || newValue === undefined || newValue === 0) {
-        // Не создаем запись для пустых значений или 0
         return;
       }
 
-      // Вызываем Insert для создания новой записи
+      const rowKey = data._rowKey;
+
+      // Если insert уже в процессе — ждём реальный ID и шлём update
+      if (insertPromises.has(rowKey)) {
+        try {
+          const realId = await insertPromises.get(rowKey);
+          if (realId) {
+            const payload = {
+              id: realId,
+              [field]: newValue,
+              update_from_row: 1
+            };
+            await api.update(payload, { filters: prepFilters() });
+          }
+        } catch (error) {
+          console.log('error', error);
+        }
+        return;
+      }
+
+      // Первый ввод — отправляем insert
+      let resolveInsert;
+      insertPromises.set(rowKey, new Promise(resolve => { resolveInsert = resolve; }));
+
       try {
-        // Создаем payload только с измененными данными
         const insertPayload = {};
-        // Копируем только непустые поля из data
         for (let key in data) {
           if (key !== 'id' && data[key] !== null && data[key] !== undefined && data[key] !== '') {
             insertPayload[key] = data[key];
           }
         }
-        // Устанавливаем измененное поле
         insertPayload[field] = newValue;
         insertPayload.filters = prepFilters();
-        
+
         const response = await api.action('insert', insertPayload);
-        
+
         emit('get-response', {
           table: props.table,
           action: 'insert',
           response: response
         });
-        
+
         if (!response.success) {
           notify('error', { detail: response.message }, true);
+          resolveInsert(null);
           return;
         }
-        
-        // Получаем новый ID из ответа
+
         if (response.data && response.data.object && response.data.object.id) {
           const oldId = data.id;
           const newData = response.data.object;
-          
-          // Обновляем пустую строку на реальную
+          resolveInsert(newData.id);
+
           if (updateEmptyRow) {
-            // Создаем объект полей из ключей newData
             const fields = {};
             for (let key in newData) {
               fields[key] = null;
             }
-            
             await updateEmptyRow(oldId, newData, fields);
-          } else {
-            console.error('updateEmptyRow function is not available');
           }
-          
+
           if (response.data.customFields) {
             for (let key in response.data.customFields) {
               customFields.value[key] = response.data.customFields[key];
             }
           }
-          
+
           if (response.data.row_setting) {
             for (let key in response.data.row_setting) {
               row_setting.value[key] = response.data.row_setting[key];
             }
           }
-          
-          // Не вызываем refresh - данные уже обновлены реактивно через updateEmptyRow
         } else {
-          // Если ID не получен, обновляем таблицу
+          resolveInsert(null);
           refresh(false);
         }
       } catch (error) {
         console.log('error', error);
         notify('error', { detail: error.message }, true);
+        resolveInsert(null);
+      } finally {
+        insertPromises.delete(rowKey);
       }
       return;
     }
     
     // Проверка на изменение значения для обычных строк
-    if (getField(data, field) == newValue) return;
+    const currentValue = getField(data, field);
+    if (currentValue == newValue) return;
+
+    // Если данные строки обновились сервером (defvalues/object) пока ячейка была
+    // в режиме редактирования, а пользователь не менял значение — не отправляем update.
+    // event.value = текущее значение data[field] (уже обновлённое сервером),
+    // newValue = значение из кеша редактирования (старое, до серверного обновления).
+    const originalValue = event.value;
+    if (originalValue != currentValue && newValue == originalValue) return;
 
     // Обычное обновление для существующих строк
     const payload = {
