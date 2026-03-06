@@ -11,7 +11,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
  * @param {Function} notify - Функция уведомлений
  * @returns {Object} Методы и состояние для работы с выделением ячеек
  */
-export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditCompleteCallback, customFields, notify) {
+export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, onCellEditCompleteCallback, customFields, notify, dtRef) {
   const cellSelectionMode = ref(false);
   const selectedCells = ref([]);
   const selectionStart = ref(null);
@@ -40,7 +40,7 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
    * @returns {Object|null} Данные ячейки
    */
   const getCellData = (rowIndex, colIndex) => {
-    const table = document.querySelector('[data-cell-selection-mode="true"]');
+    const table = dtRef && dtRef.value && dtRef.value.$el ? dtRef.value.$el : null;
     if (!table) return null;
 
     const targetRow = table.querySelector(`tbody tr[data-p-index="${rowIndex}"]`);
@@ -383,6 +383,9 @@ export function usePVTableCellSelection(columns, lineItems, hideId, table_tree, 
    */
   const handleKeyDown = (e) => {
     if (e.ctrlKey && e.shiftKey && e.code === 'KeyS') {
+      // Проверяем, что фокус внутри нашей таблицы
+      const tableEl = dtRef && dtRef.value && dtRef.value.$el;
+      if (tableEl && !tableEl.contains(e.target)) return;
       e.preventDefault();
       toggleCellSelectionMode();
     }
