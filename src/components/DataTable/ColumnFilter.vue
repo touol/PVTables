@@ -130,30 +130,30 @@
                             </Button>
                         </div>
                         <!-- Список уникальных значений с чекбоксами -->
-                        <div v-if="filterList && filterList[field]" :class="cx('filterValueList')" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;" v-bind="getColumnPT('filterValueList')">
-                            <div style="padding: 0.5rem; border-bottom: 1px solid #dee2e6;">
+                        <div v-if="filterList && filterList[field]" :class="cx('filterValueList')" style="max-height: 350px; overflow-y: auto; margin-bottom: 10px;" v-bind="getColumnPT('filterValueList')">
+                            <div style="padding: 0.15rem 0.5rem; border-bottom: 1px solid #dee2e6;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         :checked="isAllSelected"
                                         @change="toggleAllValues"
-                                        style="margin-right: 0.5rem;"
+                                        style="margin-right: 0.4rem;"
                                     />
                                     <span style="font-weight: bold;">Показать все</span>
                                 </label>
                             </div>
-                            <div 
-                                v-for="value in filterList[field]" 
+                            <div
+                                v-for="value in filterList[field]"
                                 :key="value"
-                                style="padding: 0.5rem;"
+                                style="padding: 0.1rem 0.5rem;"
                             >
                                 <label style="display: flex; align-items: center; cursor: pointer;">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         :value="value"
                                         :checked="selectedValues.includes(value)"
                                         @change="toggleValue(value)"
-                                        style="margin-right: 0.5rem;"
+                                        style="margin-right: 0.4rem;"
                                     />
                                     <span>{{ value === '' ? '(Пусто)' : value }}</span>
                                 </label>
