@@ -1045,7 +1045,8 @@
       isEditableEmptyRow,
       emptyRowsState
     },
-    selectedlineItems // Передаем существующий ref
+    selectedlineItems, // Передаем существующий ref
+    dt
   );
 
   // Извлекаем функции и переменные из CRUD composable (без selectedlineItems)

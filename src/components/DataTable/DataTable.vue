@@ -1936,6 +1936,11 @@ export default {
                 this.d_editingMeta = {};
             }
         },
+        updateEditingMetaData(rowIndex, newData) {
+            if (this.d_editingMeta[rowIndex]) {
+                this.d_editingMeta[rowIndex].data = { ...newData };
+            }
+        },
         createLazyLoadEvent(event) {
             return {
                 originalEvent: event,

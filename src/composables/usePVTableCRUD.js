@@ -34,7 +34,8 @@ export function usePVTableCRUD(
   expandedTableTreeRows,
   childComponentRefs,
   emptyRowsHelpers = {},
-  selectedlineItemsRef = null
+  selectedlineItemsRef = null,
+  dtRef = null
 ) {
   const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
   const insertPromises = new Map(); // _rowKey → Promise<realId>
@@ -356,15 +357,7 @@ export function usePVTableCRUD(
     }
     
     // Проверка на изменение значения для обычных строк
-    const currentValue = getField(data, field);
-    if (currentValue == newValue) return;
-
-    // Если данные строки обновились сервером (defvalues/object) пока ячейка была
-    // в режиме редактирования, а пользователь не менял значение — не отправляем update.
-    // event.value = текущее значение data[field] (уже обновлённое сервером),
-    // newValue = значение из кеша редактирования (старое, до серверного обновления).
-    const originalValue = event.value;
-    if (originalValue != currentValue && newValue == originalValue) return;
+    if (getField(data, field) == newValue) return;
 
     // Обычное обновление для существующих строк
     const payload = {
@@ -401,13 +394,17 @@ export function usePVTableCRUD(
       if (response.data.object) {
         const idx = findIndexById(Number(payload.id));
         const oldRowKey = lineItems.value[idx]?._rowKey;
-        
+
         // Сохраняем _rowKey если его нет в новых данных
         if (!response.data.object._rowKey && oldRowKey) {
           response.data.object._rowKey = oldRowKey;
         }
-        
+
         lineItems.value[idx] = response.data.object;
+        // Обновляем кеш редактирования чтобы ячейки в edit mode получили новые данные
+        if (dtRef && dtRef.value) {
+          dtRef.value.updateEditingMetaData(idx, response.data.object);
+        }
       } else if (response.data.defvalues) {
         const idx = findIndexById(Number(payload.id));
         const oldRow = lineItems.value[idx];
@@ -416,6 +413,9 @@ export function usePVTableCRUD(
           ...response.data.defvalues
         };
         lineItems.value[idx] = newRow;
+        if (dtRef && dtRef.value) {
+          dtRef.value.updateEditingMetaData(idx, newRow);
+        }
       }
 
       if (response.data.row_setting) {
