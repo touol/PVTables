@@ -175,7 +175,7 @@ export function usePVTableNavigation() {
           }
         }
       }else{
-        console.log('moveCell targetCell',targetCell)
+        // targetCell not found
       }
     }
   };
