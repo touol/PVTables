@@ -1,5 +1,3 @@
-import apiCtor from '../components/api.js'
-
 export class ComponentLoader {
   constructor(app) {
     this.app = app
@@ -7,9 +5,6 @@ export class ComponentLoader {
     this.loadingComponents = new Map()
     this.failedComponents = new Set() // Компоненты, которые не удалось загрузить
     this.assetsPath = null
-    
-    // Используем API клиент для tSkladNaryad
-    this.api = apiCtor('tSkladNaryad')
   }
 
   /**
@@ -194,39 +189,4 @@ export class ComponentLoader {
     })
   }
 
-  /**
-   * Получает список компонентов из таблицы tSkladNaryad
-   * @returns {Promise<string[]>}
-   */
-  async fetchComponentsList() {
-    try {
-      const response = await this.api.read()
-      
-      if (!response.success) {
-        console.error('Ошибка чтения tSkladNaryad:', response.message)
-        return []
-      }
-      
-      // Извлекаем названия компонентов из поля component
-      const components = response.data.rows
-        .map(row => row.component)
-        .filter(component => component && component.trim() !== '')
-      
-      // Убираем дубликаты
-      return [...new Set(components)]
-    } catch (error) {
-      console.error('Ошибка получения списка компонентов:', error)
-      return []
-    }
-  }
-
-  /**
-   * Загружает все компоненты из списка
-   * @param {string[]} components - Массив названий компонентов
-   * @returns {Promise<void>}
-   */
-  async loadComponents(components) {
-    const promises = components.map(name => this.loadComponent(name))
-    await Promise.allSettled(promises)
-  }
 }
