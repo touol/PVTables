@@ -605,6 +605,7 @@
     lineItems,
     lazyParams,
     autocompleteSettings,
+    dynamicSelects,
     row_setting,
     customFields,
     filterList,
@@ -628,6 +629,12 @@
   const actions_row = ref(false);
   const globalFilterFields = ref([]);
   const selectSettings = ref({});
+  // Мерж динамических selects из read-ответа JSON-таблиц (select_from_json)
+  watch(dynamicSelects, (newSelects) => {
+    for (let key in newSelects) {
+      selectSettings.value[key] = newSelects[key];
+    }
+  }, { deep: true });
   let topFilters0 = {}
   const row_class_trigger = ref({})
   const table_tree = ref()

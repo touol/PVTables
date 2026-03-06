@@ -16,6 +16,7 @@ export function usePVTableData(emptyRowsCount = 0) {
   const lineItems = ref([]);
   const lazyParams = ref({});
   const autocompleteSettings = ref({});
+  const dynamicSelects = ref({});
   const row_setting = ref({});
   const customFields = ref({});
   const filterList = ref({});
@@ -133,6 +134,12 @@ export function usePVTableData(emptyRowsCount = 0) {
         if (response.data.autocomplete) {
           for (let af in response.data.autocomplete) {
             autocompleteSettings.value[af] = response.data.autocomplete[af];
+          }
+        }
+
+        if (response.data.selects) {
+          for (let sf in response.data.selects) {
+            dynamicSelects.value[sf] = response.data.selects[sf];
           }
         }
 
@@ -290,6 +297,7 @@ export function usePVTableData(emptyRowsCount = 0) {
     lineItems,
     lazyParams,
     autocompleteSettings,
+    dynamicSelects,
     row_setting,
     customFields,
     filterList,
