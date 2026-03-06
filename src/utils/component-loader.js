@@ -5,6 +5,7 @@ export class ComponentLoader {
     this.app = app
     this.loadedComponents = new Map() // Изменено на Map для хранения модулей
     this.loadingComponents = new Map()
+    this.failedComponents = new Set() // Компоненты, которые не удалось загрузить
     this.assetsPath = null
     
     // Используем API клиент для tSkladNaryad
@@ -46,6 +47,11 @@ export class ComponentLoader {
       return
     }
 
+    // Не пытаемся повторно загрузить компонент, который уже не удалось загрузить
+    if (this.failedComponents.has(componentName)) {
+      return
+    }
+
     // Проверяем, не загружается ли компонент в данный момент
     if (this.loadingComponents.has(componentName)) {
       return this.loadingComponents.get(componentName)
@@ -57,6 +63,9 @@ export class ComponentLoader {
     try {
       await loadPromise
       // Модуль уже сохранен в _doLoadComponent через .set()
+    } catch (error) {
+      this.failedComponents.add(componentName)
+      throw error
     } finally {
       this.loadingComponents.delete(componentName)
     }
