@@ -83,6 +83,13 @@ export class ComponentLoader {
     }
     
     try {
+      // 0. Проверяем существование JS-файла одним HEAD запросом
+      const jsUrl = `${basePath}/js/${componentName.toLowerCase()}.js`
+      const headResponse = await fetch(jsUrl, { method: 'HEAD' })
+      if (!headResponse.ok) {
+        throw new Error(`Component not found: ${jsUrl}`)
+      }
+
       // 1. Предоставляем зависимости глобально для UMD модулей
       // Дополняем PVTablesAPI, если он уже существует, или создаем новый
       if (!window.PVTablesAPI) {
@@ -138,7 +145,6 @@ export class ComponentLoader {
       
       console.log(`✓ Компонент ${componentName} загружен и зарегистрирован`)
     } catch (error) {
-      console.error(`✗ Ошибка загрузки компонента ${componentName}:`, error)
       throw error
     }
   }
@@ -159,22 +165,7 @@ export class ComponentLoader {
       link.rel = 'stylesheet'
       link.href = url
       link.onload = () => resolve()
-      link.onerror = () => {
-        // Проверяем, действительно ли файл не найден (404)
-        fetch(url, { method: 'HEAD' })
-          .then(response => {
-            if (response.status === 404) {
-              console.warn(`CSS файл не найден: ${url}`)
-              resolve() // Не блокируем загрузку, если CSS не найден
-            } else {
-              reject(new Error(`Failed to load CSS: ${url}`))
-            }
-          })
-          .catch(() => {
-            console.warn(`CSS файл недоступен: ${url}`)
-            resolve() // Не блокируем загрузку
-          })
-      }
+      link.onerror = () => resolve() // CSS необязателен, не блокируем
       document.head.appendChild(link)
     })
   }
@@ -198,20 +189,7 @@ export class ComponentLoader {
         }
       }
       
-      script.onerror = () => {
-        // Проверяем, действительно ли файл не найден (404)
-        fetch(url, { method: 'HEAD' })
-          .then(response => {
-            if (response.status === 404) {
-              reject(new Error(`Component not found: ${url}`))
-            } else {
-              reject(new Error(`Failed to load JS: ${url}`))
-            }
-          })
-          .catch(() => {
-            reject(new Error(`Component not available: ${url}`))
-          })
-      }
+      script.onerror = () => reject(new Error(`Failed to load JS: ${url}`))
       document.head.appendChild(script)
     })
   }
