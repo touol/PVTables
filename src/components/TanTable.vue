@@ -427,7 +427,7 @@ const activeInline = ref(null)  // { cellId, col, data }
 const activeFull   = ref(null)  // { cellId, col, data, rect }
 const fullEditValue = ref(null)
 
-const isCellEditable = (col) => col && !col.readonly && col.type !== 'html' && col.type !== 'hidden'
+const isCellEditable = (col) => col && col.field !== 'id' && !col.readonly && col.type !== 'html' && col.type !== 'hidden'
 const isInlineType   = (col) => !col?.type || INLINE_TYPES.has(col.type)
 
 const closeInline = () => { activeInline.value = null }

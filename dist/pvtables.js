@@ -50869,7 +50869,7 @@ const G9 = {
       tableInstanceGetter: () => wn,
       first: x,
       lazyParams: z
-    }), Pn = /* @__PURE__ */ new Set(["text", "view", "number", "decimal", "boolean", "date"]), ro = T(null), on = T(null), zo = T(null), Tn = (_) => _ && !_.readonly && _.type !== "html" && _.type !== "hidden", Ko = (_) => !_?.type || Pn.has(_.type), _o = () => {
+    }), Pn = /* @__PURE__ */ new Set(["text", "view", "number", "decimal", "boolean", "date"]), ro = T(null), on = T(null), zo = T(null), Tn = (_) => _ && _.field !== "id" && !_.readonly && _.type !== "html" && _.type !== "hidden", Ko = (_) => !_?.type || Pn.has(_.type), _o = () => {
       ro.value = null;
     }, jo = () => {
       on.value = null, zo.value = null;
