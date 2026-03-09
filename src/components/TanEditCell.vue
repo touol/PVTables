@@ -1,60 +1,30 @@
 <template>
   <div class="tan-edit-cell" @click.stop @dblclick.stop>
-    <textarea
-      v-if="col.type === 'textarea'"
-      ref="inputRef"
-      v-model="localValue"
-      class="tan-edit-input tan-edit-textarea"
-      @keydown="onKeydown"
-      @blur="onBlur"
-    />
+
+    <!-- boolean — чекбокс, contenteditable не применим -->
     <input
-      v-else-if="col.type === 'number'"
-      ref="inputRef"
-      type="number"
-      step="1"
-      v-model.number="localValue"
-      class="tan-edit-input"
-      @keydown="onKeydown"
-      @blur="onBlur"
-    />
-    <input
-      v-else-if="col.type === 'decimal'"
-      ref="inputRef"
-      type="number"
-      :step="decimalStep"
-      v-model.number="localValue"
-      class="tan-edit-input"
-      @keydown="onKeydown"
-      @blur="onBlur"
-    />
-    <input
-      v-else-if="col.type === 'date'"
-      ref="inputRef"
-      type="date"
-      v-model="localValue"
-      class="tan-edit-input"
-      @keydown="onKeydown"
-      @blur="onBlur"
-    />
-    <input
-      v-else-if="col.type === 'boolean'"
-      ref="inputRef"
+      v-if="col.type === 'boolean'"
+      ref="divRef"
       type="checkbox"
-      v-model="localValue"
+      :checked="boolValue"
       class="tan-edit-checkbox"
-      @change="onSave"
+      @change="onBoolChange"
       @blur="onBlur"
-    />
-    <input
-      v-else
-      ref="inputRef"
-      type="text"
-      v-model="localValue"
-      class="tan-edit-input"
       @keydown="onKeydown"
+    />
+
+    <!-- все остальные типы — contenteditable div -->
+    <div
+      v-else
+      ref="divRef"
+      contenteditable="true"
+      class="tan-edit-div"
+      :class="{ 'tan-edit-invalid': !valid }"
+      @keydown="onKeydown"
+      @input="onInput"
       @blur="onBlur"
     />
+
   </div>
 </template>
 
@@ -68,33 +38,95 @@ const props = defineProps({
 
 const emit = defineEmits(['save', 'cancel', 'navigate'])
 
-const decimalStep = computed(() => {
-  const fd = props.col.FractionDigits
-  return fd ? Math.pow(10, -fd) : 0.01
+// ── initial text displayed in the div ─────────────────────────────────────
+const displayText = computed(() => {
+  const v = props.initialValue
+  if (v === null || v === undefined) return ''
+  return String(v)
 })
 
-const inputRef = ref(null)
-const localValue = ref(
-  (props.col.type === 'number' || props.col.type === 'decimal')
-    ? (props.initialValue === '' || props.initialValue == null ? null : Number(props.initialValue))
-    : props.col.type === 'boolean'
-      ? (props.initialValue == 1 || props.initialValue === true)
-      : (props.initialValue ?? '')
-)
+// ── boolean state ──────────────────────────────────────────────────────────
+const boolValue = ref(props.initialValue == 1 || props.initialValue === true)
 
+// ── validation ─────────────────────────────────────────────────────────────
+const valid = ref(true)
+
+const validate = (text) => {
+  const t = text.trim()
+  if (props.col.type === 'number') return t === '' || /^-?\d+$/.test(t)
+  if (props.col.type === 'decimal') return t === '' || /^-?\d*[.,]?\d*$/.test(t)
+  if (props.col.type === 'date') return t === '' || /^\d{4}-\d{2}-\d{2}$/.test(t) || /^\d{2}\.\d{2}\.\d{4}$/.test(t)
+  return true
+}
+
+// ── block invalid keystrokes for numeric types ─────────────────────────────
+const numericAllowed = (e, allowDot) => {
+  const allowed = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Escape','Enter','a','c','v','x'])
+  if (allowed.has(e.key)) return true
+  if ((e.ctrlKey || e.metaKey) && allowed.has(e.key.toLowerCase())) return true
+  if (e.key === '-' && allowDot) return true  // allow minus
+  if (allowDot && (e.key === '.' || e.key === ',')) return true
+  return /^\d$/.test(e.key)
+}
+
+// ── mount: set content and focus ──────────────────────────────────────────
+const divRef = ref(null)
 let saved = false
 
 onMounted(() => {
   nextTick(() => {
-    inputRef.value?.focus?.()
-    if (inputRef.value?.select && props.col.type !== 'boolean') inputRef.value.select()
+    const el = divRef.value
+    if (!el) return
+    if (props.col.type !== 'boolean') {
+      el.textContent = displayText.value
+    }
+    el.focus?.()
+    // Select all text
+    if (props.col.type !== 'boolean' && el.textContent) {
+      const sel = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
   })
 })
+
+// ── parse typed text to correct JS type ──────────────────────────────────
+const parseValue = (text) => {
+  const t = text.trim()
+  if (props.col.type === 'number') return t === '' ? null : (parseInt(t, 10) || 0)
+  if (props.col.type === 'decimal') {
+    const norm = t.replace(',', '.')
+    return norm === '' ? null : (parseFloat(norm) || 0)
+  }
+  return t
+}
+
+// ── events ────────────────────────────────────────────────────────────────
+const onInput = (e) => {
+  valid.value = validate(e.target.textContent)
+}
+
+const onBoolChange = (e) => {
+  boolValue.value = e.target.checked
+  onSave()
+}
 
 const onSave = () => {
   if (saved) return
   saved = true
-  emit('save', localValue.value)
+  if (props.col.type === 'boolean') {
+    emit('save', boolValue.value ? 1 : 0)
+    return
+  }
+  const text = divRef.value?.textContent ?? ''
+  if (!validate(text)) {
+    saved = false  // allow retry
+    valid.value = false
+    return
+  }
+  emit('save', parseValue(text))
 }
 
 const onBlur = () => {
@@ -102,6 +134,10 @@ const onBlur = () => {
 }
 
 const onKeydown = (e) => {
+  // Block invalid chars for numeric types before they appear
+  if (props.col.type === 'number' && !numericAllowed(e, false)) { e.preventDefault(); return }
+  if (props.col.type === 'decimal' && !numericAllowed(e, true)) { e.preventDefault(); return }
+
   if (e.key === 'Escape') {
     saved = true
     emit('cancel')

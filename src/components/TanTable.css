@@ -199,15 +199,15 @@
 
 /* ── Cell editing ── */
 .tan-td-editing { padding: 0 !important; }
-.tan-edit-cell { width: 100%; height: 100%; display: flex; align-items: center; }
-.tan-edit-input {
-  width: 100%; height: 100%; min-height: 32px; box-sizing: border-box;
-  padding: 3px 6px; font-size: 13px; font-family: inherit;
+.tan-edit-cell { width: 100%; height: 100%; display: flex; align-items: stretch; }
+.tan-edit-div {
+  width: 100%; min-height: 32px; box-sizing: border-box;
+  padding: 4px 7px; font-size: 13px; font-family: inherit; line-height: 1.4;
   border: 2px solid var(--p-primary-color, #3b82f6);
   background: var(--p-surface-0, #fff); color: var(--p-text-color, #374151);
-  outline: none; border-radius: 0;
+  outline: none; white-space: pre-wrap; word-break: break-word;
 }
-.tan-edit-textarea { min-height: 60px; resize: vertical; }
+.tan-edit-div.tan-edit-invalid { border-color: var(--p-red-500, #ef4444); background: #fff5f5; }
 .tan-edit-checkbox { width: 16px; height: 16px; margin: auto; cursor: pointer; }
 
 /* ── EditField popup (Teleport to="body") ── */
