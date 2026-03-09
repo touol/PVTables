@@ -50476,14 +50476,6 @@ const G9 = {
     }, y = () => {
       d || m();
     }, w = (R) => {
-      if (n.col.type === "number" && !u(R, !1)) {
-        R.preventDefault();
-        return;
-      }
-      if (n.col.type === "decimal" && !u(R, !0)) {
-        R.preventDefault();
-        return;
-      }
       if (R.key === "Escape") {
         d = !0, r("cancel"), R.preventDefault();
         return;
@@ -50496,15 +50488,29 @@ const G9 = {
         m(), r("navigate", R.shiftKey ? "prev-col" : "next-col"), R.preventDefault();
         return;
       }
-      if (n.col.type !== "text" && n.col.type !== "view" && n.col.type !== "textarea") {
-        if (R.key === "ArrowDown") {
-          m(), r("navigate", "next-row"), R.preventDefault();
-          return;
-        }
-        if (R.key === "ArrowUp") {
-          m(), r("navigate", "prev-row"), R.preventDefault();
-          return;
-        }
+      if (R.key === "ArrowDown") {
+        m(), r("navigate", "next-row"), R.preventDefault();
+        return;
+      }
+      if (R.key === "ArrowUp") {
+        m(), r("navigate", "prev-row"), R.preventDefault();
+        return;
+      }
+      if (R.key === "ArrowLeft" && n.col.type !== "text" && n.col.type !== "view" && n.col.type !== "textarea") {
+        m(), r("navigate", "prev-col"), R.preventDefault();
+        return;
+      }
+      if (R.key === "ArrowRight" && n.col.type !== "text" && n.col.type !== "view" && n.col.type !== "textarea") {
+        m(), r("navigate", "next-col"), R.preventDefault();
+        return;
+      }
+      if (n.col.type === "number" && !u(R, !1)) {
+        R.preventDefault();
+        return;
+      }
+      if (n.col.type === "decimal" && !u(R, !0)) {
+        R.preventDefault();
+        return;
       }
     };
     return (R, k) => (c(), g("div", {

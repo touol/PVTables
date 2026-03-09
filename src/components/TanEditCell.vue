@@ -134,10 +134,7 @@ const onBlur = () => {
 }
 
 const onKeydown = (e) => {
-  // Block invalid chars for numeric types before they appear
-  if (props.col.type === 'number' && !numericAllowed(e, false)) { e.preventDefault(); return }
-  if (props.col.type === 'decimal' && !numericAllowed(e, true)) { e.preventDefault(); return }
-
+  // ── Навигационные клавиши — всегда в приоритете ────────────────────────
   if (e.key === 'Escape') {
     saved = true
     emit('cancel')
@@ -156,10 +153,19 @@ const onKeydown = (e) => {
     e.preventDefault()
     return
   }
-  // Arrow navigation for non-text types
-  if (props.col.type !== 'text' && props.col.type !== 'view' && props.col.type !== 'textarea') {
-    if (e.key === 'ArrowDown') { onSave(); emit('navigate', 'next-row'); e.preventDefault(); return }
-    if (e.key === 'ArrowUp')   { onSave(); emit('navigate', 'prev-row'); e.preventDefault(); return }
+  // ArrowDown/Up — переход по строкам для всех типов
+  if (e.key === 'ArrowDown') { onSave(); emit('navigate', 'next-row'); e.preventDefault(); return }
+  if (e.key === 'ArrowUp')   { onSave(); emit('navigate', 'prev-row'); e.preventDefault(); return }
+  // ArrowLeft/Right — для text/view/textarea двигают курсор внутри, для остальных переходят по колонкам
+  if (e.key === 'ArrowLeft' && props.col.type !== 'text' && props.col.type !== 'view' && props.col.type !== 'textarea') {
+    onSave(); emit('navigate', 'prev-col'); e.preventDefault(); return
   }
+  if (e.key === 'ArrowRight' && props.col.type !== 'text' && props.col.type !== 'view' && props.col.type !== 'textarea') {
+    onSave(); emit('navigate', 'next-col'); e.preventDefault(); return
+  }
+
+  // ── Блокировка недопустимых символов для числовых типов ───────────────
+  if (props.col.type === 'number'  && !numericAllowed(e, false)) { e.preventDefault(); return }
+  if (props.col.type === 'decimal' && !numericAllowed(e, true))  { e.preventDefault(); return }
 }
 </script>
