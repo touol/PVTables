@@ -46,6 +46,8 @@ import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
 import TanFilterPopoverUI from './TanFilterPopoverUI.vue'
 import TanSettingsPopover from './TanSettingsPopover.vue'
+import TanEditCell        from './TanEditCell.vue'
+import EditField          from './EditField.vue'
 
 // ─── Props (идентичны PVTables.vue) ───────────────────────────────────────
 const props = defineProps({
@@ -418,6 +420,100 @@ const {
   lazyParams,
 })
 
+// ─── Cell editing ─────────────────────────────────────────────────────────
+const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date'])
+
+const activeInline = ref(null)  // { cellId, col, data }
+const activeFull   = ref(null)  // { cellId, col, data, rect }
+const fullEditValue = ref(null)
+
+const isCellEditable = (col) => col && !col.readonly && col.type !== 'html' && col.type !== 'hidden'
+const isInlineType   = (col) => !col?.type || INLINE_TYPES.has(col.type)
+
+const closeInline = () => { activeInline.value = null }
+const closeFull   = () => { activeFull.value = null; fullEditValue.value = null }
+
+const saveCellUpdate = async (data, field, newValue) => {
+  if (String(data[field] ?? '') === String(newValue ?? '')) return
+  const payload = { id: data.id, [field]: newValue, update_from_row: 1 }
+  try {
+    const response = await api.update(payload, { filters: prepFilters?.() })
+    emit('get-response', { table: props.table, action: 'update', response })
+    if (!response.success) { notify('error', { detail: response.message }, true); return }
+    const idx = findIndexById(Number(data.id))
+    if (idx >= 0) {
+      if (response.data?.object) {
+        lineItems.value[idx] = response.data.object
+      } else if (response.data?.defvalues) {
+        lineItems.value[idx] = { ...lineItems.value[idx], ...response.data.defvalues }
+      } else {
+        lineItems.value[idx] = { ...lineItems.value[idx], [field]: newValue }
+      }
+    }
+  } catch (e) {
+    notify('error', { detail: e.message }, true)
+  }
+}
+
+const activateInlineCell = (cell) => {
+  const col = cell.column.columnDef.meta
+  if (!isCellEditable(col)) return
+  if (!isInlineType(col)) { activateFullCell(cell); return }
+  activeFull.value = null
+  activeInline.value = { cellId: cell.id, col, data: cell.row.original }
+}
+
+const activateFullCell = (cell, rect) => {
+  const col = cell.column.columnDef.meta
+  if (!isCellEditable(col)) return
+  activeInline.value = null
+  fullEditValue.value = cell.row.original[col.field] ?? ''
+  activeFull.value = { cellId: cell.id, col, data: cell.row.original, rect: rect ?? null }
+}
+
+const onCellClick = (cell, event) => {
+  const col = cell.column.columnDef.meta
+  if (!col || !isCellEditable(col)) return
+  if (activeInline.value?.cellId === cell.id) return
+  if (isInlineType(col)) activateInlineCell(cell)
+  else activateFullCell(cell, event.currentTarget.getBoundingClientRect())
+}
+
+const onCellDblClick = (cell, event) => {
+  const col = cell.column.columnDef.meta
+  if (!col || !isCellEditable(col)) return
+  activateFullCell(cell, event.currentTarget.getBoundingClientRect())
+}
+
+const onInlineNavigate = (currentCell, dir) => {
+  const editableCols = visibleColumns.value.filter(c => isCellEditable(c) && isInlineType(c))
+  const allRows = tableInstance.getRowModel().rows
+  let colIdx = editableCols.findIndex(c => c.field === currentCell.column.id)
+  let rowIdx = allRows.findIndex(r => r.id === currentCell.row.id)
+  if (colIdx < 0) colIdx = 0
+  if (rowIdx < 0) rowIdx = 0
+
+  if (dir === 'next-col') {
+    if (colIdx < editableCols.length - 1) colIdx++
+    else { colIdx = 0; rowIdx = Math.min(rowIdx + 1, allRows.length - 1) }
+  } else if (dir === 'prev-col') {
+    if (colIdx > 0) colIdx--
+    else { colIdx = editableCols.length - 1; rowIdx = Math.max(rowIdx - 1, 0) }
+  } else if (dir === 'next-row') {
+    rowIdx = Math.min(rowIdx + 1, allRows.length - 1)
+  } else if (dir === 'prev-row') {
+    rowIdx = Math.max(rowIdx - 1, 0)
+  }
+
+  const targetCell = allRows[rowIdx]?.getVisibleCells().find(c => c.column.id === editableCols[colIdx]?.field)
+  if (targetCell) nextTick(() => activateInlineCell(targetCell))
+}
+
+const onFullEditSave = () => {
+  if (activeFull.value) saveCellUpdate(activeFull.value.data, activeFull.value.col.field, fullEditValue.value)
+  closeFull()
+}
+
 // ─── Flat items for virtual scroll (data rows + expansion rows) ───────────
 const flatItems = computed(() => {
   const items = []
@@ -749,8 +845,19 @@ defineExpose({ refresh })
                 :key="cell.id"
                 :style="{ width: cell.column.getSize() + 'px' }"
                 class="tan-td"
+                :class="{ 'tan-td-editing': activeInline?.cellId === cell.id }"
+                @click="cell.column.columnDef.meta && onCellClick(cell, $event)"
+                @dblclick="cell.column.columnDef.meta && onCellDblClick(cell, $event)"
               >
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                <TanEditCell
+                  v-if="activeInline?.cellId === cell.id"
+                  :col="activeInline.col"
+                  :initial-value="getFieldValue(cell.row.original, cell.column.id)"
+                  @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
+                  @cancel="closeInline"
+                  @navigate="(dir) => onInlineNavigate(cell, dir)"
+                />
+                <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </td>
             </tr>
 
@@ -883,6 +990,33 @@ defineExpose({ refresh })
     @close="closeFilterPopover(false)"
     @clear="clearColFilter(openFilterColId)"
   />
+
+  <!-- ── EditField popup (double-click inline edit) ── -->
+  <Teleport to="body">
+    <div
+      v-if="activeFull"
+      class="tan-full-popup"
+      :style="{
+        top:  activeFull.rect ? (activeFull.rect.bottom + 4) + 'px' : '50%',
+        left: activeFull.rect ? activeFull.rect.left + 'px' : '50%',
+      }"
+    >
+      <EditField
+        v-model="fullEditValue"
+        :field="activeFull.col"
+        :data="activeFull.data"
+        :use_data="false"
+        :autocompleteSettings="autocompleteSettings"
+        :selectSettings="selectSettings"
+        :customFields="customFields[activeFull.data._rowKey] ?? {}"
+        :use_readonly="false"
+      />
+      <div class="tan-full-popup-actions">
+        <button class="tan-action-btn" @click="closeFull">Отмена</button>
+        <button class="tan-action-btn p-button-success" @click="onFullEditSave">Сохранить</button>
+      </div>
+    </div>
+  </Teleport>
 
   <!-- ── Settings popover ── -->
   <TanSettingsPopover
