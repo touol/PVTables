@@ -1,5 +1,20 @@
 <template>
-  <div class="card pvtables">
+  <!-- ── TanStack Table (бета) — полная замена ─────────────────────── -->
+  <TanTable
+    v-if="useTanTable"
+    :table="table"
+    :actions="actions"
+    :filters="props.filters"
+    :sorting="sorting"
+    :scrollHeight="tableScrollHeight"
+    :child="child"
+    @get-response="emit('get-response', $event)"
+    @refresh-table="emit('refresh-table', $event)"
+    @switch-engine="toggleTanTable"
+  />
+
+  <!-- ── PrimeVue DataTable (оригинал) ─────────────────────────────── -->
+  <div v-else class="card pvtables">
     <Popover ref="op">
       <div style="padding: 1rem;">
         <MultiSelect :modelValue="selectedColumns" :options="columns" optionLabel="label" @update:modelValue="(val) => onToggleColomns(val)"
@@ -149,13 +164,22 @@
           @click="toggleVirtualScrollSettings"
           v-tooltip.bottom="'Виртуальный скроллинг'"
         />
+        <Button
+          type="button"
+          icon="pi pi-th-large"
+          :class="useTanTable ? 'p-button-info' : ''"
+          @click="toggleTanTable"
+          v-tooltip.bottom="useTanTable ? 'Движок: TanStack Table (бета) — нажать для PrimeVue' : 'Движок: PrimeVue DataTable — нажать для TanStack (бета)'"
+        />
       </template>
     </Toolbar>
-    <StatusBar 
+    <StatusBar
       v-if="cellSelectionMode && selectedCells.length > 0"
       :selectedCells="selectedCells"
       @copy="handleCellCopy"
     />
+
+    <!-- ── PrimeVue DataTable ────────────────────────────────────── -->
     <DataTable
       :value="lineItems"
       lazy
@@ -532,6 +556,7 @@
   import PVTablesSplitButton from './components/PVTablesSplitButton.vue'
   import PVPrintAction from './components/PVPrintAction.vue'
   import StatusBar from './components/DataTable/StatusBar.vue'
+  import TanTable from './components/TanTable.vue'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
   import { useVirtualScroll } from "./composables/useVirtualScroll";
@@ -651,11 +676,23 @@
   const actionsFrozen = ref(null)
   const enableVirtScroll = ref(false)
 
+  // ── TanStack Table toggle ──────────────────────────────────────────
+  // Переключение движка таблицы: 'primevue' (по умолчанию) или 'tanstack'
+  // Сохраняется в localStorage отдельно для каждой таблицы
+  const TAN_TABLE_KEY = `pvtables-engine-${props.table}`
+  const useTanTable = ref(localStorage.getItem(TAN_TABLE_KEY) !== 'primevue')
+  const toggleTanTable = () => {
+    useTanTable.value = !useTanTable.value
+    localStorage.setItem(TAN_TABLE_KEY, useTanTable.value ? 'tanstack' : 'primevue')
+  }
+  // ──────────────────────────────────────────────────────────────────
+
   onMounted(async () => {
+    if(useTanTable.value) return;
     loading.value = true;
     lazyParams.value = {
-      first: dt.value.first,
-      rows: dt.value.rows,
+      first: dt.value?.first ?? 0,
+      rows: dt.value?.rows ?? 10,
       sortField: null,
       sortOrder: null,
       // filters: filters.value

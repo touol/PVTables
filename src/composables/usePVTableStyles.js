@@ -1,4 +1,5 @@
 import { ref, watch, onBeforeUnmount } from 'vue';
+import { useRowHighlight } from './useRowHighlight.js';
 
 /**
  * Composable для управления стилями таблицы
@@ -15,6 +16,8 @@ import { ref, watch, onBeforeUnmount } from 'vue';
  * @returns {Object} Методы для работы со стилями
  */
 export function usePVTableStyles(row_setting, row_class_trigger, customFields, hideId, api = null, table = '', notify = null, props = null, dt = null, virtualScrollEnabled = null) {
+  const { rowClass, rowStyle: baseRowStyle } = useRowHighlight(row_setting, row_class_trigger);
+
   const op = ref(null);
   const selectedColumns = ref();
   const darkTheme = ref(false);
@@ -138,60 +141,6 @@ export function usePVTableStyles(row_setting, row_class_trigger, customFields, h
     }
 
     return style;
-  };
-
-  /**
-   * Получение класса для строки
-   * @param {Object} data - Данные строки
-   * @returns {String|undefined} Класс строки
-   */
-  const rowClass = (data) => {
-    if (row_setting.value[data.id] && row_setting.value[data.id].class) {
-      return row_setting.value[data.id].class;
-    }
-    if (row_class_trigger.value.field) {
-      if (data[row_class_trigger.value.field]) {
-        return row_class_trigger.value.class;
-      }
-    }
-    return;
-  };
-
-  /**
-   * Базовый стиль строки (без виртуального скроллинга)
-   * @param {Object} data - Данные строки
-   * @returns {Object} Объект стилей
-   */
-  const baseRowStyle = (data) => {
-    if (row_setting.value[data.id] && row_setting.value[data.id].style) {
-      const style = row_setting.value[data.id].style;
-      
-      // Если style - это объект, возвращаем его как есть
-      if (style && typeof style === 'object' && !Array.isArray(style)) {
-        return style;
-      }
-      
-      // Если style - это строка, парсим её в объект
-      if (typeof style === 'string') {
-        const styleObj = {};
-        // Разбиваем строку по точке с запятой
-        style.split(';').forEach(rule => {
-          const trimmedRule = rule.trim();
-          if (trimmedRule) {
-            const colonIndex = trimmedRule.indexOf(':');
-            if (colonIndex > 0) {
-              const property = trimmedRule.substring(0, colonIndex).trim();
-              const value = trimmedRule.substring(colonIndex + 1).trim();
-              // Преобразуем CSS свойство в camelCase для Vue
-              const camelProperty = property.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
-              styleObj[camelProperty] = value;
-            }
-          }
-        });
-        return styleObj;
-      }
-    }
-    return {};
   };
 
   /**
