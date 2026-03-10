@@ -681,7 +681,8 @@
   // Переключение движка таблицы: 'primevue' (по умолчанию) или 'tanstack'
   // Сохраняется в localStorage отдельно для каждой таблицы
   const TAN_TABLE_KEY = `pvtables-engine-${props.table}`
-  const useTanTable = ref(localStorage.getItem(TAN_TABLE_KEY) !== 'primevue')
+  // const useTanTable = ref(localStorage.getItem(TAN_TABLE_KEY) !== 'primevue')
+  const useTanTable = ref(false)
   const toggleTanTable = () => {
     useTanTable.value = !useTanTable.value
     localStorage.setItem(TAN_TABLE_KEY, useTanTable.value ? 'tanstack' : 'primevue')
