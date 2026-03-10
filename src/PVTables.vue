@@ -8,6 +8,7 @@
     :sorting="sorting"
     :scrollHeight="tableScrollHeight"
     :child="child"
+    :emptyRowsCount="emptyRowsCount"
     @get-response="emit('get-response', $event)"
     @refresh-table="emit('refresh-table', $event)"
     @switch-engine="toggleTanTable"

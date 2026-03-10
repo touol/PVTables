@@ -115,16 +115,14 @@ export function usePVTableData(emptyRowsCount = 0) {
             row._rowKey = `row_${++rowKeyCounter}`;
           }
         });
-        lineItems.value = [...processedRows];
-        
-        // Добавляем пустые строки если emptyRowsCount > 0
+        // Добавляем пустые строки если emptyRowsCount > 0 — одним присваиванием
         if (emptyRowsState.value.count > 0) {
-          // Создаем пустые строки только если их еще нет
           if (emptyRowsState.value.rows.length === 0) {
             emptyRowsState.value.rows = createEmptyRows(fields);
           }
-          // Добавляем существующие пустые строки к данным
-          lineItems.value = [...lineItems.value, ...emptyRowsState.value.rows];
+          lineItems.value = [...processedRows, ...emptyRowsState.value.rows];
+        } else {
+          lineItems.value = [...processedRows];
         }
 
         if (!response.success && response.message) {

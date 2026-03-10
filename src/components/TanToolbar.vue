@@ -1,6 +1,10 @@
 <script setup>
 import Button   from 'primevue/button'
 import Toolbar  from 'primevue/toolbar'
+import Tooltip  from 'primevue/tooltip'
+
+// Регистрация директивы для использования в template
+const vTooltip = Tooltip
 import PVAutoComplete      from './PVAutoComplete.vue'
 import PVMultiAutoComplete from './PVMultiAutoComplete.vue'
 

@@ -140,8 +140,12 @@ export function usePVTableActions({
       confirmDeleteLineItem,
       confirmDeleteSelected,
       openNew,
-      setExpandedRow
+      setExpandedRow,
+      Insert: InsertOverride,
+      Insert_child: Insert_childOverride,
     } = callbacks;
+    const _Insert       = InsertOverride       || Insert;
+    const _Insert_child = Insert_childOverride || Insert_child;
 
     const cur_actions = [];
     const nemu_actions = {};
@@ -192,12 +196,12 @@ export function usePVTableActions({
           if (!tmp.hasOwnProperty("head")) tmp.head = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
           if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
-          if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => Insert();
+          if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => _Insert();
           if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
           // Добавляем обработчик клавиатуры
           document.addEventListener('keyup', function(e) {
             if (!e.ctrlKey || !e.shiftKey || e.code !== 'KeyZ') return;
-            Insert();
+            _Insert();
           }, true);
           break;
           
@@ -205,7 +209,7 @@ export function usePVTableActions({
           if (!tmp.hasOwnProperty("row")) tmp.row = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
           if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
-          if (!tmp.hasOwnProperty("click")) tmp.click = (data) => Insert_child(data);
+          if (!tmp.hasOwnProperty("click")) tmp.click = (data) => _Insert_child(data);
           if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
           break;
           
