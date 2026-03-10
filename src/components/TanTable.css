@@ -60,6 +60,13 @@
 .tan-row:hover { background: var(--p-surface-50, #f8fafc); }
 .tan-row-selected { background: var(--p-primary-50, #eff6ff) !important; }
 
+/* ── Empty rows ── */
+.tan-row-empty { background: var(--p-surface-50, #fafafa); }
+.tan-row-empty:hover { background: var(--p-primary-50, #eff6ff); }
+.tan-row-empty .tan-td { color: var(--p-surface-400, #adb5bd); font-style: italic; }
+.tan-row-empty-locked { background: var(--p-surface-50, #fafafa); opacity: 0.45; cursor: default; }
+.tan-row-empty-locked .tan-td { pointer-events: none; }
+
 /* ── Row highlight classes (row_setting / row_class_trigger) ── */
 .tan-row.hit      { background-color: #60cc2fe6; }
 .tan-row.attention{ background-color: rgba(252, 3, 3, 0.8); }
@@ -210,13 +217,27 @@
 .tan-edit-div.tan-edit-invalid { border-color: var(--p-red-500, #ef4444); background: #fff5f5; }
 .tan-edit-checkbox { width: 16px; height: 16px; margin: auto; cursor: pointer; }
 
-/* ── EditField popup (Teleport to="body") ── */
-.tan-full-popup {
-  position: fixed; z-index: 9999;
-  background: var(--p-surface-0, #fff); border: 1px solid var(--p-surface-300, #dee2e6);
-  border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,.15);
-  padding: 10px 12px; min-width: 220px; max-width: 400px;
+/* ── Dropdown overlay (select / autocomplete) — Teleport to body ── */
+.tan-dropdown-overlay {
+  background: var(--p-overlay-popover-background, #fff);
+  border: 1px solid var(--p-overlay-popover-border-color, #e5e7eb);
+  border-radius: var(--p-overlay-popover-border-radius, 6px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  padding: 4px 0;
 }
+.tan-options-list { max-height: 220px; overflow-y: auto; }
+.tan-option-item {
+  padding: 6px 12px; cursor: pointer; font-size: 13px;
+  color: var(--p-text-color, #374151);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tan-option-item:hover, .tan-option-active {
+  background: var(--p-primary-50, #eff6ff);
+  color: var(--p-primary-color, #3b82f6);
+}
+.tan-option-empty { padding: 6px 12px; font-size: 13px; color: var(--p-text-muted-color, #9ca3af); }
+
+/* ── EditField popup (Teleport to="body") ── */
 .tan-full-popup-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
 
 /* ── Filter popover (global — Teleport to="body") ── */

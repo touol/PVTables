@@ -10,7 +10,7 @@
  */
 import './TanTable.css'
 
-import { ref, computed, h, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, h, watch, nextTick, onMounted, customRef } from 'vue'
 import {
   useVueTable,
   getCoreRowModel,
@@ -25,6 +25,7 @@ import Button   from 'primevue/button'
 import Dialog   from 'primevue/dialog'
 import Toast    from 'primevue/toast'
 import Checkbox from 'primevue/checkbox'
+import Popover  from 'primevue/popover'
 
 import PVForm              from './PVForm.vue'
 import PVTabs              from './PVTabs.vue'
@@ -35,7 +36,7 @@ import apiCtor                 from './api'
 import { usePVTableData }      from '../composables/usePVTableData'
 import { usePVTableFilters }   from '../composables/usePVTableFilters'
 import { usePVTableActions }   from '../composables/usePVTableActions'
-import { usePVTableCRUD }      from '../composables/usePVTableCRUD'
+import { useTanCRUD }          from '../composables/useTanCRUD'
 import { usePVTableExpand }    from '../composables/usePVTableExpand'
 import { useActionsCaching }   from '../composables/useActionsCaching'
 import { useTanColSizing }     from '../composables/useTanColSizing'
@@ -86,6 +87,9 @@ const visibleColumns = computed(() =>
   )
 )
 
+// Поля таблицы (нужны в saveCellUpdate для updateEmptyRow)
+const fieldsRef = ref({})
+
 // ─── Data composable ──────────────────────────────────────────────────────
 const {
   loading, totalRecords, first, lineItems, lazyParams,
@@ -130,11 +134,12 @@ const refresh = (from_parent, tbl) => {
 // ─── Row selection ────────────────────────────────────────────────────────
 const selectedlineItems = ref([])
 
-// ─── CRUD (инициализируется в onMounted) ──────────────────────────────────
+// ─── CRUD (инициализируется в onMounted через useTanCRUD) ─────────────────
 let lineItem, lineItemDialog, deleteLineItemDialog, deleteLineItemsDialog
 let openNew, editLineItem, hideDialog, saveLineItem
 let confirmDeleteLineItem, deleteLineItem, confirmDeleteSelected, deleteSelectedLineItems
 let mywatch
+let saveCellUpdate, consumeSkip
 
 // ─── Actions (инициализируется в onMounted) ───────────────────────────────
 const cur_actions      = ref([])
@@ -348,7 +353,17 @@ const dataColDefs = computed(() =>
           const lbl = getACContent(col.field, value)
           return col.hide_id ? lbl : `${value} ${lbl}`
         }
-        case 'select':   return getSelectContent(col.field, value)
+        case 'select': {
+          const lbl = getSelectContent(col.field, value)
+          if (lbl) return lbl
+          // fallback: select_data из customFields конкретной строки
+          const cfRows = customFields.value[data.id]?.[col.field]?.select_data
+          if (cfRows) {
+            const found = cfRows.find(o => String(o.id) === String(value))
+            if (found) return found.content ?? found.label ?? String(value)
+          }
+          return String(value)
+        }
         default: {
           const s = String(value)
           if (col.truncate && s.length > col.truncate) return h('span', { title: s }, truncateText(s, col.truncate))
@@ -388,7 +403,8 @@ const tableInstance = useVueTable({
     get expanded()      { return expanded.value },
     get columnSizing()  { return columnSizing.value },
   },
-  getRowId: row => String(row._rowKey ?? row.id ?? Math.random()),
+  // Реальные строки: стабильный id с сервера. Пустые строки (id='empty'): уникальный _rowKey.
+  getRowId: row => (row.id && row.id !== 'empty') ? String(row.id) : (row._rowKey ?? String(Math.random())),
   onRowSelectionChange:  u => { rowSelection.value  = typeof u === 'function' ? u(rowSelection.value)  : u },
   onColumnFiltersChange: u => { columnFilters.value = typeof u === 'function' ? u(columnFilters.value) : u },
   onSortingChange:       u => { tanSorting.value    = typeof u === 'function' ? u(tanSorting.value)    : u },
@@ -421,92 +437,125 @@ const {
 })
 
 // ─── Cell editing ─────────────────────────────────────────────────────────
-const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date'])
+const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date', 'select', 'autocomplete'])
 
-const activeInline = ref(null)  // { cellId, col, data }
-const activeFull   = ref(null)  // { cellId, col, data, rect }
-const fullEditValue = ref(null)
+let _activeInlineVal = null
+const activeInline = customRef((track, trigger) => ({
+  get() { track(); return _activeInlineVal },
+  set(v) { _activeInlineVal = v; trigger() },
+}))  // { cellId, col, data }
+const activeFull     = ref(null)  // { cellId, col, data }
+const fullEditValue  = ref(null)
+const fullPopoverRef = ref(null)
 
-const isCellEditable = (col) => col && col.field !== 'id' && !col.readonly && col.type !== 'html' && col.type !== 'hidden'
-const isInlineType   = (col) => !col?.type || INLINE_TYPES.has(col.type)
+// data — необязателен; если передан, customFields[data.id]?.[col.field] может переопределить readonly/type
+const getCellCol = (col, data) => {
+  if (!data?.id) return col
+  const cf = customFields.value[data.id]?.[col.field]
+  if (!cf) return col
+  return { ...col, ...cf, readonly: cf.readonly == 1 || cf.readonly === true }
+}
+const isCellEditable = (col, data) => {
+  const c = getCellCol(col, data)
+  return c && c.field !== 'id' && !c.readonly && c.type !== 'html' && c.type !== 'hidden'
+}
+const isInlineType = (col, data) => {
+  const c = getCellCol(col, data)
+  return !c?.type || INLINE_TYPES.has(c.type)
+}
 
 const closeInline = () => { activeInline.value = null }
-const closeFull   = () => { activeFull.value = null; fullEditValue.value = null }
+const closeFull   = () => { fullPopoverRef.value?.hide(); activeFull.value = null; fullEditValue.value = null }
 
-const saveCellUpdate = async (data, field, newValue) => {
-  if (String(data[field] ?? '') === String(newValue ?? '')) return
-  const payload = { id: data.id, [field]: newValue, update_from_row: 1 }
-  try {
-    const response = await api.update(payload, { filters: prepFilters?.() })
-    emit('get-response', { table: props.table, action: 'update', response })
-    if (!response.success) { notify('error', { detail: response.message }, true); return }
-    const idx = findIndexById(Number(data.id))
-    if (idx >= 0) {
-      if (response.data?.object) {
-        lineItems.value[idx] = response.data.object
-      } else if (response.data?.defvalues) {
-        lineItems.value[idx] = { ...lineItems.value[idx], ...response.data.defvalues }
-      } else {
-        lineItems.value[idx] = { ...lineItems.value[idx], [field]: newValue }
-      }
-    }
-  } catch (e) {
-    notify('error', { detail: e.message }, true)
+const activateInlineCell = (cell) => {
+  const col  = cell.column.columnDef.meta
+  const data = cell.row.original
+  if (!isCellEditable(col, data)) return
+  if (!isInlineType(col, data)) { activateFullCell(cell); return }
+  activeFull.value = null
+  activeInline.value = { cellId: cell.id, col: getCellCol(col, data), data }
+}
+
+let fullPopoverRepositioning = false
+
+const activateFullCell = (cell, triggerEl) => {
+  const col  = cell.column.columnDef.meta
+  const data = cell.row.original
+  if (!isCellEditable(col, data)) return
+  activeInline.value = null
+  fullEditValue.value = cell.row.original[col.field] ?? ''
+  activeFull.value = { cellId: cell.id, col, data: cell.row.original }
+  if (!triggerEl) return
+  const pop = fullPopoverRef.value
+  if (!pop) return
+  if (pop.visible) {
+    fullPopoverRepositioning = true
+    pop.hide()
+    nextTick(() => { pop.show({ currentTarget: triggerEl }, triggerEl) })
+  } else {
+    nextTick(() => pop.show({ currentTarget: triggerEl }, triggerEl))
   }
 }
 
-const activateInlineCell = (cell) => {
-  const col = cell.column.columnDef.meta
-  if (!isCellEditable(col)) return
-  if (!isInlineType(col)) { activateFullCell(cell); return }
-  activeFull.value = null
-  activeInline.value = { cellId: cell.id, col, data: cell.row.original }
-}
-
-const activateFullCell = (cell, rect) => {
-  const col = cell.column.columnDef.meta
-  if (!isCellEditable(col)) return
-  activeInline.value = null
-  fullEditValue.value = cell.row.original[col.field] ?? ''
-  activeFull.value = { cellId: cell.id, col, data: cell.row.original, rect: rect ?? null }
-}
-
 const onCellClick = (cell, event) => {
-  const col = cell.column.columnDef.meta
-  if (!col || !isCellEditable(col)) return
+  const col  = cell.column.columnDef.meta
+  const data = cell.row.original
+  if (!col || !isCellEditable(col, data)) return
+  if (isEmptyRow(data.id) && !isEditableEmptyRow(data._rowKey)) return
   if (activeInline.value?.cellId === cell.id) return
-  if (isInlineType(col)) activateInlineCell(cell)
-  else activateFullCell(cell, event.currentTarget.getBoundingClientRect())
+  if (isInlineType(col, data)) activateInlineCell(cell)
+  else activateFullCell(cell, event.currentTarget)
 }
 
 const onCellDblClick = (cell, event) => {
-  const col = cell.column.columnDef.meta
-  if (!col || !isCellEditable(col)) return
-  activateFullCell(cell, event.currentTarget.getBoundingClientRect())
+  const col  = cell.column.columnDef.meta
+  const data = cell.row.original
+  if (!col || !isCellEditable(col, data)) return
+  if (isEmptyRow(data.id) && !isEditableEmptyRow(data._rowKey)) return
+  activateFullCell(cell, event.currentTarget)
 }
 
 const onInlineNavigate = (currentCell, dir) => {
   const editableCols = visibleColumns.value.filter(c => isCellEditable(c) && isInlineType(c))
-  const allRows = tableInstance.getRowModel().rows
+  // Нередактируемые пустые строки пропускаем при навигации
+  const allRows = tableInstance.getRowModel().rows.filter(r =>
+    !isEmptyRow(r.original.id) || isEditableEmptyRow(r.original._rowKey)
+  )
   let colIdx = editableCols.findIndex(c => c.field === currentCell.column.id)
   let rowIdx = allRows.findIndex(r => r.id === currentCell.row.id)
+
   if (colIdx < 0) colIdx = 0
   if (rowIdx < 0) rowIdx = 0
 
-  if (dir === 'next-col') {
-    if (colIdx < editableCols.length - 1) colIdx++
-    else { colIdx = 0; rowIdx = Math.min(rowIdx + 1, allRows.length - 1) }
-  } else if (dir === 'prev-col') {
-    if (colIdx > 0) colIdx--
-    else { colIdx = editableCols.length - 1; rowIdx = Math.max(rowIdx - 1, 0) }
-  } else if (dir === 'next-row') {
-    rowIdx = Math.min(rowIdx + 1, allRows.length - 1)
-  } else if (dir === 'prev-row') {
-    rowIdx = Math.max(rowIdx - 1, 0)
-  }
+  const maxSteps = (editableCols.length * allRows.length) + 1
+  for (let step = 0; step < maxSteps; step++) {
+    const prevRow = rowIdx
+    if (dir === 'next-col') {
+      if (colIdx < editableCols.length - 1) colIdx++
+      else { colIdx = 0; rowIdx = Math.min(rowIdx + 1, allRows.length - 1) }
+    } else if (dir === 'prev-col') {
+      if (colIdx > 0) colIdx--
+      else { colIdx = editableCols.length - 1; rowIdx = Math.max(rowIdx - 1, 0) }
+    } else if (dir === 'next-row') {
+      rowIdx = Math.min(rowIdx + 1, allRows.length - 1)
+    } else if (dir === 'prev-row') {
+      rowIdx = Math.max(rowIdx - 1, 0)
+    }
 
-  const targetCell = allRows[rowIdx]?.getVisibleCells().find(c => c.column.id === editableCols[colIdx]?.field)
-  if (targetCell) nextTick(() => activateInlineCell(targetCell))
+    // Граница для навигации по строкам — дальше идти некуда
+    if ((dir === 'next-row' || dir === 'prev-row') && rowIdx === prevRow) break
+
+    const col = editableCols[colIdx]
+    const row = allRows[rowIdx]
+    if (!col || !row) break
+
+    // Пропускаем ячейки, readonly или non-inline по customFields данной строки
+    if (isCellEditable(col, row.original) && isInlineType(col, row.original)) {
+      const cell = row.getVisibleCells().find(c => c.column.id === col.field)
+      if (cell) nextTick(() => activateInlineCell(cell))
+      return
+    }
+  }
 }
 
 const onFullEditSave = () => {
@@ -537,12 +586,37 @@ const virtualizer = useVirtualizer({
 })
 
 // При смене данных (сортировка, фильтр, страница) — сбросить кеш высот
-// и вернуться в начало, иначе virtualizer использует старые измерения
-// и строки накладываются или рендерятся на неправильных позициях.
+// и вернуться в начало. consumeSkip() > 0 — подавить сброс скрола при
+// обновлении ячейки (saveCellUpdate из useTanCRUD).
 watch(lineItems, () => {
+  const suppress = consumeSkip?.()
   nextTick(() => {
-    if (scrollRef.value) scrollRef.value.scrollTop = 0
-    virtualizer.measure()
+    if (!suppress) {
+      if (scrollRef.value) scrollRef.value.scrollTop = 0
+    } else if (activeInline.value) {
+      // После обновления lineItems cell.id может измениться (пустая строка → реальная запись).
+      // Переактивируем ячейку: для пустых строк ищем по _rowKey (id сменился 'empty' → реальный),
+      // для обычных — по id.
+      const dataId   = activeInline.value.data?.id
+      const rowKey   = activeInline.value.data?._rowKey
+      const colField = activeInline.value.col?.field
+      if (dataId != null && colField) {
+        let newRow
+        if (isEmptyRow(dataId) && rowKey) {
+          // id изменился с 'empty' → реальный после insert: ищем по стабильному _rowKey
+          newRow = tableInstance.getRowModel().rows.find(r => r.original._rowKey === rowKey)
+        } else {
+          newRow = tableInstance.getRowModel().rows.find(r => r.original.id == dataId)
+        }
+        const newCell = newRow?.getVisibleCells().find(c => c.column.id === colField)
+        if (newCell) {
+          activeInline.value = { cellId: newCell.id, col: activeInline.value.col, data: newRow.original }
+          nextTick(() => document.querySelector('.tan-edit-div, .tan-edit-checkbox')?.focus())
+        } else {
+          closeInline()
+        }
+      }
+    }
   })
 })
 
@@ -639,6 +713,7 @@ onMounted(async () => {
     }
     globalFilterFields.value = filterFields
     columns.value = cols
+    fieldsRef.value = fields
 
     // Инициализация ширин колонок (ls → server → auto-fit)
     if (response.data.fields_style) serverFieldsStyle.value = response.data.fields_style
@@ -677,13 +752,13 @@ onMounted(async () => {
     submitModalForm = actionsComposable.submitModalForm
 
     // CRUD composable
-    const crudComposable = usePVTableCRUD(
+    const crudComposable = useTanCRUD(
       api, () => prepFilters(), notify, refresh, emit, props,
       lineItems, findIndexById, customFields, row_setting, table_tree,
       ref({}),
       childComponentRefs,
       { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState },
-      selectedlineItems, ref(null)
+      selectedlineItems, fieldsRef, activeInline
     )
     lineItem                = crudComposable.lineItem
     lineItemDialog          = crudComposable.lineItemDialog
@@ -698,6 +773,8 @@ onMounted(async () => {
     deleteLineItem          = crudComposable.deleteLineItem
     confirmDeleteSelected   = crudComposable.confirmDeleteSelected
     deleteSelectedLineItems = crudComposable.deleteSelectedLineItems
+    saveCellUpdate          = crudComposable.saveCellUpdate
+    consumeSkip             = crudComposable.consumeSkip
 
     // Expand composable
     const expandComposable = usePVTableExpand(table_tree, () => filters, dataFields, props.table)
@@ -724,6 +801,8 @@ onMounted(async () => {
       {
         editLineItem, confirmDeleteLineItem, confirmDeleteSelected,
         openNew, setExpandedRow: setExpandedRowComposable,
+        Insert: crudComposable.Insert,
+        Insert_child: crudComposable.Insert_child,
       }
     )
     cur_actions.value      = processed.cur_actions
@@ -838,7 +917,13 @@ defineExpose({ refresh })
               :data-index="vItem.index"
               :style="[{ position:'absolute', top:0, left:0, width:'100%', transform:`translateY(${vItem.start}px)` }, rowStyle(flatItems[vItem.index]?.row.original)]"
               class="tan-row"
-              :class="[{ 'tan-row-selected': flatItems[vItem.index]?.row.getIsSelected() }, rowClass(flatItems[vItem.index]?.row.original)]"
+              :class="[
+                { 'tan-row-selected': flatItems[vItem.index]?.row.getIsSelected() },
+                rowClass(flatItems[vItem.index]?.row.original),
+                isEmptyRow(flatItems[vItem.index]?.row.original?.id)
+                  ? (isEditableEmptyRow(flatItems[vItem.index]?.row.original?._rowKey) ? 'tan-row-empty' : 'tan-row-empty-locked')
+                  : '',
+              ]"
             >
               <td
                 v-for="cell in flatItems[vItem.index]?.row.getVisibleCells()"
@@ -853,6 +938,7 @@ defineExpose({ refresh })
                   v-if="activeInline?.cellId === cell.id"
                   :col="activeInline.col"
                   :initial-value="getFieldValue(cell.row.original, cell.column.id)"
+                  :selectSettings="selectSettings"
                   @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"
@@ -992,15 +1078,8 @@ defineExpose({ refresh })
   />
 
   <!-- ── EditField popup (double-click inline edit) ── -->
-  <Teleport to="body">
-    <div
-      v-if="activeFull"
-      class="tan-full-popup"
-      :style="{
-        top:  activeFull.rect ? (activeFull.rect.bottom + 4) + 'px' : '50%',
-        left: activeFull.rect ? activeFull.rect.left + 'px' : '50%',
-      }"
-    >
+  <Popover ref="fullPopoverRef" @hide="if (!fullPopoverRepositioning) { activeFull = null; fullEditValue = null } else { fullPopoverRepositioning = false }">
+    <div v-if="activeFull" style="min-width: 220px; max-width: 400px;">
       <EditField
         v-model="fullEditValue"
         :field="activeFull.col"
@@ -1016,7 +1095,7 @@ defineExpose({ refresh })
         <button class="tan-action-btn p-button-success" @click="onFullEditSave">Сохранить</button>
       </div>
     </div>
-  </Teleport>
+  </Popover>
 
   <!-- ── Settings popover ── -->
   <TanSettingsPopover
