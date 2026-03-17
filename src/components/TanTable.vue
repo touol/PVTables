@@ -177,6 +177,19 @@ const acMaps = computed(() => {
   }
   return maps
 })
+// Full row data map for show_id lookup
+const acFullMaps = computed(() => {
+  const maps = {}
+  for (const field in autocompleteSettings.value) {
+    const rows = autocompleteSettings.value[field]?.rows
+    if (rows && Array.isArray(rows)) {
+      const m = new Map()
+      for (const o of rows) m.set(String(o.id), o)
+      maps[field] = m
+    }
+  }
+  return maps
+})
 const selectMaps = computed(() => {
   const maps = {}
   for (const field in selectSettings.value) {
@@ -350,8 +363,16 @@ const dataColDefs = computed(() =>
         case 'datetime': return formatDateTime(value)
         case 'html':     return h('span', { innerHTML: String(value) })
         case 'autocomplete': {
+          if (!value || value == 0) return ''
           const lbl = getACContent(col.field, value)
-          return col.hide_id ? lbl : `${value} ${lbl}`
+          if (col.hide_id) return lbl
+          if (col.show_id) {
+            const fullRow = acFullMaps.value[col.field]?.get(String(value))
+            const sv = fullRow?.[col.show_id]
+            const showVal = (sv !== null && sv !== undefined && sv !== '' && sv != 0) ? sv : value
+            return `${showVal} ${lbl}`
+          }
+          return `${value} ${lbl}`
         }
         case 'select': {
           const lbl = getSelectContent(col.field, value)
@@ -403,8 +424,8 @@ const tableInstance = useVueTable({
     get expanded()      { return expanded.value },
     get columnSizing()  { return columnSizing.value },
   },
-  // Реальные строки: стабильный id с сервера. Пустые строки (id='empty'): уникальный _rowKey.
-  getRowId: row => (row.id && row.id !== 'empty') ? String(row.id) : (row._rowKey ?? String(Math.random())),
+  // _rowKey — стабильный ключ, назначаемый usePVTableData; используется также в usePVTableExpand
+  getRowId: row => row._rowKey ?? String(row.id) ?? String(Math.random()),
   onRowSelectionChange:  u => { rowSelection.value  = typeof u === 'function' ? u(rowSelection.value)  : u },
   onColumnFiltersChange: u => { columnFilters.value = typeof u === 'function' ? u(columnFilters.value) : u },
   onSortingChange:       u => { tanSorting.value    = typeof u === 'function' ? u(tanSorting.value)    : u },
@@ -437,7 +458,7 @@ const {
 })
 
 // ─── Cell editing ─────────────────────────────────────────────────────────
-const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date', 'select', 'autocomplete'])
+const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date', 'select', 'autocomplete', 'textarea'])
 
 let _activeInlineVal = null
 const activeInline = customRef((track, trigger) => ({
@@ -939,6 +960,7 @@ defineExpose({ refresh })
                   :col="activeInline.col"
                   :initial-value="getFieldValue(cell.row.original, cell.column.id)"
                   :selectSettings="selectSettings"
+                  :autocompleteSettings="autocompleteSettings"
                   @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"

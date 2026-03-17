@@ -235,6 +235,7 @@
   background: var(--p-primary-50, #eff6ff);
   color: var(--p-primary-color, #3b82f6);
 }
+.tan-option-id { color: var(--p-text-muted-color, #9ca3af); margin-right: 6px; font-size: 12px; }
 .tan-option-empty { padding: 6px 12px; font-size: 13px; color: var(--p-text-muted-color, #9ca3af); }
 
 /* ── EditField popup (Teleport to="body") ── */

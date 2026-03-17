@@ -2,6 +2,7 @@
   <!-- ── TanStack Table (бета) — полная замена ─────────────────────── -->
   <TanTable
     v-if="useTanTable"
+    ref="tanTableRef"
     :table="table"
     :actions="actions"
     :filters="props.filters"
@@ -647,6 +648,7 @@
 
   const rowsPerPage = ref(10);
   const dt = ref();
+  const tanTableRef = ref();
   const columns = ref([{ field: "id", label: "ID" }]);
   let fields = {};
   let cur_actions = ref([]);
@@ -920,6 +922,11 @@
   let onSort;
   
   const refresh = (from_parent,table) => {
+    if (useTanTable.value) {
+      tanTableRef.value?.refresh(from_parent, table)
+      if (!from_parent && (!table || table == props.table)) emit('refresh-table')
+      return
+    }
     if(!table || table == props.table){
       if(loadLazyData) {
         loadLazyData();

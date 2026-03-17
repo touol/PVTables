@@ -40,7 +40,12 @@
                 class="tan-option-item"
                 :class="{ 'tan-option-active': i === activeIdx }"
                 @click="selectOption(opt)"
-              >{{ opt.content }}</div>
+              ><template v-if="col.type === 'autocomplete' && !col.hide_id">
+                  <span class="tan-option-id">{{ (col.show_id && opt[col.show_id] > 0) ? opt[col.show_id] : opt.id }}</span>
+                  {{ opt.content }}
+                </template>
+                <template v-else>{{ opt.content }}</template>
+              </div>
               <div v-if="dropdownOptions.length === 0" class="tan-option-empty">Не найдено</div>
             </template>
           </div>
@@ -71,6 +76,7 @@ const props = defineProps({
   col:              { type: Object, required: true },
   initialValue:     { default: '' },
   selectSettings:   { type: Object, default: () => ({}) },
+  autocompleteSettings: { type: Object, default: () => ({}) },
 })
 
 const emit = defineEmits(['save', 'cancel', 'navigate'])
@@ -174,19 +180,33 @@ const loadAutocompleteOptions = async (query) => {
   if (!acApi.value) return
   optionsLoading.value = true
   try {
-    const params = {
-      query,
+    const q = query.trim()
+    const isNum = /^\d+$/.test(q)
+    const baseParams = {
       parent:  props.col.parent,
       ids:     props.col.ids,
-      limit:   20,
-      offset:  0,
     }
-    if (/^\d+$/.test(query.trim()) && props.col.show_id) {
-      params.show_id = props.col.show_id
-      params.by_id   = 1
+
+    if (isNum) {
+      // 2 параллельных запроса: show_id (id OR show_id_where) + query (текстовый поиск)
+      const idParams = props.col.show_id
+        ? { ...baseParams, show_id: q, limit: 5, offset: 0 }
+        : { ...baseParams, id: q, limit: 5, offset: 0 }
+      const queryParams = { ...baseParams, query: q, limit: 20, offset: 0 }
+      const [idRes, queryRes] = await Promise.all([
+        acApi.value.autocomplete(idParams),
+        acApi.value.autocomplete(queryParams),
+      ])
+      const idRows = idRes?.data?.rows ?? []
+      const queryRows = queryRes?.data?.rows ?? []
+      // Объединяем: id/show_id записи сверху, затем остальные без дублей
+      const idSet = new Set(idRows.map(o => String(o.id)))
+      dropdownOptions.value = [...idRows, ...queryRows.filter(o => !idSet.has(String(o.id)))]
+    } else {
+      const params = { ...baseParams, query: q, limit: 20, offset: 0 }
+      const res = await acApi.value.autocomplete(params)
+      dropdownOptions.value = res?.data?.rows ?? []
     }
-    const res = await acApi.value.autocomplete(params)
-    dropdownOptions.value = res?.data?.rows ?? []
   } catch {
     dropdownOptions.value = []
   } finally {
@@ -298,6 +318,27 @@ const onSave = () => {
       emit('save', selectedId)
     } else if (text === '') {
       emit('save', null)
+    } else if (props.col.type === 'autocomplete' && /^\d+$/.test(text)) {
+      // Число без выбора — ищем exact match в загруженных опциях или AC кэше
+      const showId = props.col.show_id
+      const exact = dropdownOptions.value.find(o =>
+        String(o.id) === text || (showId && String(o[showId]) === text)
+      )
+      if (exact) {
+        emit('save', exact.id)
+      } else {
+        // Проверяем AC кэш
+        const acRows = props.autocompleteSettings?.[props.col.field]?.rows
+        const cached = acRows?.find(o =>
+          String(o.id) === text || (showId && String(o[showId]) === text)
+        )
+        if (cached) {
+          emit('save', cached.id)
+        } else {
+          // Сохраняем как id напрямую (совместимо с PVAutoComplete поведением)
+          emit('save', parseInt(text, 10))
+        }
+      }
     } else {
       // Ничего не выбрано — отмена
       emit('cancel')
@@ -338,6 +379,26 @@ const onKeydown = (e) => {
       }
       e.preventDefault(); return
     }
+    if (e.key === 'ArrowRight') {
+      if (activeIdx.value >= 0 && dropdownOptions.value[activeIdx.value]) {
+        selectOption(dropdownOptions.value[activeIdx.value])
+      } else {
+        hideOptionsPopover()
+        onSave()
+      }
+      emit('navigate', 'next-col')
+      e.preventDefault(); return
+    }
+    if (e.key === 'ArrowLeft') {
+      if (activeIdx.value >= 0 && dropdownOptions.value[activeIdx.value]) {
+        selectOption(dropdownOptions.value[activeIdx.value])
+      } else {
+        hideOptionsPopover()
+        onSave()
+      }
+      emit('navigate', 'prev-col')
+      e.preventDefault(); return
+    }
     if (e.key === 'Escape') {
       hideOptionsPopover()
       e.preventDefault(); return
@@ -350,7 +411,7 @@ const onKeydown = (e) => {
     emit('cancel')
     e.preventDefault(); return
   }
-  if (e.key === 'Enter' && props.col.type !== 'textarea') {
+  if (e.key === 'Enter') {
     const dir = e.shiftKey ? 'prev-row' : 'next-row'
     onSave(); emit('navigate', dir)
     e.preventDefault(); e.stopPropagation(); return
