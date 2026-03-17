@@ -278,6 +278,8 @@ const {
 // ─── TanStack column definitions ──────────────────────────────────────────
 const stringIncludesFilter = (row, columnId, filterValue) => {
   const val = row.getValue(columnId)
+  // Чеклист фильтр — Set значений
+  if (filterValue instanceof Set) return filterValue.has(String(val ?? ''))
   return String(val ?? '').toLowerCase().includes(String(filterValue).toLowerCase())
 }
 
@@ -443,11 +445,21 @@ const tableInstance = useVueTable({
 const {
   openFilterColId,
   filterPopoverPos,
-  colFilterValues,
-  openFilterValue,
+  colServerFilters,
+  colChecklistState,
+  MATCH_MODES,
+  MATCH_MODE_LABELS,
+  OPERATOR_LABELS,
   openFilterPopover,
   closeFilterPopover,
+  applyServerFilter,
+  clearServerFilter,
   clearColFilter,
+  addConstraint,
+  removeConstraint,
+  toggleChecklistValue,
+  toggleChecklistAll,
+  isFilterActive,
 } = useTanFilterPopover({
   filtersGetter:       () => filters,
   loadLazyDataGetter:  () => loadLazyData,
@@ -455,6 +467,14 @@ const {
   tableInstanceGetter: () => tableInstance,
   first,
   lazyParams,
+  lineItemsGetter:           () => lineItems.value,
+  columnsGetter:             () => visibleColumns.value,
+  selectSettingsGetter:      () => selectSettings.value,
+  autocompleteSettingsGetter:() => autocompleteSettings.value,
+  acFullMapsGetter:          () => acFullMaps.value,
+  getACContentFn:            getACContent,
+  getSelectContentFn:        getSelectContent,
+  formatDateFn:              formatDate,
 })
 
 // ─── Cell editing ─────────────────────────────────────────────────────────
@@ -846,7 +866,8 @@ onMounted(async () => {
 // ─── Clear filters ────────────────────────────────────────────────────────
 const onClearFilter = () => {
   columnFilters.value   = []
-  colFilterValues.value = {}
+  colServerFilters.value = {}
+  colChecklistState.value = {}
   tanSorting.value      = []
   clearFilter?.()
 }
@@ -854,8 +875,29 @@ const onClearFilter = () => {
 // ─── Clear single column filter (from paginator chip) ────────────────────
 const onClearColFilterChip = (columnId) => {
   clearColFilter(columnId)
-  tableInstance.getColumn(columnId)?.setFilterValue(undefined)
 }
+
+// ─── Filter popover helpers ───────────────────────────────────────────────
+const openFilterColMeta = computed(() => {
+  if (!openFilterColId.value) return null
+  return visibleColumns.value.find(c => c.field === openFilterColId.value) ?? null
+})
+const openFilterColType = computed(() => openFilterColMeta.value?.type ?? 'text')
+const openFilterMatchModes = computed(() => MATCH_MODES[openFilterColType.value] || MATCH_MODES.text)
+const openFilterServerState = computed(() =>
+  openFilterColId.value ? colServerFilters.value[openFilterColId.value] : null
+)
+const openFilterChecklistState = computed(() =>
+  openFilterColId.value ? colChecklistState.value[openFilterColId.value] : null
+)
+const openFilterSelectOptions = computed(() => {
+  if (!openFilterColId.value) return []
+  const field = openFilterColId.value
+  const rows = selectSettings.value?.[field]?.rows
+    ?? openFilterColMeta.value?.select_data
+    ?? openFilterColMeta.value?.rows
+  return rows ?? []
+})
 
 // ─── Public API ───────────────────────────────────────────────────────────
 defineExpose({ refresh })
@@ -908,7 +950,7 @@ defineExpose({ refresh })
                 v-if="header.column.getCanFilter()"
                 class="tan-filter-btn"
                 :class="{
-                  'tan-filter-btn--active': header.column.getFilterValue() != null,
+                  'tan-filter-btn--active': isFilterActive(header.column.id),
                   'tan-filter-btn--open': openFilterColId === header.column.id,
                 }"
                 @click.stop="openFilterPopover($event, header.column.id)"
@@ -1091,12 +1133,26 @@ defineExpose({ refresh })
   <TanFilterPopoverUI
     :openFilterColId="openFilterColId"
     :filterPopoverPos="filterPopoverPos"
-    :filterValue="openFilterValue"
+    :colType="openFilterColType"
+    :colMeta="openFilterColMeta"
     :columnLabel="openFilterColId ? (tableInstance.getColumn(openFilterColId)?.columnDef.header ?? openFilterColId) : ''"
-    @update:filterValue="v => openFilterValue = v"
-    @apply="closeFilterPopover(true)"
-    @close="closeFilterPopover(false)"
-    @clear="clearColFilter(openFilterColId)"
+    :serverFilter="openFilterServerState"
+    :selectOptions="openFilterSelectOptions"
+    :matchModes="openFilterMatchModes"
+    :matchModeLabels="MATCH_MODE_LABELS"
+    :operatorLabels="OPERATOR_LABELS"
+    :checklistAll="openFilterChecklistState?.all ?? []"
+    :checklistChecked="openFilterChecklistState?.checked ?? null"
+    @apply-server="applyServerFilter(openFilterColId)"
+    @clear-all="clearColFilter(openFilterColId)"
+    @close="closeFilterPopover()"
+    @update:operator="v => { if (colServerFilters[openFilterColId]) colServerFilters[openFilterColId].operator = v }"
+    @update:constraint-value="({ idx, value }) => { if (colServerFilters[openFilterColId]?.constraints[idx]) colServerFilters[openFilterColId].constraints[idx].value = value }"
+    @update:constraint-mode="({ idx, value }) => { if (colServerFilters[openFilterColId]?.constraints[idx]) colServerFilters[openFilterColId].constraints[idx].matchMode = value }"
+    @add-constraint="addConstraint(openFilterColId, openFilterColType)"
+    @remove-constraint="idx => removeConstraint(openFilterColId, idx)"
+    @toggle-checklist="val => toggleChecklistValue(openFilterColId, val)"
+    @toggle-checklist-all="toggleChecklistAll(openFilterColId)"
   />
 
   <!-- ── EditField popup (double-click inline edit) ── -->

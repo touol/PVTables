@@ -242,11 +242,11 @@
 .tan-full-popup-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
 
 /* ── Filter popover (global — Teleport to="body") ── */
-.tan-filter-popover { position: fixed; z-index: 9999; min-width: 220px; max-width: 320px; }
+.tan-filter-popover { position: fixed; z-index: 9999; min-width: 260px; max-width: 360px; }
 .tan-filter-popover-inner {
   background: var(--p-surface-0, #fff); border: 1px solid var(--p-surface-300, #dee2e6);
   border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 10px;
 }
 .tan-filter-popover-label {
   font-size: 12px; font-weight: 600; color: var(--p-text-color, #374151);
@@ -256,10 +256,95 @@
   width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 13px;
   border: 1px solid var(--p-surface-300, #dee2e6); border-radius: 4px;
   background: var(--p-surface-0, #fff); color: var(--p-text-color, #374151);
-  outline: none; transition: border-color .15s;
+  outline: none; transition: border-color .15s; min-width: 0;
 }
 .tan-filter-popover-input:focus {
   border-color: var(--p-primary-color, #3b82f6);
   box-shadow: 0 0 0 2px var(--p-primary-100, #dbeafe);
 }
+
+/* Секции */
+.tan-filter-section {
+  display: flex; flex-direction: column; gap: 6px;
+  border-top: 1px solid var(--p-surface-200, #e9ecef); padding-top: 8px;
+}
+.tan-filter-section:first-of-type { border-top: none; padding-top: 0; }
+.tan-filter-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  color: var(--p-text-muted-color, #9ca3af); letter-spacing: .5px;
+}
+
+/* Селект */
+.tan-filter-select {
+  width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 13px;
+  border: 1px solid var(--p-surface-300, #dee2e6); border-radius: 4px;
+  background: var(--p-surface-0, #fff); color: var(--p-text-color, #374151);
+  outline: none; cursor: pointer;
+}
+.tan-filter-select:focus { border-color: var(--p-primary-color, #3b82f6); }
+
+/* Constraint row */
+.tan-filter-constraints { display: flex; flex-direction: column; gap: 4px; }
+.tan-filter-constraint-row { display: flex; gap: 4px; align-items: center; }
+.tan-filter-mode-select { flex: 0 0 auto; width: auto; min-width: 110px; }
+.tan-filter-constraint-row .tan-filter-popover-input { flex: 1 1 0; }
+.tan-filter-remove-btn {
+  flex: 0 0 auto; width: 22px; height: 22px; border: none; border-radius: 3px;
+  background: transparent; color: var(--p-surface-400, #9ca3af); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 10px;
+}
+.tan-filter-remove-btn:hover { color: var(--p-red-500, #ef4444); background: var(--p-red-50, #fef2f2); }
+
+/* Autocomplete в фильтре */
+.tan-filter-ac-wrap { position: relative; flex: 1 1 0; min-width: 0; }
+.tan-filter-ac-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 10000;
+  max-height: 200px; overflow-y: auto;
+  background: var(--p-surface-0, #fff); border: 1px solid var(--p-surface-300, #dee2e6);
+  border-radius: 0 0 4px 4px; box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+
+/* Добавить правило */
+.tan-filter-add-rule {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 0;
+  border: none; background: none; color: var(--p-primary-color, #3b82f6);
+  font-size: 12px; cursor: pointer;
+}
+.tan-filter-add-rule:hover { text-decoration: underline; }
+
+/* Кнопки применить/сбросить */
 .tan-filter-popover-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.tan-filter-action-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px;
+  border: 1px solid var(--p-surface-300, #dee2e6); border-radius: 4px;
+  font-size: 12px; cursor: pointer; background: var(--p-surface-0, #fff);
+  color: var(--p-text-color, #374151);
+}
+.tan-filter-action-btn:hover { background: var(--p-surface-100, #f3f4f6); }
+.tan-filter-action-apply {
+  background: var(--p-primary-color, #3b82f6); color: #fff;
+  border-color: var(--p-primary-color, #3b82f6);
+}
+.tan-filter-action-apply:hover { background: var(--p-primary-600, #2563eb); }
+.tan-filter-action-clear { border-color: transparent; background: transparent; }
+
+/* Чеклист */
+.tan-filter-checklist {
+  max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+}
+.tan-filter-checklist-item {
+  display: flex; align-items: center; gap: 6px; padding: 3px 4px;
+  font-size: 13px; cursor: pointer; border-radius: 3px;
+  color: var(--p-text-color, #374151);
+}
+.tan-filter-checklist-item:hover { background: var(--p-surface-100, #f3f4f6); }
+.tan-filter-checklist-item input[type="checkbox"] {
+  flex: 0 0 auto; width: 14px; height: 14px; margin: 0; cursor: pointer;
+}
+.tan-filter-checklist-item span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tan-filter-checklist-all {
+  font-weight: 600; border-bottom: 1px solid var(--p-surface-200, #e9ecef);
+  padding-bottom: 4px; margin-bottom: 2px;
+}
