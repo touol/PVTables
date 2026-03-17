@@ -9,8 +9,9 @@ import PVAutoComplete      from './PVAutoComplete.vue'
 import PVMultiAutoComplete from './PVMultiAutoComplete.vue'
 
 const props = defineProps({
-  headActions: { type: Array,   default: () => [] },
-  topFilters:  { type: Object,  default: () => ({}) },
+  headActions:        { type: Array,   default: () => [] },
+  topFilters:         { type: Object,  default: () => ({}) },
+  cellSelectionMode:  { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -20,6 +21,7 @@ const emit = defineEmits([
   'refresh',
   'settings',
   'switch-engine',
+  'toggle-cell-selection',
 ])
 </script>
 
@@ -52,6 +54,10 @@ const emit = defineEmits([
     </template>
 
     <template #end>
+      <Button icon="pi pi-check-square"
+        :class="cellSelectionMode ? 'p-button-info' : 'p-button-secondary'"
+        v-tooltip.bottom="'Выделение ячеек (Ctrl+Shift+S)'"
+        @click="emit('toggle-cell-selection')" />
       <Button icon="pi pi-refresh" class="p-button-success"
         v-tooltip.bottom="'Обновить'" @click="emit('refresh')" />
       <Button icon="pi pi-filter-slash"

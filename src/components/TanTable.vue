@@ -42,6 +42,7 @@ import { useActionsCaching }   from '../composables/useActionsCaching'
 import { useTanColSizing }     from '../composables/useTanColSizing'
 import { useRowHighlight }    from '../composables/useRowHighlight'
 import { useTanFilterPopover } from '../composables/useTanFilterPopover'
+import { useTanCellSelection } from '../composables/useTanCellSelection'
 
 import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
@@ -215,6 +216,7 @@ const formatDate = (v) => {
   if (!v) return ''
   return v.split('-').reverse().join('.')
 }
+const formatNumber = (num) => new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num)
 const formatDateTime = (v) => {
   if (!v) return ''
   const m = v.match(/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2})(?::(\d{2}))?)?$/)
@@ -244,6 +246,7 @@ watch(() => props.scrollHeight, v => {
 
 // ─── Scroll container ref ─────────────────────────────────────────────────
 const scrollRef = ref(null)
+const rootElRef = ref(null)
 
 // Размер кнопки действия — читается из CSS-переменной PrimeVue после монтирования
 const actionBtnSize = ref(32)
@@ -477,6 +480,35 @@ const {
   formatDateFn:              formatDate,
 })
 
+// ─── Cell selection (Excel-like) ──────────────────────────────────────────
+const {
+  cellSelectionMode, selectedCells, isFillDragging, fillRange, fillHandleCell,
+  cellCount, sum, average,
+  toggleCellSelectionMode, onCellMouseDown: onSelMouseDown, onCellMouseEnter: onSelMouseEnter,
+  onFillHandleMouseDown, onFillIncMouseDown, isCellSelected, isCellInFillRange, copyToClipboard,
+} = useTanCellSelection({
+  columnsGetter:       () => visibleColumns.value,
+  lineItemsGetter:     () => lineItems.value,
+  tableInstanceGetter: () => tableInstance,
+  customFieldsGetter:  () => customFields.value,
+  saveCellUpdateFn:    (...args) => saveCellUpdate?.(...args),
+  notify,
+  isEmptyRowFn:        isEmptyRow,
+  isEditableEmptyRowFn:isEditableEmptyRow,
+  hideIdGetter:        () => hideId.value,
+  rootElGetter:        () => rootElRef.value,
+})
+
+// Helper: get lineItems index from TanStack row
+const getRowLineIndex = (row) => {
+  const items = lineItems.value
+  const id = row.original.id ?? row.original._rowKey
+  return items.findIndex(r => (r.id ?? r._rowKey) === id)
+}
+
+// Helper: get visible column index from column id
+const getColVisibleIndex = (colId) => visibleColumns.value.findIndex(c => c.field === colId)
+
 // ─── Cell editing ─────────────────────────────────────────────────────────
 const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date', 'select', 'autocomplete', 'textarea'])
 
@@ -539,6 +571,7 @@ const activateFullCell = (cell, triggerEl) => {
 }
 
 const onCellClick = (cell, event) => {
+  if (cellSelectionMode.value) return  // In selection mode, clicks are handled by onSelMouseDown
   const col  = cell.column.columnDef.meta
   const data = cell.row.original
   if (!col || !isCellEditable(col, data)) return
@@ -666,7 +699,7 @@ const currentPageSize = ref(10)
 const currentPage  = computed(() => currentPageSize.value > 0 ? Math.floor(first.value / currentPageSize.value) + 1 : 1)
 const totalPages   = computed(() => currentPageSize.value > 0 ? Math.ceil(totalRecords.value / currentPageSize.value) : 1)
 
-const emitPage = (f, rows) => { onPage?.({ first: f, rows }) }
+const emitPage = (f, rows) => { first.value = f; onPage?.({ first: f, rows }) }
 const goFirst  = () => { if (first.value > 0) emitPage(0, currentPageSize.value) }
 const goPrev   = () => { const n = Math.max(0, first.value - currentPageSize.value); if (n !== first.value) emitPage(n, currentPageSize.value) }
 const goNext   = () => { const n = first.value + currentPageSize.value; if (n < totalRecords.value) emitPage(n, currentPageSize.value) }
@@ -904,18 +937,20 @@ defineExpose({ refresh })
 </script>
 
 <template>
-  <div class="card pvtables tan-root">
+  <div ref="rootElRef" class="card pvtables tan-root">
 
     <!-- ── Toolbar ── -->
     <TanToolbar
       :headActions="headActions"
       :topFilters="topFilters"
+      :cellSelectionMode="cellSelectionMode"
       @head-action="(action, e) => action.head_click(e, props.table, filters, selectedlineItems)"
       @set-top-filter="(filter) => onSetTopFilter?.(filter)"
       @clear="onClearFilter"
       @refresh="refresh(false)"
       @settings="toggleSettings"
       @switch-engine="emit('switch-engine')"
+      @toggle-cell-selection="toggleCellSelectionMode"
     />
 
     <!-- ── Loading overlay ── -->
@@ -924,7 +959,7 @@ defineExpose({ refresh })
     </div>
 
     <!-- ── Scroll container ── -->
-    <div ref="scrollRef" class="tan-scroll" :style="{ maxHeight: localScrollHeight }">
+    <div ref="scrollRef" class="tan-scroll" :class="{ 'tan-cell-select-mode': cellSelectionMode }" :style="{ maxHeight: localScrollHeight }">
       <table class="tan-table" :style="{ width: tableInstance.getTotalSize() + 'px' }">
 
         <!-- HEAD -->
@@ -993,9 +1028,15 @@ defineExpose({ refresh })
                 :key="cell.id"
                 :style="{ width: cell.column.getSize() + 'px' }"
                 class="tan-td"
-                :class="{ 'tan-td-editing': activeInline?.cellId === cell.id }"
+                :class="{
+                  'tan-td-editing': activeInline?.cellId === cell.id,
+                  'tan-td-selected': cellSelectionMode && isCellSelected(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
+                  'tan-td-fill-range': cellSelectionMode && isCellInFillRange(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
+                }"
                 @click="cell.column.columnDef.meta && onCellClick(cell, $event)"
                 @dblclick="cell.column.columnDef.meta && onCellDblClick(cell, $event)"
+                @mousedown="cellSelectionMode && cell.column.columnDef.meta && onSelMouseDown(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id), $event)"
+                @mouseenter="cellSelectionMode && cell.column.columnDef.meta && onSelMouseEnter(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id))"
               >
                 <TanEditCell
                   v-if="activeInline?.cellId === cell.id"
@@ -1008,6 +1049,14 @@ defineExpose({ refresh })
                   @navigate="(dir) => onInlineNavigate(cell, dir)"
                 />
                 <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                <!-- Fill handles: copy + increment -->
+                <div
+                  v-if="fillHandleCell && fillHandleCell.rowIndex === getRowLineIndex(cell.row) && fillHandleCell.colIndex === getColVisibleIndex(cell.column.id)"
+                  class="tan-fill-handles"
+                >
+                  <div class="tan-fill-handle" title="Копировать значение" @mousedown="onFillHandleMouseDown" />
+                  <div class="tan-fill-inc" title="Инкремент (+1)" @mousedown="onFillIncMouseDown">+</div>
+                </div>
               </td>
             </tr>
 
@@ -1076,6 +1125,32 @@ defineExpose({ refresh })
       @rows-per-page-change="onRowsPerPageChange"
       @clear-col-filter="onClearColFilterChip"
     />
+
+    <!-- ── Cell Selection Status Bar ── -->
+    <div v-if="cellSelectionMode" class="tan-status-bar">
+      <div class="tan-status-info">
+        <span class="tan-status-item">
+          <i class="pi pi-check-square" />
+          Выделено: <strong>{{ cellCount }}</strong>
+        </span>
+        <span v-if="average !== null" class="tan-status-item">
+          <i class="pi pi-chart-line" />
+          Среднее: <strong>{{ formatNumber(average) }}</strong>
+        </span>
+        <span v-if="sum !== null" class="tan-status-item">
+          <i class="pi pi-calculator" />
+          Сумма: <strong>{{ formatNumber(sum) }}</strong>
+        </span>
+      </div>
+      <div class="tan-status-actions">
+        <button class="tan-status-btn" @click="copyToClipboard" :disabled="cellCount === 0" title="Копировать (Ctrl+C)">
+          <i class="pi pi-copy" /> Копировать
+        </button>
+        <button class="tan-status-btn tan-status-btn--close" @click="toggleCellSelectionMode" title="Выйти из режима выделения">
+          <i class="pi pi-times" />
+        </button>
+      </div>
+    </div>
 
     <!-- ── CRUD Dialogs ── -->
     <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" header="Редактировать" modal>

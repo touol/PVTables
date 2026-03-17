@@ -348,3 +348,71 @@
   font-weight: 600; border-bottom: 1px solid var(--p-surface-200, #e9ecef);
   padding-bottom: 4px; margin-bottom: 2px;
 }
+
+/* ── Cell selection ── */
+.tan-cell-select-mode .tan-tbody { user-select: none; -webkit-user-select: none; }
+.tan-td-selected {
+  background: var(--p-primary-50, #eff6ff) !important;
+  outline: 2px solid var(--p-primary-color, #3b82f6);
+  outline-offset: -2px;
+}
+.tan-td-fill-range {
+  background: var(--p-primary-100, #dbeafe) !important;
+  outline: 2px dashed var(--p-primary-400, #60a5fa);
+  outline-offset: -2px;
+}
+
+/* Fill handles — two buttons below-right of selected cell */
+.tan-fill-handles {
+  position: absolute; bottom: -22px; right: 0; z-index: 15;
+  display: flex; gap: 2px;
+  background: #fff; border: 1px solid var(--p-surface-300, #dee2e6);
+  border-radius: 4px; padding: 2px; box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.tan-fill-handle, .tan-fill-inc {
+  width: 20px; height: 18px; border: none; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; line-height: 1; cursor: crosshair;
+}
+.tan-fill-handle {
+  background: var(--p-primary-color, #3b82f6); color: #fff; font-size: 11px;
+}
+.tan-fill-handle::after { content: '⬇'; font-size: 10px; }
+.tan-fill-inc {
+  background: var(--p-green-500, #22c55e); color: #fff; font-size: 14px;
+}
+.tan-fill-handle:hover { background: var(--p-primary-600, #2563eb); }
+.tan-fill-inc:hover { background: var(--p-green-600, #16a34a); }
+/* td needs relative + overflow visible for fill handle positioning */
+.tan-td-selected { position: relative; overflow: visible !important; z-index: 2; }
+/* Row with selected cell must be above other rows so fill handles aren't covered */
+.tan-row:has(.tan-td-selected) { z-index: 3 !important; }
+/* Selection outline should be clearly visible on colored rows */
+.tan-td-selected { background: rgba(255,255,255,.85) !important; }
+
+/* ── Status bar (cell selection mode) ── */
+.tan-status-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px; font-size: 12px;
+  background: var(--p-primary-50, #eff6ff);
+  border: 1px solid var(--p-primary-200, #bfdbfe); border-top: none;
+  color: var(--p-text-color, #374151); gap: 8px;
+}
+.tan-status-info { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.tan-status-item { display: flex; align-items: center; gap: 4px; }
+.tan-status-item i { font-size: 12px; color: var(--p-primary-color, #3b82f6); }
+.tan-status-item strong { font-weight: 600; }
+.tan-status-actions { display: flex; align-items: center; gap: 4px; }
+.tan-status-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+  border: 1px solid var(--p-primary-200, #bfdbfe); border-radius: 4px;
+  background: var(--p-surface-0, #fff); color: var(--p-primary-color, #3b82f6);
+  font-size: 12px; cursor: pointer;
+}
+.tan-status-btn:hover { background: var(--p-primary-100, #dbeafe); }
+.tan-status-btn:disabled { opacity: .4; cursor: default; }
+.tan-status-btn--close {
+  padding: 3px 5px; border-color: transparent; background: transparent;
+  color: var(--p-surface-500, #6b7280);
+}
+.tan-status-btn--close:hover { color: var(--p-red-500, #ef4444); }

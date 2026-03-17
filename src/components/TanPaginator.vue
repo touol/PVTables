@@ -43,7 +43,7 @@ const selectedCount = () => Object.values(props.rowSelection).filter(Boolean).le
         <i class="pi pi-angle-left" />
       </button>
       <span class="tan-pag-info">
-        {{ first + 1 }}–{{ Math.min(first + currentPageSize, totalRecords) }} из {{ totalRecords }}
+        {{ currentPage }}/{{ totalPages }} | {{ first + 1 }}–{{ Math.min(first + currentPageSize, totalRecords) }} из {{ totalRecords }}
       </span>
       <button class="tan-pag-btn" @click="emit('go-next')"
         :disabled="first + currentPageSize >= totalRecords" title="Следующая">
