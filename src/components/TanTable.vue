@@ -10,7 +10,7 @@
  */
 import './TanTable.css'
 
-import { ref, computed, h, watch, nextTick, onMounted, customRef } from 'vue'
+import { ref, computed, h, watch, nextTick, onMounted, onBeforeUnmount, customRef } from 'vue'
 import {
   useVueTable,
   getCoreRowModel,
@@ -239,9 +239,51 @@ const truncateText = (text, max) => {
 // ─── Scroll height (localStorage per table) ──────────────────────────────
 const HEIGHT_KEY = `tan-scroll-height-${props.table}`
 const localScrollHeight = ref(localStorage.getItem(HEIGHT_KEY) || props.scrollHeight || '85vh')
-watch(localScrollHeight, v => { try { localStorage.setItem(HEIGHT_KEY, v || '85vh') } catch {} })
+const autoFitHeight = ref(props.autoFitHeight || false)
+
+watch(localScrollHeight, v => { try { if (!autoFitHeight.value) localStorage.setItem(HEIGHT_KEY, v || '85vh') } catch {} })
 watch(() => props.scrollHeight, v => {
   if (v && !localStorage.getItem(HEIGHT_KEY)) localScrollHeight.value = v
+})
+watch(() => props.autoFitHeight, v => { autoFitHeight.value = v })
+
+const calculateTableHeight = () => {
+  if (!autoFitHeight.value || !rootElRef.value) return
+  setTimeout(() => {
+    try {
+      const windowHeight = window.innerHeight
+      const rootRect = rootElRef.value.getBoundingClientRect()
+      const rootTop = rootRect.top
+      // Find toolbar, paginator and status bar heights inside root
+      const toolbar = rootElRef.value.querySelector('.p-toolbar')
+      const paginator = rootElRef.value.querySelector('.tan-paginator')
+      const statusBar = rootElRef.value.querySelector('.tan-status-bar')
+      const thead = rootElRef.value.querySelector('.tan-thead')
+      const toolbarH = toolbar ? toolbar.offsetHeight : 0
+      const paginatorH = paginator ? paginator.offsetHeight : 0
+      const statusBarH = statusBar ? statusBar.offsetHeight : 0
+      const theadH = 0 //thead ? thead.offsetHeight : 0
+      const bottomPadding = 20
+      const available = windowHeight - rootTop - toolbarH - paginatorH - statusBarH - theadH - bottomPadding
+      localScrollHeight.value = `${Math.max(200, available)}px`
+    } catch {}
+  }, 100)
+}
+
+const onAutoFitHeightToggle = () => {
+  if (autoFitHeight.value) {
+    calculateTableHeight()
+    window.addEventListener('resize', calculateTableHeight)
+  } else {
+    localScrollHeight.value = localStorage.getItem(HEIGHT_KEY) || props.scrollHeight || '85vh'
+    window.removeEventListener('resize', calculateTableHeight)
+  }
+}
+
+watch(autoFitHeight, () => onAutoFitHeightToggle())
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', calculateTableHeight)
 })
 
 // ─── Scroll container ref ─────────────────────────────────────────────────
@@ -498,6 +540,9 @@ const {
   hideIdGetter:        () => hideId.value,
   rootElGetter:        () => rootElRef.value,
 })
+
+// Пересчёт высоты при появлении/скрытии статусбара выделения
+watch(cellSelectionMode, () => { if (autoFitHeight.value) nextTick(calculateTableHeight) })
 
 // Helper: get lineItems index from TanStack row
 const getRowLineIndex = (row) => {
@@ -889,6 +934,12 @@ onMounted(async () => {
 
     // fitColumnsToContainer после загрузки данных — чтобы измерить реальное содержимое
     nextTick(() => { if (autoFitCols.value) fitColumnsToContainer() })
+
+    // autoFitHeight — рассчитать высоту после загрузки данных
+    if (autoFitHeight.value) {
+      calculateTableHeight()
+      window.addEventListener('resize', calculateTableHeight)
+    }
   } catch (err) {
     console.error('TanTable init error', err)
     notify('error', { detail: err.message }, true)
@@ -933,7 +984,7 @@ const openFilterSelectOptions = computed(() => {
 })
 
 // ─── Public API ───────────────────────────────────────────────────────────
-defineExpose({ refresh })
+defineExpose({ refresh, recalculateHeight: calculateTableHeight })
 </script>
 
 <template>
@@ -959,7 +1010,7 @@ defineExpose({ refresh })
     </div>
 
     <!-- ── Scroll container ── -->
-    <div ref="scrollRef" class="tan-scroll" :class="{ 'tan-cell-select-mode': cellSelectionMode }" :style="{ maxHeight: localScrollHeight }">
+    <div ref="scrollRef" class="tan-scroll" :class="{ 'tan-cell-select-mode': cellSelectionMode }" :style="autoFitHeight ? { height: localScrollHeight } : { maxHeight: localScrollHeight }">
       <table class="tan-table" :style="{ width: tableInstance.getTotalSize() + 'px' }">
 
         <!-- HEAD -->
@@ -1255,8 +1306,10 @@ defineExpose({ refresh })
     ref="settingsRef"
     :scrollHeight="localScrollHeight"
     :autoFitCols="autoFitCols"
+    :autoFitHeight="autoFitHeight"
     @update:scrollHeight="localScrollHeight = $event"
     @update:autoFitCols="autoFitCols = $event"
+    @update:autoFitHeight="autoFitHeight = $event"
     @fit-columns="fitColumnsToContainer()"
     @save-local="saveWidthsToLocal(); notify('success', { detail: 'Ширина сохранена локально' })"
     @save-server="saveFieldsStyleToServer()"

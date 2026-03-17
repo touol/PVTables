@@ -8,6 +8,7 @@
     :filters="props.filters"
     :sorting="sorting"
     :scrollHeight="tableScrollHeight"
+    :autoFitHeight="autoFitHeight"
     :child="child"
     :emptyRowsCount="emptyRowsCount"
     @get-response="emit('get-response', $event)"
@@ -683,8 +684,7 @@
   // Переключение движка таблицы: 'primevue' (по умолчанию) или 'tanstack'
   // Сохраняется в localStorage отдельно для каждой таблицы
   const TAN_TABLE_KEY = `pvtables-engine-${props.table}`
-  // const useTanTable = ref(localStorage.getItem(TAN_TABLE_KEY) !== 'primevue')
-  const useTanTable = ref(false)
+  const useTanTable = ref(localStorage.getItem(TAN_TABLE_KEY) !== 'primevue')
   const toggleTanTable = () => {
     useTanTable.value = !useTanTable.value
     localStorage.setItem(TAN_TABLE_KEY, useTanTable.value ? 'tanstack' : 'primevue')
@@ -1281,8 +1281,10 @@
   }
   
   // Экспортируем методы для внешнего использования
-  defineExpose({ 
-    refresh, 
-    recalculateHeight: calculateTableHeight 
+  defineExpose({
+    refresh,
+    recalculateHeight: (...args) => useTanTable.value
+      ? tanTableRef.value?.recalculateHeight?.(...args)
+      : calculateTableHeight(...args)
   });
 </script>

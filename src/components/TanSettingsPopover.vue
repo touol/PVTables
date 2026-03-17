@@ -8,11 +8,13 @@ import InputText   from 'primevue/inputtext'
 const props = defineProps({
   scrollHeight:   { type: String,  default: '85vh' },
   autoFitCols:    { type: Boolean, default: true },
+  autoFitHeight:  { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
   'update:scrollHeight',
   'update:autoFitCols',
+  'update:autoFitHeight',
   'fit-columns',
   'save-local',
   'save-server',
@@ -37,12 +39,23 @@ defineExpose({ toggle })
         <div style="font-weight:600; font-size:13px; margin-bottom:0.5rem;">
           <i class="pi pi-arrows-v" style="margin-right:4px" /> Высота таблицы
         </div>
+        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
+          <ToggleSwitch
+            :modelValue="autoFitHeight"
+            @update:modelValue="emit('update:autoFitHeight', $event)"
+            inputId="tan-autofit-height-toggle"
+          />
+          <label for="tan-autofit-height-toggle" style="cursor:pointer; font-size:13px; flex:1;">
+            Автовысота
+          </label>
+        </div>
         <InputText
           :modelValue="scrollHeight"
           @update:modelValue="emit('update:scrollHeight', $event)"
           placeholder="85vh"
           style="width:100%"
           size="small"
+          :disabled="autoFitHeight"
         />
         <small style="color:#888; font-size:11px; display:block; margin-top:3px;">
           Например: 85vh, 600px, calc(100vh - 200px)
