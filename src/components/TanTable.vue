@@ -368,7 +368,14 @@ const actionsColDef = computed(() => ({
   cell: ({ row }) => h('div', { style: 'display:flex;gap:2px;align-items:center' }, [
     ...rowActions.value.map(action =>
       action.compiledTemplate
-        ? null
+        ? h(action.compiledTemplate, {
+            data: row.original,
+            columns: columns.value,
+            table: props.table,
+            filters,
+            action,
+            'onAction-click': () => action.click?.(row.original, columns.value, props.table, filters),
+          })
         : h('button', {
             class: `tan-action-btn ${action.class || ''}`,
             title: action.label || '',
@@ -1020,6 +1027,10 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight })
               v-for="header in hg.headers" :key="header.id"
               :style="{ width: header.getSize() + 'px' }"
               class="tan-th"
+              :class="{
+                'tan-frozen-right': actionsFrozen === 'right' && header.id === '__actions__',
+                'tan-frozen-left':  actionsFrozen === 'left'  && header.id === '__actions__',
+              }"
             >
               <div class="tan-th-label">
                 <div class="tan-th-text"
@@ -1083,6 +1094,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight })
                   'tan-td-editing': activeInline?.cellId === cell.id,
                   'tan-td-selected': cellSelectionMode && isCellSelected(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
                   'tan-td-fill-range': cellSelectionMode && isCellInFillRange(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
+                  'tan-frozen-right': actionsFrozen === 'right' && cell.column.id === '__actions__',
+                  'tan-frozen-left':  actionsFrozen === 'left'  && cell.column.id === '__actions__',
                 }"
                 @click="cell.column.columnDef.meta && onCellClick(cell, $event)"
                 @dblclick="cell.column.columnDef.meta && onCellDblClick(cell, $event)"
