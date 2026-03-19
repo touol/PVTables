@@ -5,6 +5,7 @@ import apiCtor from './api'
 const props = defineProps({
   openFilterColId:   { type: String,  default: null },
   filterPopoverPos:  { type: Object,  default: () => ({ top: 0, left: 0 }) },
+  inline:            { type: Boolean, default: false },  // встроенный режим (без Teleport и позиционирования)
   colType:           { type: String,  default: 'text' },
   colMeta:           { type: Object,  default: null },  // full column definition
   columnLabel:       { type: String,  default: '' },
@@ -169,24 +170,25 @@ const getConstraintDisplay = (c, idx) => {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport :disabled="inline" to="body">
     <div
-      v-if="openFilterColId"
+      v-if="openFilterColId || inline"
       class="tan-filter-popover"
-      :style="{ top: filterPopoverPos.top + 'px', left: filterPopoverPos.left + 'px' }"
+      :class="{ 'tan-filter-popover-inline': inline }"
+      :style="inline ? {} : { top: filterPopoverPos.top + 'px', left: filterPopoverPos.left + 'px' }"
       @keydown.esc="emit('close')"
     >
       <div class="tan-filter-popover-inner">
 
-        <!-- Заголовок -->
-        <div class="tan-filter-popover-label">
+        <!-- Заголовок (только в floating режиме) -->
+        <div v-if="!inline" class="tan-filter-popover-label">
           <i class="pi pi-filter" />
           {{ columnLabel || openFilterColId }}
         </div>
 
         <!-- ═══ Секция 1: Серверный фильтр ═══ -->
         <div class="tan-filter-section">
-          <div class="tan-filter-section-title">Фильтр</div>
+          <div v-if="!inline" class="tan-filter-section-title">Фильтр</div>
 
           <!-- Оператор -->
           <select

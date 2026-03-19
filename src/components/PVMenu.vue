@@ -1,5 +1,37 @@
 <template>
     <span v-if="loading">Загрузка</span>
+
+    <!-- ── Мобильный вид: кнопка + Drawer ─────────────────────────────── -->
+    <template v-else-if="useMobileView">
+        <Button
+            icon="pi pi-bars"
+            class="pv-menu-mobile-btn"
+            text
+            severity="secondary"
+            @click="drawerVisible = true"
+            aria-label="Меню"
+        />
+        <Drawer v-model:visible="drawerVisible" position="left" style="width:280px">
+            <template #header>
+                <span class="font-semibold text-base">Меню</span>
+            </template>
+            <PanelMenu :model="menuItems" class="pv-menu-panel">
+                <template #item="{ item }">
+                    <a
+                        class="pv-menu-panel-item"
+                        :href="item.url || '#'"
+                        @click.prevent="item.url ? navigate(item.url) : undefined"
+                    >
+                        <span v-if="item.iconSvg" class="menu-icon" v-html="item.iconSvg" />
+                        <i v-else-if="item.icon && item.icon !== 'custom-icon'" :class="item.icon" />
+                        <span>{{ item.label }}</span>
+                    </a>
+                </template>
+            </PanelMenu>
+        </Drawer>
+    </template>
+
+    <!-- ── Десктоп: горизонтальный Menubar ────────────────────────────── -->
     <Menubar v-else :model="menuItems" class="pv-menu">
         <template #item="{ item, props, hasSubmenu }">
             <a class="flex align-items-center" v-bind="props.action" :href="item.url">
@@ -13,10 +45,14 @@
 </template>
 
 <script setup>
-import Menubar from 'primevue/menubar';
+import Menubar   from 'primevue/menubar';
+import PanelMenu from 'primevue/panelmenu';
+import Drawer    from 'primevue/drawer';
+import Button    from 'primevue/button';
 import { ref, onMounted } from 'vue';
 import apiCtor from './api';
 import { useNotifications } from "./useNotifications";
+import { useMobileLayout } from '../composables/useMobileLayout';
 
 const props = defineProps({
     table: {
@@ -28,6 +64,8 @@ const props = defineProps({
 const loading = ref(true);
 const api = apiCtor(props.table);
 const { notify } = useNotifications();
+const { useMobileView } = useMobileLayout();
+const drawerVisible = ref(false);
 
 const menuItems = ref([]);
 const gtsAPIUniTreeClass = ref({});
@@ -88,6 +126,15 @@ const convertSlTreeToPanelMenu = (nodes) => {
         });
 };
 
+const navigate = (url) => {
+    drawerVisible.value = false;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        window.open(url, '_blank');
+    } else {
+        window.location.href = url;
+    }
+};
+
 const handleMenuClick = (node) => {
     // Если есть URL, переходим по нему
     if (node.data.url) {
@@ -133,7 +180,7 @@ defineExpose({ refresh });
     height: 16px;
 }
 
-/* Стили для горизонтального меню */
+/* Десктоп Menubar */
 .pv-menu :deep(.p-menubar) {
     border-radius: 6px;
 }
@@ -160,5 +207,31 @@ defineExpose({ refresh });
 
 .pv-menu :deep(.p-submenu-list) {
     min-width: 200px;
+}
+
+/* Мобильная кнопка */
+.pv-menu-mobile-btn {
+    font-size: 1.25rem;
+}
+
+/* PanelMenu в Drawer */
+.pv-menu-panel {
+    width: 100%;
+}
+
+.pv-menu-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 6px;
+    transition: background 0.15s;
+    width: 100%;
+}
+
+.pv-menu-panel-item:hover {
+    background: var(--p-surface-100, #f3f4f6);
 }
 </style>

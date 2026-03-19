@@ -1,7 +1,22 @@
 <template>
+  <!-- ── Mobile card list ────────────────────────────────────────────── -->
+  <TanMobileList
+    v-if="useMobileView"
+    :table="table"
+    :actions="actions"
+    :filters="props.filters"
+    :sorting="sorting"
+    :scrollHeight="tableScrollHeight"
+    :autoFitHeight="autoFitHeight"
+    :scrollMode="mobileScrollMode"
+    @get-response="emit('get-response', $event)"
+    @refresh-table="emit('refresh-table', $event)"
+    @switch-to-desktop="setForceDesktop(true)"
+  />
+
   <!-- ── TanStack Table (бета) — полная замена ─────────────────────── -->
   <TanTable
-    v-if="useTanTable"
+    v-else-if="useTanTable"
     ref="tanTableRef"
     :table="table"
     :actions="actions"
@@ -560,6 +575,8 @@
   import PVPrintAction from './components/PVPrintAction.vue'
   import StatusBar from './components/DataTable/StatusBar.vue'
   import TanTable from './components/TanTable.vue'
+  import TanMobileList from './components/TanMobileList.vue'
+  import { useMobileLayout } from './composables/useMobileLayout'
 
   import { useActionsCaching } from "./composables/useActionsCaching";
   import { useVirtualScroll } from "./composables/useVirtualScroll";
@@ -689,6 +706,11 @@
     useTanTable.value = !useTanTable.value
     localStorage.setItem(TAN_TABLE_KEY, useTanTable.value ? 'tanstack' : 'primevue')
   }
+  // ──────────────────────────────────────────────────────────────────
+
+  // ── Mobile layout ──────────────────────────────────────────────────
+  const { useMobileView, setForceDesktop } = useMobileLayout()
+  const mobileScrollMode = computed(() => (props.autoFitHeight || props.child) ? 'container' : 'window')
   // ──────────────────────────────────────────────────────────────────
 
   onMounted(async () => {

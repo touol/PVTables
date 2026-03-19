@@ -243,10 +243,14 @@
 
 /* ── Filter popover (global — Teleport to="body") ── */
 .tan-filter-popover { position: fixed; z-index: 9999; min-width: 260px; max-width: 360px; }
+.tan-filter-popover-inline { position: static; z-index: auto; min-width: 0; max-width: none; }
 .tan-filter-popover-inner {
   background: var(--p-surface-0, #fff); border: 1px solid var(--p-surface-300, #dee2e6);
   border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
   padding: 10px 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.tan-filter-popover-inline .tan-filter-popover-inner {
+  border: none; box-shadow: none; padding: 4px 0;
 }
 .tan-filter-popover-label {
   font-size: 12px; font-weight: 600; color: var(--p-text-color, #374151);

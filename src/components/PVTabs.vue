@@ -351,3 +351,15 @@
     emit('update-treenode-title', event)
   }
 </script>
+
+<style>
+@media (max-width: 767px) {
+  .p-tablist-tab-list {
+    flex-wrap: wrap;
+  }
+  .p-tablist-tab-list .p-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+</style>

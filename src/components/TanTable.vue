@@ -43,6 +43,7 @@ import { useTanColSizing }     from '../composables/useTanColSizing'
 import { useRowHighlight }    from '../composables/useRowHighlight'
 import { useTanFilterPopover } from '../composables/useTanFilterPopover'
 import { useTanCellSelection } from '../composables/useTanCellSelection'
+import { useMobileLayout }    from '../composables/useMobileLayout'
 
 import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
@@ -289,6 +290,10 @@ onBeforeUnmount(() => {
 // ─── Scroll container ref ─────────────────────────────────────────────────
 const scrollRef = ref(null)
 const rootElRef = ref(null)
+
+// ─── Mobile layout ────────────────────────────────────────────────────────
+const { isMobile, forceDesktop, setForceDesktop } = useMobileLayout()
+const showMobileSwitch = computed(() => isMobile.value && forceDesktop.value)
 
 // Размер кнопки действия — читается из CSS-переменной PrimeVue после монтирования
 const actionBtnSize = ref(32)
@@ -1002,6 +1007,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight })
       :headActions="headActions"
       :topFilters="topFilters"
       :cellSelectionMode="cellSelectionMode"
+      :showMobileSwitch="showMobileSwitch"
       @head-action="(action, e) => action.head_click(e, props.table, filters, selectedlineItems)"
       @set-top-filter="(filter) => onSetTopFilter?.(filter)"
       @clear="onClearFilter"
@@ -1009,6 +1015,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight })
       @settings="toggleSettings"
       @switch-engine="emit('switch-engine')"
       @toggle-cell-selection="toggleCellSelectionMode"
+      @switch-mobile="setForceDesktop(false)"
     />
 
     <!-- ── Loading overlay ── -->

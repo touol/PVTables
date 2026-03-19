@@ -21,6 +21,7 @@ export function useTanFilterPopover({
   getACContentFn,
   getSelectContentFn,
   formatDateFn,
+  onChecklistChange,  // callback(colId, checkedSet) — для серверного режима
 }) {
   const openFilterColId  = ref(null)
   const filterPopoverPos = ref({ top: 0, left: 0 })
@@ -227,14 +228,17 @@ export function useTanFilterPopover({
 
     const table = tableInstanceGetter()
     const column = table?.getColumn(colId)
-    if (!column) return
 
-    // Все выбраны или ничего — снимаем фильтр
-    if (state.checked.size === state.all.length || state.checked.size === 0) {
-      column.setFilterValue(undefined)
-    } else {
-      // Ставим фильтр: значение = Set выбранных
-      column.setFilterValue(state.checked)
+    if (column) {
+      // Клиентский режим (TanStack Table)
+      if (state.checked.size === state.all.length || state.checked.size === 0) {
+        column.setFilterValue(undefined)
+      } else {
+        column.setFilterValue(state.checked)
+      }
+    } else if (onChecklistChange) {
+      // Серверный режим — передаём Set наружу
+      onChecklistChange(colId, state.checked, state.all)
     }
   }
 
@@ -315,5 +319,19 @@ export function useTanFilterPopover({
     toggleChecklistValue,
     toggleChecklistAll,
     isFilterActive,
+    ensureServerFilter,
+    initColFilter: (colId, colType) => {
+      ensureServerFilter(colId, colType)
+      const uniqueVals = buildUniqueValues(colId)
+      const prev = colChecklistState.value[colId]
+      if (!prev) {
+        colChecklistState.value[colId] = {
+          all: uniqueVals,
+          checked: new Set(uniqueVals.map(v => v.value)),
+        }
+      } else {
+        colChecklistState.value[colId] = { ...prev, all: uniqueVals }
+      }
+    },
   }
 }

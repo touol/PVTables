@@ -12,6 +12,7 @@ const props = defineProps({
   headActions:        { type: Array,   default: () => [] },
   topFilters:         { type: Object,  default: () => ({}) },
   cellSelectionMode:  { type: Boolean, default: false },
+  showMobileSwitch:   { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -22,6 +23,7 @@ const emit = defineEmits([
   'settings',
   'switch-engine',
   'toggle-cell-selection',
+  'switch-mobile',
 ])
 </script>
 
@@ -64,6 +66,9 @@ const emit = defineEmits([
         v-tooltip.bottom="'Сбросить фильтры'" @click="emit('clear')" />
       <Button icon="pi pi-cog"
         v-tooltip.bottom="'Настройки'" @click="emit('settings', $event)" />
+      <Button v-if="showMobileSwitch" icon="pi pi-mobile"
+        v-tooltip.bottom="'Мобильный вид'"
+        @click="emit('switch-mobile')" />
       <Button icon="pi pi-th-large" class="p-button-info"
         v-tooltip.bottom="'Движок: TanStack Table — нажать для PrimeVue'"
         @click="emit('switch-engine')" />
