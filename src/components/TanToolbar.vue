@@ -13,6 +13,8 @@ const props = defineProps({
   topFilters:         { type: Object,  default: () => ({}) },
   cellSelectionMode:  { type: Boolean, default: false },
   showMobileSwitch:   { type: Boolean, default: false },
+  canUndo:            { type: Boolean, default: false },
+  canRedo:            { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -24,6 +26,8 @@ const emit = defineEmits([
   'switch-engine',
   'toggle-cell-selection',
   'switch-mobile',
+  'undo',
+  'redo',
 ])
 </script>
 
@@ -56,6 +60,10 @@ const emit = defineEmits([
     </template>
 
     <template #end>
+      <Button icon="pi pi-undo" :disabled="!canUndo"
+        v-tooltip.bottom="'Отменить (Ctrl+Z)'" @click="emit('undo')" />
+      <Button icon="pi pi-undo" style="transform:scaleX(-1)" :disabled="!canRedo"
+        v-tooltip.bottom="'Повторить (Ctrl+Y)'" @click="emit('redo')" />
       <Button icon="pi pi-check-square"
         :class="cellSelectionMode ? 'p-button-info' : 'p-button-secondary'"
         v-tooltip.bottom="'Выделение ячеек (Ctrl+Shift+S)'"

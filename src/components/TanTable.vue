@@ -70,7 +70,7 @@ const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine'])
 // ─── API + Notifications ──────────────────────────────────────────────────
 const api = apiCtor(props.table)
 const { notify } = useNotifications()
-const { cacheAction } = useActionsCaching()
+const { cacheAction, undo, redo, canUndo, canRedo, init: initUndoRedo } = useActionsCaching()
 
 // ─── State (инициализируется в onMounted из api.options()) ────────────────
 const columns     = ref([{ field: 'id', label: 'ID' }])
@@ -924,8 +924,10 @@ onMounted(async () => {
       ref({}),
       childComponentRefs,
       { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState },
-      selectedlineItems, fieldsRef, activeInline
+      selectedlineItems, fieldsRef, activeInline,
+      cacheAction,
     )
+    initUndoRedo(api, lineItems, findIndexById, crudComposable.skipScroll, refresh)
     lineItem                = crudComposable.lineItem
     lineItemDialog          = crudComposable.lineItemDialog
     deleteLineItemDialog    = crudComposable.deleteLineItemDialog
@@ -1077,6 +1079,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       :topFilters="topFilters"
       :cellSelectionMode="cellSelectionMode"
       :showMobileSwitch="showMobileSwitch"
+      :canUndo="canUndo"
+      :canRedo="canRedo"
       @head-action="(action, e) => action.head_click(e, props.table, filters, selectedlineItems)"
       @set-top-filter="(filter) => onSetTopFilter?.(filter)"
       @clear="onClearFilter"
@@ -1085,6 +1089,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       @switch-engine="emit('switch-engine')"
       @toggle-cell-selection="toggleCellSelectionMode"
       @switch-mobile="setForceDesktop(false)"
+      @undo="undo"
+      @redo="redo"
     />
 
     <!-- ── Loading overlay ── -->

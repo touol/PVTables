@@ -25,6 +25,7 @@ export function useTanCRUD(
   selectedlineItemsRef = null,
   fieldsRef = null,       // Ref<fields> — для updateEmptyRow после insert
   activeInline = null,    // Ref — для повторного фокуса после обновления ячейки
+  cacheAction = null,     // из useActionsCaching — опционально
 ) {
   const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
 
@@ -92,6 +93,7 @@ export function useTanCRUD(
 
     if (lineItem.value.id) {
       try {
+        const dataBefore = { ...lineItem.value };
         const response = await api.update(lineItem.value, params);
         if (!response.success) notify('error', { detail: response.message }, true);
         emit('get-response', { table: props.table, action: 'update', response });
@@ -111,6 +113,7 @@ export function useTanCRUD(
             lineItems.value = updated;
           }
         }
+        cacheAction?.({ type: 'update', id: dataBefore.id, source: 'modal', dataBefore, dataAfter: response.data?.object ?? lineItem.value });
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (e) {
@@ -139,7 +142,9 @@ export function useTanCRUD(
 
   const deleteLineItem = async () => {
     try {
+      const deletedRow = { ...lineItem.value };
       await api.delete({ ids: lineItem.value.id, filters: prepFilters() });
+      cacheAction?.({ type: 'delete', deletedIds: [deletedRow.id], deletedRows: [deletedRow], filters: prepFilters() });
       skipScroll();
       lineItems.value = lineItems.value.filter(v => v.id !== lineItem.value.id);
       deleteLineItemDialog.value = false;
@@ -155,9 +160,11 @@ export function useTanCRUD(
   };
 
   const deleteSelectedLineItems = async () => {
-    const ids = selectedlineItems.value.map(l => l.id).join(',');
+    const deletedRows = [...(selectedlineItems.value ?? [])];
+    const ids = deletedRows.map(l => l.id).join(',');
     try {
       await api.delete({ ids, filters: prepFilters() });
+      cacheAction?.({ type: 'delete', deletedIds: deletedRows.map(r => r.id), deletedRows, filters: prepFilters() });
       skipScroll();
       lineItems.value = lineItems.value.filter(v => !selectedlineItems.value.includes(v));
       deleteLineItemsDialog.value = false;
@@ -228,6 +235,7 @@ export function useTanCRUD(
           // Переприсвоение: TanStack видит смену ссылки, watch(lineItems) стреляет
           skipScroll();
           lineItems.value = [...lineItems.value];
+          cacheAction?.({ type: 'insert', insertedId: newObj.id, insertedData: newObj, filters: prepFilters?.() });
           if (response.data?.customFields) {
             for (const key in response.data.customFields) {
               customFields.value[key] = response.data.customFields[key];
@@ -253,6 +261,7 @@ export function useTanCRUD(
     }
 
     // ── Обычное обновление ────────────────────────────────────────────────
+    const dataBefore = { ...lineItems.value[findIndexById(Number(data.id))] ?? data };
     const payload = { id: data.id, [field]: newValue, update_from_row: 1 };
     try {
       const response = await api.update(payload, { filters: prepFilters?.() });
@@ -288,6 +297,8 @@ export function useTanCRUD(
           row_setting.value[key] = response.data.row_setting[key];
         }
       }
+      const dataAfter = response.data?.object ?? { ...dataBefore, [field]: newValue };
+      cacheAction?.({ type: 'update', id: data.id, field, dataBefore, dataAfter, filters: prepFilters?.() });
       if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
     } catch (e) {
       notify('error', { detail: e.message }, true);
@@ -355,6 +366,7 @@ export function useTanCRUD(
     saveCellUpdate,
 
     // Scroll suppression (использовать в watch(lineItems) TanTable.vue)
+    skipScroll,
     consumeSkip,
 
     // Совместимость
