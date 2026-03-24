@@ -38,7 +38,7 @@ export function usePVTableActions({
   modalFormAction,
   modalFormRowData,
   modalFormType,
-  modalFormColumns
+  modalFormColumns,
 }) {
   
   /**
