@@ -228,6 +228,16 @@ export function useTanCRUD(
           // Переприсвоение: TanStack видит смену ссылки, watch(lineItems) стреляет
           skipScroll();
           lineItems.value = [...lineItems.value];
+          if (response.data?.customFields) {
+            for (const key in response.data.customFields) {
+              customFields.value[key] = response.data.customFields[key];
+            }
+          }
+          if (response.data?.row_setting) {
+            for (const key in response.data.row_setting) {
+              row_setting.value[key] = response.data.row_setting[key];
+            }
+          }
           if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
         } else {
           resolveInsert(null);
@@ -268,6 +278,11 @@ export function useTanCRUD(
         });
       }
 
+      if (response.data?.customFields) {
+        for (const key in response.data.customFields) {
+          customFields.value[key] = response.data.customFields[key];
+        }
+      }
       if (response.data?.row_setting) {
         for (const key in response.data.row_setting) {
           row_setting.value[key] = response.data.row_setting[key];
