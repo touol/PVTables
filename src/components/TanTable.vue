@@ -44,6 +44,7 @@ import { useRowHighlight }    from '../composables/useRowHighlight'
 import { useTanFilterPopover } from '../composables/useTanFilterPopover'
 import { useTanCellSelection } from '../composables/useTanCellSelection'
 import { useMobileLayout }    from '../composables/useMobileLayout'
+import { useTanRowDrag }     from '../composables/useTanRowDrag'
 
 import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
@@ -80,6 +81,7 @@ const selectSettings     = ref({})
 const row_class_trigger  = ref({})
 const globalFilterFields = ref([])
 const actionsFrozen = ref(null)
+const rowDrag       = ref(false)
 const form          = ref({})
 const actions1      = ref({})
 
@@ -323,6 +325,7 @@ const {
   speedDialEnabled: SpeedDialEnabled,
   rowsGetter: () => tableInstance?.getRowModel?.().rows.map(r => r.original) ?? [],
   actionBtnSize,
+  rowDrag,
 })
 
 // ─── TanStack column definitions ──────────────────────────────────────────
@@ -331,6 +334,13 @@ const stringIncludesFilter = (row, columnId, filterValue) => {
   // Чеклист фильтр — Set значений
   if (filterValue instanceof Set) return filterValue.has(String(val ?? ''))
   return String(val ?? '').toLowerCase().includes(String(filterValue).toLowerCase())
+}
+
+const dragColDef = {
+  id: '__drag__', size: 28, minSize: 28, maxSize: 28,
+  enableResizing: false, enableSorting: false, enableColumnFilter: false,
+  header: () => '',
+  cell: () => h('span', { class: 'tan-drag-handle', title: 'Перетащить' }, '⠿'),
 }
 
 const selectionColDef = {
@@ -457,6 +467,7 @@ const dataColDefs = computed(() =>
 const hasExpandRows = computed(() => !!table_tree.value)
 
 const allColDefs = computed(() => [
+  ...(rowDrag.value ? [dragColDef] : []),
   selectionColDef,
   ...(hasExpandRows.value ? [expandColDef] : []),
   ...dataColDefs.value,
@@ -722,7 +733,7 @@ const virtualizer = useVirtualizer({
 watch(lineItems, () => {
   const suppress = consumeSkip?.()
   nextTick(() => {
-    if (!suppress) {
+    if (!suppress && !_scrollToLastPending) {
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
       // После обновления lineItems cell.id может измениться (пустая строка → реальная запись).
@@ -809,6 +820,7 @@ onMounted(async () => {
     if (response.data.actions_frozen)    actionsFrozen.value = response.data.actions_frozen
     if (response.data.row_class_trigger) row_class_trigger.value = response.data.row_class_trigger
     if (response.data.table_tree)        table_tree.value = response.data.table_tree
+    if (response.data.row_drag)          rowDrag.value = true
 
     // Top filters
     if (response.data.filters) {
@@ -849,6 +861,29 @@ onMounted(async () => {
     // Инициализация ширин колонок (ls → server → auto-fit)
     if (response.data.fields_style) serverFieldsStyle.value = response.data.fields_style
     initColumnWidths()
+    // Для дочерних таблиц — масштабировать сохранённые ширины под реальный контейнер.
+    // Отступы фиксированы: .tan-expansion-td padding 16px*2=32 + .p-3 12px*2=24 = 56px
+    if (props.child && !autoFitCols.value) {
+      const savedWidths = { ...columnSizing.value }
+      const totalSaved = Object.values(savedWidths).reduce((s, w) => s + w, 0)
+      if (totalSaved > 0) {
+        const containerWidth = totalSaved - 120
+        const scale = containerWidth / totalSaved
+        const fields = Object.keys(savedWidths)
+        const newSizing = {}
+        let distributed = 0
+        fields.forEach((field, i) => {
+          if (i === fields.length - 1) {
+            newSizing[field] = Math.max(40, containerWidth - distributed)
+          } else {
+            const w = Math.max(40, Math.floor(savedWidths[field] * scale))
+            newSizing[field] = w
+            distributed += w
+          }
+        })
+        columnSizing.value = newSizing
+      }
+    }
 
     // Filters composable
     let composableLoadLazyData = null
@@ -942,6 +977,7 @@ onMounted(async () => {
     SpeedDialEnabled.value = processed.SpeedDialEnabled
     actions1.value         = response.data.actions
 
+
     await loadLazyData()
 
     // fitColumnsToContainer после загрузки данных — чтобы измерить реальное содержимое
@@ -995,8 +1031,41 @@ const openFilterSelectOptions = computed(() => {
   return rows ?? []
 })
 
+// ─── Row drag ─────────────────────────────────────────────────────────────
+const {
+  draggingRowKey, dragOverRowKey,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
+} = useTanRowDrag({
+  lineItems,
+  onReorder: async (newOrder) => {
+    await api.action('sortable_reorder', { order: newOrder })
+  },
+})
+
 // ─── Public API ───────────────────────────────────────────────────────────
-defineExpose({ refresh, recalculateHeight: calculateTableHeight })
+let _scrollToLastPending = false
+
+function scrollToLast() {
+  // Ищем последнюю реальную (не empty) строку
+  let idx = flatItems.value.length - 1
+  while (idx >= 0 && flatItems.value[idx]?.type === 'row' && isEmptyRow(flatItems.value[idx].row.original.id)) {
+    idx--
+  }
+  if (idx >= 0) virtualizer.value.scrollToIndex(idx, { align: 'center' })
+}
+
+function refreshAndScrollToLast() {
+  _scrollToLastPending = true
+  watch(lineItems, () => {
+    requestAnimationFrame(() => {
+      _scrollToLastPending = false
+      scrollToLast()
+    })
+  }, { once: true })
+  refresh()
+}
+
+defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, refreshAndScrollToLast })
 </script>
 
 <template>
@@ -1090,7 +1159,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight })
                 isEmptyRow(flatItems[vItem.index]?.row.original?.id)
                   ? (isEditableEmptyRow(flatItems[vItem.index]?.row.original?._rowKey) ? 'tan-row-empty' : 'tan-row-empty-locked')
                   : '',
+                { 'tan-row-dragging':  rowDrag && draggingRowKey === flatItems[vItem.index]?.row.original?._rowKey },
+                { 'tan-row-drag-over': rowDrag && dragOverRowKey === flatItems[vItem.index]?.row.original?._rowKey },
               ]"
+              :draggable="rowDrag && !isEmptyRow(flatItems[vItem.index]?.row.original?.id) ? 'true' : 'false'"
+              @dragstart="rowDrag && onDragStart($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragover="rowDrag && onDragOver($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragleave="rowDrag && onDragLeave()"
+              @drop="rowDrag && onDrop($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragend="rowDrag && onDragEnd()"
             >
               <td
                 v-for="cell in flatItems[vItem.index]?.row.getVisibleCells()"

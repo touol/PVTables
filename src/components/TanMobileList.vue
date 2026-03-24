@@ -852,7 +852,25 @@ onMounted(async () => {
 })
 
 // ─── expose refresh to parent ─────────────────────────────────────────────
-defineExpose({ refresh })
+function scrollToLast() {
+  const last = lineItems.value.length - 1
+  if (last < 0) return
+  if (props.scrollMode === 'container') {
+    virtualizer.value.scrollToIndex(last, { align: 'end' })
+  } else {
+    windowVirtualizer.value.scrollToIndex(last, { align: 'end' })
+  }
+}
+
+function refreshAndScrollToLast() {
+  watch(lineItems, async () => {
+    await nextTick()
+    scrollToLast()
+  }, { once: true })
+  refresh()
+}
+
+defineExpose({ refresh, scrollToLast, refreshAndScrollToLast })
 </script>
 
 <style scoped>

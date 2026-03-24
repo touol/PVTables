@@ -12,7 +12,7 @@ import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
  * @param {Ref}      rowActions      - computed/ref с массивом row-actions
  * @param {Ref}      visibleColumns  - computed/ref с массивом видимых колонок
  */
-export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow, rowActions, visibleColumns, tableTree, speedDialEnabled, rowsGetter, actionBtnSize }) {
+export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow, rowActions, visibleColumns, tableTree, speedDialEnabled, rowsGetter, actionBtnSize, rowDrag }) {
   const WIDTH_LS_KEY = `pvtables-${tableName}-column-widths-v2`
   const AUTOFIT_KEY  = `tan-autofit-${tableName}-v2`
   // Очистить устаревшие ключи предыдущих версий
@@ -132,6 +132,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
     const btnSlot = (actionBtnSize?.value ?? 32) + 2  // кнопка + gap
     const fixedWidth =
+      (rowDrag?.value ? 28 : 0) +   // __drag__
       38 +   // __select__
       (tableTree?.value ? 34 : 0) +   // __expand__ (только для table_tree)
       (actionsRow.value ? (rowActions.value.length * btnSlot + (speedDialEnabled?.value ? btnSlot : 0) + 8) : 0)

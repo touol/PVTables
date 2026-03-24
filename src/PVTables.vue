@@ -2,6 +2,7 @@
   <!-- ── Mobile card list ────────────────────────────────────────────── -->
   <TanMobileList
     v-if="useMobileView"
+    ref="mobileListRef"
     :table="table"
     :actions="actions"
     :filters="props.filters"
@@ -667,6 +668,7 @@
   const rowsPerPage = ref(10);
   const dt = ref();
   const tanTableRef = ref();
+  const mobileListRef = ref();
   const columns = ref([{ field: "id", label: "ID" }]);
   let fields = {};
   let cur_actions = ref([]);
@@ -1307,6 +1309,12 @@
     refresh,
     recalculateHeight: (...args) => useTanTable.value
       ? tanTableRef.value?.recalculateHeight?.(...args)
-      : calculateTableHeight(...args)
+      : calculateTableHeight(...args),
+    scrollToLast: () => useMobileView.value
+      ? mobileListRef.value?.scrollToLast?.()
+      : tanTableRef.value?.scrollToLast?.(),
+    refreshAndScrollToLast: () => useMobileView.value
+      ? mobileListRef.value?.refreshAndScrollToLast?.()
+      : tanTableRef.value?.refreshAndScrollToLast?.(),
   });
 </script>

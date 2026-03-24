@@ -84,7 +84,7 @@
 }
 
 /* ── Expansion ── */
-.tan-expansion-row { display: flex; }
+.tan-expansion-row { display: flex; min-width: 100%; }
 .tan-expansion-td {
   padding: 10px 16px; width: 100%; box-sizing: border-box;
   background: var(--p-surface-50, #fafafa);
@@ -453,3 +453,13 @@
   color: var(--p-surface-500, #6b7280);
 }
 .tan-status-btn--close:hover { color: var(--p-red-500, #ef4444); }
+
+
+/* ── Row drag-and-drop ── */
+.tan-drag-handle {
+  cursor: grab; font-size: 14px; color: var(--p-surface-400, #9ca3af);
+  display: block; text-align: center; user-select: none; line-height: 1;
+}
+.tan-drag-handle:active { cursor: grabbing; }
+.tan-row-dragging { opacity: 0.4; }
+.tan-row-drag-over td { border-top: 2px solid var(--p-primary-color, #3b82f6) !important; }
