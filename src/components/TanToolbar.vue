@@ -7,6 +7,7 @@ import Tooltip  from 'primevue/tooltip'
 const vTooltip = Tooltip
 import PVAutoComplete      from './PVAutoComplete.vue'
 import PVMultiAutoComplete from './PVMultiAutoComplete.vue'
+import PVPrintAction       from './PVPrintAction.vue'
 
 const props = defineProps({
   headActions:        { type: Array,   default: () => [] },
@@ -15,6 +16,10 @@ const props = defineProps({
   showMobileSwitch:   { type: Boolean, default: false },
   canUndo:            { type: Boolean, default: false },
   canRedo:            { type: Boolean, default: false },
+  actions1:           { type: Object,  default: () => ({}) },
+  table:              { type: String,  default: '' },
+  filters:            { type: Object,  default: () => ({}) },
+  api:                { type: Object,  default: null },
 })
 
 const emit = defineEmits([
@@ -28,6 +33,8 @@ const emit = defineEmits([
   'switch-mobile',
   'undo',
   'redo',
+  'print-success',
+  'print-error',
 ])
 </script>
 
@@ -41,6 +48,16 @@ const emit = defineEmits([
         :label="action.label"
         :class="action.class"
         @click="emit('head-action', action, $event)"
+      />
+      <!-- Компонент печати PVPrint -->
+      <PVPrintAction
+        v-if="actions1 && actions1.print && actions1.print !== false"
+        :table="table"
+        :filters="filters"
+        :api="api"
+        :page-key="`pvtables-${table}`"
+        @print-success="emit('print-success', $event)"
+        @print-error="emit('print-error', $event)"
       />
     </template>
 

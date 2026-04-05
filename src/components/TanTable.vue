@@ -1081,6 +1081,10 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       :showMobileSwitch="showMobileSwitch"
       :canUndo="canUndo"
       :canRedo="canRedo"
+      :actions1="actions1"
+      :table="props.table"
+      :filters="filters"
+      :api="api"
       @head-action="(action, e) => action.head_click(e, props.table, filters, selectedlineItems)"
       @set-top-filter="(filter) => onSetTopFilter?.(filter)"
       @clear="onClearFilter"
@@ -1091,6 +1095,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       @switch-mobile="setForceDesktop(false)"
       @undo="undo"
       @redo="redo"
+      @print-success="notify('success', { detail: 'Печать выполнена успешно' })"
+      @print-error="(err) => notify('error', { detail: `Ошибка печати: ${err.message}` })"
     />
 
     <!-- ── Loading overlay ── -->

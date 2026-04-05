@@ -32,6 +32,7 @@ if (!window.PVTablesAPI) {
     }
 }
 
+
 import 'primeicons/primeicons.css'
 import './style.css'
 import Lara from '@primevue/themes/lara/'
@@ -185,4 +186,23 @@ export {
     Panel as Panel,
     Badge as Badge,
     Tag as Tag,
+}
+
+// Глобал window.PVTables для UMD-компонентов (PVPrint и др.),
+// которые резолвят pvtables/dist/pvtables → window.PVTables
+if (typeof window !== 'undefined' && !window.PVTables) {
+    window.PVTables = {
+        Button, Dialog, ToggleSwitch, Checkbox, InputText, Textarea,
+        InputNumber, Tabs, TabList, Tab, TabPanels, TabPanel, Toast,
+        Drawer, Splitter, SplitterPanel, Popover, MultiSelect,
+        FileUpload, SpeedDial, Column, Toolbar, InputGroup, Tree,
+        Select, Menubar, Card, Panel, Badge, Tag,
+        PVTables, PVTab, PVTabs, apiCtor, apiFetch,
+        gtsAutoComplete, PVAutoComplete, gtsDate, PVDateTime,
+        PVTable, PVForm, PVTableModel, EditField, useNotifications,
+        UniTree, UniTreePanel, UniTreeSplitButton, PVMenu,
+        FileSelector, DataTable, ComponentLoader,
+        FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog,
+        FileGalleryAPI, fileUtils,
+    }
 }
