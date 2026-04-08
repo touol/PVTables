@@ -71,16 +71,17 @@ export class ComponentLoader {
    */
   async _doLoadComponent(componentName) {
     const basePath = `${this.assetsPath}${componentName.toLowerCase()}/web`
-    
+    const cacheBuster = `?v=${Date.now()}`
+
     // Дополнительная проверка на случай race condition
     if (this.loadedComponents.has(componentName)) {
       return
     }
-    
+
     try {
       // 0. Проверяем существование JS-файла одним HEAD запросом
       const jsUrl = `${basePath}/js/${componentName.toLowerCase()}.js`
-      const headResponse = await fetch(jsUrl, { method: 'HEAD' })
+      const headResponse = await fetch(jsUrl + cacheBuster, { method: 'HEAD' })
       if (!headResponse.ok) {
         throw new Error(`Component not found: ${jsUrl}`)
       }
@@ -112,10 +113,10 @@ export class ComponentLoader {
       }
       
       // 2. Загружаем CSS
-      await this._loadCSS(`${basePath}/css/${componentName.toLowerCase()}.css`)
-      
+      await this._loadCSS(`${basePath}/css/${componentName.toLowerCase()}.css${cacheBuster}`)
+
       // 3. Загружаем JS модуль
-      const module = await this._loadJS(`${basePath}/js/${componentName.toLowerCase()}.js`)
+      const module = await this._loadJS(`${basePath}/js/${componentName.toLowerCase()}.js${cacheBuster}`)
       
       // Проверяем, может быть это UMD и нужно взять из window
       let componentModule = module
@@ -150,8 +151,11 @@ export class ComponentLoader {
    */
   _loadCSS(url) {
     return new Promise((resolve, reject) => {
-      // Проверяем, не загружен ли уже
-      if (document.querySelector(`link[href="${url}"]`)) {
+      // Проверяем, не загружен ли уже (без учёта query-параметров)
+      const urlBase = url.split('?')[0]
+      const existing = document.querySelector(`link[href^="${urlBase}"]`)
+      if (existing) {
+        existing.href = url
         resolve()
         return
       }
