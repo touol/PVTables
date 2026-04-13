@@ -297,7 +297,7 @@
                 <template v-else-if="col.type === 'decimal'">{{ formatDecimal(getFieldValue(data, field), col.FractionDigits) }}</template>
                 <template v-else-if="col.type === 'number' || col.type === 'view'">{{ getFieldValue(data, field) }}</template>
                 <template v-else-if="col.type === 'autocomplete'"><span v-if="!col.hide_id">{{ getFieldValue(data, field) }}</span> {{ getACContent(field, getFieldValue(data, field)) }}</template>
-                <template v-else-if="col.type === 'multiautocomplete'">{{ getMultiACContent(field, getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'multiautocomplete'">{{ getMultiACContent(col, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'select'">{{ getSelectContent(field, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'html'"><span v-html="getFieldValue(data, field)"></span></template>
                 <template v-else-if="col.type === 'boolean'"><Checkbox :modelValue="getFieldValue(data, field) == 1 || getFieldValue(data, field) === true" :binary="true" disabled /></template>
@@ -1274,18 +1274,21 @@
     return maps;
   });
 
-  const getMultiACContent = (field, value) => {
+  const getMultiACContent = (col, value) => {
     if (!value || value == 0) return '';
+    const field = typeof col === 'string' ? col : col.field;
     const row = acFullMaps.value[field]?.get(String(value));
-    if (!row) return acMaps.value[field]?.get(String(value)) ?? '';
-    const parts = [];
-    for (const k in row) {
-      if (k === 'id' || k.startsWith('_')) continue;
-      const v = row[k];
-      if (v === null || v === undefined || v === '' || typeof v === 'object') continue;
-      parts.push(String(v));
+    const mainContent = acMaps.value[field]?.get(String(value)) ?? '';
+    const parts = mainContent !== '' ? [String(mainContent)] : [];
+    const search = typeof col === 'object' ? col.search : null;
+    if (row && search) {
+      for (const key in search) {
+        const v = row[key];
+        if (v === null || v === undefined || v === '' || typeof v === 'object') continue;
+        parts.push(String(v));
+      }
     }
-    return parts.join(' ');
+    return parts.length ? parts.join(' ') : String(value);
   };
 
   const selectMaps = computed(() => {
