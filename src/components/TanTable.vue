@@ -447,16 +447,19 @@ const dataColDefs = computed(() =>
           if (!value || value == 0) return ''
           const mainContent = getACContent(col.field, value) || ''
           const parts = mainContent !== '' ? [String(mainContent)] : []
+          const fullRow = acFullMaps.value[col.field]?.get(String(value))
           const searchFields = autocompleteSettings.value[col.field]?.searchFields
-          if (col.search && searchFields) {
+          if (col.search && fullRow) {
             for (const key in col.search) {
-              const id = data[key]
+              const id = fullRow[key]
               if (id === null || id === undefined || id === '' || id == 0) continue
-              const rows = searchFields[key]?.rows
-              if (!Array.isArray(rows)) continue
-              const found = rows.find(r => String(r.id) === String(id))
-              const txt = found?.content ?? id
-              if (txt !== null && txt !== undefined && txt !== '') parts.push(String(txt))
+              const rows = searchFields?.[key]?.rows
+              let txt = id
+              if (Array.isArray(rows)) {
+                const found = rows.find(r => String(r.id) === String(id))
+                if (found?.content !== undefined && found?.content !== null && found?.content !== '') txt = found.content
+              }
+              parts.push(String(txt))
             }
           }
           return parts.length ? parts.join(' ') : String(value)
