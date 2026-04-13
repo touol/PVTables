@@ -87,6 +87,37 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
       };
     }
 
+    // Применяем фильтры из GET-параметра ?filters={id:3,order_id:4}
+    // Поддерживаем как строгий JSON, так и relaxed (без кавычек у ключей).
+    try {
+      const raw = new URLSearchParams(window.location.search).get('filters');
+      if (raw) {
+        let parsed = null;
+        try { parsed = JSON.parse(raw); }
+        catch {
+          // relaxed: {id:3,order_id:4} → оборачиваем ключи в кавычки
+          const fixed = raw.replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":');
+          try { parsed = JSON.parse(fixed); } catch { parsed = null; }
+        }
+        if (parsed && typeof parsed === 'object') {
+          for (const field in parsed) {
+            const v = parsed[field];
+            const existing = filters0[field];
+            if (existing && existing.hasOwnProperty('constraints')) {
+              existing.constraints[0] = { value: v, matchMode: FilterMatchMode.EQUALS };
+            } else if (existing && existing.hasOwnProperty('value')) {
+              existing.value = v;
+            } else {
+              filters0[field] = {
+                operator: FilterOperator.AND,
+                constraints: [{ value: v, matchMode: FilterMatchMode.EQUALS }],
+              };
+            }
+          }
+        }
+      }
+    } catch {}
+
     topFilters.value = JSON.parse(JSON.stringify(topFilters0));
     filters.value = filters0;
   };
