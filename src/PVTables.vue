@@ -297,6 +297,7 @@
                 <template v-else-if="col.type === 'decimal'">{{ formatDecimal(getFieldValue(data, field), col.FractionDigits) }}</template>
                 <template v-else-if="col.type === 'number' || col.type === 'view'">{{ getFieldValue(data, field) }}</template>
                 <template v-else-if="col.type === 'autocomplete'"><span v-if="!col.hide_id">{{ getFieldValue(data, field) }}</span> {{ getACContent(field, getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'multiautocomplete'">{{ getMultiACContent(field, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'select'">{{ getSelectContent(field, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'html'"><span v-html="getFieldValue(data, field)"></span></template>
                 <template v-else-if="col.type === 'boolean'"><Checkbox :modelValue="getFieldValue(data, field) == 1 || getFieldValue(data, field) === true" :binary="true" disabled /></template>
@@ -1212,7 +1213,7 @@
   const isSimpleField = (col, data) => {
     if (col.template) return false;
     if (customFields.value[data.id]?.[col.field]) return false;
-    const simple = ['view', 'text', 'number', 'decimal', 'autocomplete', 'select', 'html'];
+    const simple = ['view', 'text', 'number', 'decimal', 'autocomplete', 'multiautocomplete', 'select', 'html'];
     if (col.field === 'id' || simple.includes(col.type) || !col.type) return true;
     // readonly boolean/date/datetime — тоже можно инлайнить
     if (col.readonly && (col.type === 'boolean' || col.type === 'date' || col.type === 'datetime')) return true;
@@ -1258,6 +1259,34 @@
     }
     return maps;
   });
+
+  // Full row map для multiautocomplete: id → исходный row со всеми полями
+  const acFullMaps = computed(() => {
+    const maps = {};
+    for (const field in autocompleteSettings.value) {
+      const rows = autocompleteSettings.value[field]?.rows;
+      if (rows && Array.isArray(rows)) {
+        const m = new Map();
+        for (const o of rows) m.set(String(o.id), o);
+        maps[field] = m;
+      }
+    }
+    return maps;
+  });
+
+  const getMultiACContent = (field, value) => {
+    if (!value || value == 0) return '';
+    const row = acFullMaps.value[field]?.get(String(value));
+    if (!row) return acMaps.value[field]?.get(String(value)) ?? '';
+    const parts = [];
+    for (const k in row) {
+      if (k === 'id' || k.startsWith('_')) continue;
+      const v = row[k];
+      if (v === null || v === undefined || v === '' || typeof v === 'object') continue;
+      parts.push(String(v));
+    }
+    return parts.join(' ');
+  };
 
   const selectMaps = computed(() => {
     const maps = {};

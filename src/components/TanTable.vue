@@ -443,6 +443,19 @@ const dataColDefs = computed(() =>
           }
           return `${value} ${lbl}`
         }
+        case 'multiautocomplete': {
+          if (!value || value == 0) return ''
+          const fullRow = acFullMaps.value[col.field]?.get(String(value))
+          if (!fullRow) return getACContent(col.field, value) || String(value)
+          const parts = []
+          for (const k in fullRow) {
+            if (k === 'id' || k.startsWith('_')) continue
+            const v = fullRow[k]
+            if (v === null || v === undefined || v === '' || typeof v === 'object') continue
+            parts.push(String(v))
+          }
+          return parts.join(' ')
+        }
         case 'select': {
           const lbl = getSelectContent(col.field, value)
           if (lbl) return lbl
