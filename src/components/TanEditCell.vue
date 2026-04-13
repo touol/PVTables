@@ -13,6 +13,21 @@
       @keydown="onKeydown"
     />
 
+    <!-- date — DatePicker с иконкой календаря -->
+    <DatePicker
+      v-else-if="col.type === 'date'"
+      ref="dateRef"
+      v-model="dateValue"
+      dateFormat="dd.mm.yy"
+      showIcon
+      :showOnFocus="false"
+      fluid
+      class="tan-edit-date"
+      @update:modelValue="onDateChange"
+      @keydown="onDateKeydown"
+      @hide="onDateHide"
+    />
+
     <!-- select / autocomplete — contenteditable + Teleport dropdown -->
     <template v-else-if="isDropdownType">
       <div
@@ -70,6 +85,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import DatePicker from 'primevue/datepicker'
 import apiCtor from './api'
 
 const props = defineProps({
@@ -102,6 +118,63 @@ const displayText = computed(() => {
 
 // ── boolean state ──────────────────────────────────────────────────────────
 const boolValue = ref(props.initialValue == 1 || props.initialValue === true)
+
+// ── date state ─────────────────────────────────────────────────────────────
+const dateRef = ref(null)
+const parseInitialDate = (v) => {
+  if (!v) return null
+  if (v instanceof Date) return v
+  const s = String(v)
+  // YYYY-MM-DD or ISO
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  // DD.MM.YYYY
+  const m2 = s.match(/^(\d{2})\.(\d{2})\.(\d{4})/)
+  if (m2) return new Date(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]))
+  return null
+}
+const dateValue = ref(parseInitialDate(props.initialValue))
+const formatDateISO = (d) => {
+  if (!d) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+const onDateChange = (val) => {
+  // Пользователь выбрал дату в календаре — сохраняем и переходим ниже
+  if (saved) return
+  saved = true
+  emit('save', val ? formatDateISO(val) : null)
+  emit('navigate', 'next-row')
+}
+const onDateKeydown = (e) => {
+  if (e.key === 'Escape') {
+    saved = true
+    emit('cancel')
+    e.preventDefault(); e.stopPropagation(); return
+  }
+  if (e.key === 'Tab') {
+    const dir = e.shiftKey ? 'prev-col' : 'next-col'
+    onSave(); emit('navigate', dir)
+    e.preventDefault(); e.stopPropagation(); return
+  }
+  if (e.key === 'Enter') {
+    // Если оверлей открыт — даём DatePicker самому выбрать дату,
+    // onDateChange вызовет save+navigate. Иначе — ручное сохранение.
+    const dp = dateRef.value
+    if (!dp?.overlayVisible) {
+      onSave(); emit('navigate', e.shiftKey ? 'prev-row' : 'next-row')
+      e.preventDefault(); e.stopPropagation()
+    }
+    return
+  }
+}
+const onDateHide = () => {
+  // Закрылся оверлей без выбора — если не сохранено, отменяем
+  if (saved) return
+  nextTick(() => { if (!saved && !unmounting) emit('cancel') })
+}
 
 // ── validation (для обычных типов) ─────────────────────────────────────────
 const valid = ref(true)
@@ -266,6 +339,22 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
+  if (props.col.type === 'date') {
+    nextTick(() => {
+      // Открываем календарь сразу
+      const dp = dateRef.value
+      if (dp) {
+        dp.$el?.querySelector('input')?.focus?.()
+        if (typeof dp.overlayVisible !== 'undefined') {
+          // PrimeVue DatePicker: программно показать оверлей
+          dp.overlayVisible = true
+        } else {
+          dp.$el?.querySelector('button')?.click?.()
+        }
+      }
+    })
+    return
+  }
   const el = divRef.value
   if (el && props.col.type !== 'boolean') {
     el.textContent = displayText.value
@@ -310,6 +399,10 @@ const onSave = () => {
   saved = true
   if (props.col.type === 'boolean') {
     emit('save', boolValue.value ? 1 : 0)
+    return
+  }
+  if (props.col.type === 'date') {
+    emit('save', dateValue.value ? formatDateISO(dateValue.value) : null)
     return
   }
   if (isDropdownType.value) {
