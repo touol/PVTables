@@ -102,7 +102,7 @@ const {
   findIndexById, emptyRowsState, updateEmptyRow, isEmptyRow, isEditableEmptyRow,
 } = usePVTableData(props.emptyRowsCount)
 
-const { rowClass, rowStyle } = useRowHighlight(row_setting, row_class_trigger)
+const { rowClass, rowStyle, cellClass, cellStyle } = useRowHighlight(row_setting, row_class_trigger)
 
 const rowsPerPage = ref(10)
 
@@ -1205,15 +1205,18 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
               <td
                 v-for="cell in flatItems[vItem.index]?.row.getVisibleCells()"
                 :key="cell.id"
-                :style="{ width: cell.column.getSize() + 'px' }"
+                :style="[{ width: cell.column.getSize() + 'px' }, cellStyle(flatItems[vItem.index]?.row.original, cell.column.id)]"
                 class="tan-td"
-                :class="{
-                  'tan-td-editing': activeInline?.cellId === cell.id,
-                  'tan-td-selected': cellSelectionMode && isCellSelected(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
-                  'tan-td-fill-range': cellSelectionMode && isCellInFillRange(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
-                  'tan-frozen-right': actionsFrozen === 'right' && cell.column.id === '__actions__',
-                  'tan-frozen-left':  actionsFrozen === 'left'  && cell.column.id === '__actions__',
-                }"
+                :class="[
+                  cellClass(flatItems[vItem.index]?.row.original, cell.column.id),
+                  {
+                    'tan-td-editing': activeInline?.cellId === cell.id,
+                    'tan-td-selected': cellSelectionMode && isCellSelected(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
+                    'tan-td-fill-range': cellSelectionMode && isCellInFillRange(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
+                    'tan-frozen-right': actionsFrozen === 'right' && cell.column.id === '__actions__',
+                    'tan-frozen-left':  actionsFrozen === 'left'  && cell.column.id === '__actions__',
+                  }
+                ]"
                 @click="cell.column.columnDef.meta && onCellClick(cell, $event)"
                 @dblclick="cell.column.columnDef.meta && onCellDblClick(cell, $event)"
                 @mousedown="cellSelectionMode && cell.column.columnDef.meta && onSelMouseDown(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id), $event)"

@@ -1,29 +1,28 @@
 /**
- * Подсветка строк таблицы.
+ * Подсветка строк и ячеек таблицы.
  *
- * Логика:
- *  1. row_setting[id].class / row_setting[id].style — индивидуальные настройки строки (от API/действий)
- *  2. row_class_trigger — условный класс: если data[field] истинно → добавить класс
+ * row_setting приходит от API/действий в формате:
+ *   {
+ *     [id]: {
+ *       class?:  string,           // CSS-класс строки
+ *       style?:  string|object,    // inline-стиль строки
+ *       cells?: {
+ *         [field]: {
+ *           class?: string,        // CSS-класс ячейки
+ *           style?: string|object  // inline-стиль ячейки
+ *         }
+ *       }
+ *     }
+ *   }
  *
- * @param {Ref<Object>} row_setting     - { [id]: { class?, style? } }
- * @param {Ref<Object>} row_class_trigger - { field: string, class: string }
+ * row_class_trigger — условный класс строки: если data[field] истинно → добавить класс.
+ *
+ * @param {Ref<Object>} row_setting
+ * @param {Ref<Object>} row_class_trigger
  */
 export function useRowHighlight(row_setting, row_class_trigger) {
 
-  /** CSS-класс строки */
-  const rowClass = (data) => {
-    if (row_setting.value[data.id]?.class) {
-      return row_setting.value[data.id].class
-    }
-    if (row_class_trigger.value?.field && data[row_class_trigger.value.field]) {
-      return row_class_trigger.value.class
-    }
-    return undefined
-  }
-
-  /** Inline-стиль строки (объект Vue) */
-  const rowStyle = (data) => {
-    const raw = row_setting.value[data.id]?.style
+  const parseStyle = (raw) => {
     if (!raw) return {}
     if (typeof raw === 'object' && !Array.isArray(raw)) return raw
     if (typeof raw === 'string') {
@@ -43,5 +42,33 @@ export function useRowHighlight(row_setting, row_class_trigger) {
     return {}
   }
 
-  return { rowClass, rowStyle }
+  /** CSS-класс строки */
+  const rowClass = (data) => {
+    if (row_setting.value[data.id]?.class) {
+      return row_setting.value[data.id].class
+    }
+    if (row_class_trigger.value?.field && data[row_class_trigger.value.field]) {
+      return row_class_trigger.value.class
+    }
+    return undefined
+  }
+
+  /** Inline-стиль строки */
+  const rowStyle = (data) => parseStyle(row_setting.value[data.id]?.style)
+
+  /** CSS-класс ячейки */
+  const cellClass = (data, field) => {
+    if (!data || field == null) return undefined
+    const cells = row_setting.value[data.id]?.cells
+    return cells?.[field]?.class
+  }
+
+  /** Inline-стиль ячейки */
+  const cellStyle = (data, field) => {
+    if (!data || field == null) return {}
+    const cells = row_setting.value[data.id]?.cells
+    return parseStyle(cells?.[field]?.style)
+  }
+
+  return { rowClass, rowStyle, cellClass, cellStyle }
 }
