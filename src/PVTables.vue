@@ -297,7 +297,7 @@
                 <template v-else-if="col.type === 'decimal'">{{ formatDecimal(getFieldValue(data, field), col.FractionDigits) }}</template>
                 <template v-else-if="col.type === 'number' || col.type === 'view'">{{ getFieldValue(data, field) }}</template>
                 <template v-else-if="col.type === 'autocomplete'"><span v-if="!col.hide_id">{{ getFieldValue(data, field) }}</span> {{ getACContent(field, getFieldValue(data, field)) }}</template>
-                <template v-else-if="col.type === 'multiautocomplete'">{{ getMultiACContent(col, getFieldValue(data, field)) }}</template>
+                <template v-else-if="col.type === 'multiautocomplete'">{{ getMultiACContent(col, data, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'select'">{{ getSelectContent(field, getFieldValue(data, field)) }}</template>
                 <template v-else-if="col.type === 'html'"><span v-html="getFieldValue(data, field)"></span></template>
                 <template v-else-if="col.type === 'boolean'"><Checkbox :modelValue="getFieldValue(data, field) == 1 || getFieldValue(data, field) === true" :binary="true" disabled /></template>
@@ -1260,32 +1260,21 @@
     return maps;
   });
 
-  // Full row map для multiautocomplete: id → исходный row со всеми полями
-  const acFullMaps = computed(() => {
-    const maps = {};
-    for (const field in autocompleteSettings.value) {
-      const rows = autocompleteSettings.value[field]?.rows;
-      if (rows && Array.isArray(rows)) {
-        const m = new Map();
-        for (const o of rows) m.set(String(o.id), o);
-        maps[field] = m;
-      }
-    }
-    return maps;
-  });
-
-  const getMultiACContent = (col, value) => {
+  const getMultiACContent = (col, data, value) => {
     if (!value || value == 0) return '';
-    const field = typeof col === 'string' ? col : col.field;
-    const row = acFullMaps.value[field]?.get(String(value));
+    const field = col.field;
     const mainContent = acMaps.value[field]?.get(String(value)) ?? '';
     const parts = mainContent !== '' ? [String(mainContent)] : [];
-    const search = typeof col === 'object' ? col.search : null;
-    if (row && search) {
-      for (const key in search) {
-        const v = row[key];
-        if (v === null || v === undefined || v === '' || typeof v === 'object') continue;
-        parts.push(String(v));
+    const searchFields = autocompleteSettings.value[field]?.searchFields;
+    if (col.search && searchFields) {
+      for (const key in col.search) {
+        const id = data[key];
+        if (id === null || id === undefined || id === '' || id == 0) continue;
+        const rows = searchFields[key]?.rows;
+        if (!Array.isArray(rows)) continue;
+        const found = rows.find(r => String(r.id) === String(id));
+        const txt = found?.content ?? id;
+        if (txt !== null && txt !== undefined && txt !== '') parts.push(String(txt));
       }
     }
     return parts.length ? parts.join(' ') : String(value);

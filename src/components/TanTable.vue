@@ -445,14 +445,18 @@ const dataColDefs = computed(() =>
         }
         case 'multiautocomplete': {
           if (!value || value == 0) return ''
-          const fullRow = acFullMaps.value[col.field]?.get(String(value))
           const mainContent = getACContent(col.field, value) || ''
           const parts = mainContent !== '' ? [String(mainContent)] : []
-          if (fullRow && col.search) {
+          const searchFields = autocompleteSettings.value[col.field]?.searchFields
+          if (col.search && searchFields) {
             for (const key in col.search) {
-              const v = fullRow[key]
-              if (v === null || v === undefined || v === '' || typeof v === 'object') continue
-              parts.push(String(v))
+              const id = data[key]
+              if (id === null || id === undefined || id === '' || id == 0) continue
+              const rows = searchFields[key]?.rows
+              if (!Array.isArray(rows)) continue
+              const found = rows.find(r => String(r.id) === String(id))
+              const txt = found?.content ?? id
+              if (txt !== null && txt !== undefined && txt !== '') parts.push(String(txt))
             }
           }
           return parts.length ? parts.join(' ') : String(value)
