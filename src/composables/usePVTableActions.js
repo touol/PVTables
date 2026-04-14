@@ -2,6 +2,26 @@ import { markRaw } from 'vue';
 import { compile } from 'vue';
 
 /**
+ * Вычисляет default-значение поля с поддержкой магических значений.
+ * - 'now' для type='date'       → YYYY-MM-DD (сегодня)
+ * - 'now' для type='datetime'   → YYYY-MM-DD HH:mm:ss
+ * - всё остальное                → возвращается как есть
+ */
+function resolveDefaultValue(field) {
+  const val = field.default;
+  if (val === 'now') {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const ymd = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    if (field.type === 'datetime') {
+      return `${ymd} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    return ymd;
+  }
+  return val;
+}
+
+/**
  * Composable для управления действиями таблицы
  * @param {Object} params - Параметры
  * @param {Object} params.api - API объект
@@ -343,7 +363,7 @@ export function usePVTableActions({
         
         // Устанавливаем значения по умолчанию
         if (field.default !== undefined) {
-          modalFormData.value[fieldName] = field.default;
+          modalFormData.value[fieldName] = resolveDefaultValue(field);
         } else if (rowData && rowData[fieldName] !== undefined) {
           modalFormData.value[fieldName] = rowData[fieldName];
         }
@@ -565,7 +585,7 @@ export function usePVTableActions({
     if (action.form && action.form.row) {
       for (let field in action.form.row) {
         if (action.form.row[field].default !== undefined) {
-          requestData[field] = action.form.row[field].default;
+          requestData[field] = resolveDefaultValue(action.form.row[field]);
         }
       }
     }
@@ -613,7 +633,7 @@ export function usePVTableActions({
     if (action.form && action.form.row) {
       for (let field in action.form.row) {
         if (action.form.row[field].default !== undefined) {
-          requestData[field] = action.form.row[field].default;
+          requestData[field] = resolveDefaultValue(action.form.row[field]);
         }
       }
     }
