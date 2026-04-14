@@ -666,6 +666,13 @@ const onCellClick = (cell, event) => {
   if (!col || !isCellEditable(col, data)) return
   if (isEmptyRow(data.id) && !isEditableEmptyRow(data._rowKey)) return
   if (activeInline.value?.cellId === cell.id) return
+  // Булев чекбокс — переключаем значение сразу, без режима редактирования.
+  if (col.type === 'boolean') {
+    const current = getFieldValue(data, cell.column.id)
+    const next = (current == 1 || current === true) ? 0 : 1
+    saveCellUpdate(data, cell.column.id, next)
+    return
+  }
   if (isInlineType(col, data)) activateInlineCell(cell)
   else activateFullCell(cell, event.currentTarget)
 }
