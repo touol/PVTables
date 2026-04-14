@@ -89,7 +89,10 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
 
     // Применяем фильтры из GET-параметра ?filters={id:3,order_id:4}
     // Поддерживаем как строгий JSON, так и relaxed (без кавычек у ключей).
+    // Дочерние таблицы (subtable/subtabs) URL-фильтры игнорируют —
+    // иначе фильтр по id=N родительской таблицы перекрывает подтаблицу.
     try {
+      if (props.child) throw new Error('skip url filters for child');
       const raw = new URLSearchParams(window.location.search).get('filters');
       if (raw) {
         let parsed = null;
