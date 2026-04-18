@@ -425,7 +425,8 @@ const dataColDefs = computed(() =>
     cell: ({ getValue, row }) => {
       const value = getValue()
       const data  = row.original
-      if (value === null || value === undefined) return ''
+      // Для file-поля рендерим даже при пустом значении — нужна кнопка выбора.
+      if ((value === null || value === undefined) && col.type !== 'file') return ''
       switch (col.type) {
         case 'decimal':  return formatDecimal(value, col.FractionDigits)
         case 'boolean':  return h(Checkbox, { modelValue: value == 1 || value === true, binary: true, disabled: true })

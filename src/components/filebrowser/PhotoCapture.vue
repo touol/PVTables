@@ -8,10 +8,7 @@
     @hide="cleanup"
   >
     <div class="photo-capture">
-      <div v-if="status === 'loading-scripts'" class="notice">
-        Скрипты загружаются…
-      </div>
-      <div v-else-if="status === 'loading-camera'" class="notice">
+      <div v-if="status === 'idle' || status === 'loading-camera'" class="notice">
         Инициализация камеры…
       </div>
       <div v-else-if="status === 'error'" class="notice error">
@@ -24,7 +21,6 @@
       <!-- Live preview -->
       <div v-show="status === 'ready'" class="stage">
         <video ref="videoEl" autoplay playsinline muted class="video"></video>
-        <canvas ref="overlayEl" class="overlay"></canvas>
       </div>
 
       <!-- Captured preview -->
@@ -53,28 +49,25 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Dialog from 'primevue/dialog'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   mediaSource: { type: [Number, String], default: 1 },
   uploadPath: { type: String, default: '/' },
-  fileName: { type: String, default: '' }, // базовое имя без расширения; по умолчанию timestamp
+  fileName: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:visible', 'fileUploaded'])
 
 const internalVisible = ref(props.visible)
-const status  = ref('idle') // idle | loading-scripts | loading-camera | ready | captured | uploading | error
+const status   = ref('idle') // idle | loading-camera | ready | captured | uploading | error
 const errorMsg = ref('')
 const videoEl  = ref(null)
-const overlayEl = ref(null)
-const resultEl  = ref(null)
+const resultEl = ref(null)
 
 let stream = null
-let rafId  = null
-let scanner = null   // jscanify instance
 let capturedCanvas = null
 
 watch(() => props.visible, v => {
@@ -86,65 +79,45 @@ watch(internalVisible, v => {
   if (!v) cleanup()
 })
 
-// ─── Загрузчики скриптов (ленивые, с кэшированием браузера) ────────────────
-const CV_URL = 'https://docs.opencv.org/4.8.0/opencv.js'
-const JSCANIFY_URL = 'https://cdn.jsdelivr.net/npm/jscanify@1.3.0/src/jscanify.min.js'
-
-const loadScriptOnce = (src) => new Promise((resolve, reject) => {
-  const existing = document.querySelector(`script[data-src="${src}"]`)
-  if (existing) {
-    if (existing.dataset.loaded === '1') return resolve()
-    existing.addEventListener('load', resolve, { once: true })
-    existing.addEventListener('error', reject, { once: true })
-    return
-  }
-  const s = document.createElement('script')
-  s.src = src
-  s.async = true
-  s.dataset.src = src
-  s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve() }, { once: true })
-  s.addEventListener('error', () => reject(new Error('Не удалось загрузить ' + src)), { once: true })
-  document.head.appendChild(s)
-})
-
-const waitCvReady = () => new Promise((resolve) => {
-  const check = () => {
-    if (window.cv && window.cv.Mat) return resolve(window.cv)
-    setTimeout(check, 50)
-  }
-  check()
-})
-
-const ensureScripts = async () => {
-  if (window.jscanify && window.cv && window.cv.Mat) return
-  status.value = 'loading-scripts'
-  if (!window.cv || !window.cv.Mat) {
-    await loadScriptOnce(CV_URL)
-    await waitCvReady()
-  }
-  if (!window.jscanify) {
-    await loadScriptOnce(JSCANIFY_URL)
-  }
-}
-
-// ─── Старт / стоп ─────────────────────────────────────────────────────────
 const start = async () => {
   try {
     errorMsg.value = ''
-    await ensureScripts()
-    scanner = new window.jscanify()
-
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Камера недоступна. Нужен HTTPS или localhost.')
+    }
     status.value = 'loading-camera'
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 4096 },
+        height: { ideal: 2160 },
+      },
       audio: false,
     })
     await nextTick()
     const v = videoEl.value
     v.srcObject = stream
     await v.play()
+
+    // TODO: remove diagnostics — временные логи для отладки ограничений камеры
+    try {
+      const track = stream.getVideoTracks()[0]
+      const settings = track.getSettings()
+      const caps = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {}
+      console.log('[PhotoCapture] трек settings', settings)
+      console.log('[PhotoCapture] трек capabilities', caps)
+      if (caps.width?.max && (settings.width || 0) < caps.width.max) {
+        try {
+          await track.applyConstraints({
+            width:  { ideal: caps.width.max },
+            height: { ideal: caps.height?.max || settings.height },
+          })
+          console.log('[PhotoCapture] после applyConstraints', track.getSettings())
+        } catch (e) { console.warn('[PhotoCapture] applyConstraints failed', e) }
+      }
+    } catch (e) { console.warn('[PhotoCapture] diagnostics', e) }
+
     status.value = 'ready'
-    loopOverlay()
   } catch (e) {
     console.error(e)
     errorMsg.value = e.message || 'Неизвестная ошибка'
@@ -152,42 +125,49 @@ const start = async () => {
   }
 }
 
-const loopOverlay = () => {
-  const v = videoEl.value
-  const c = overlayEl.value
-  if (!v || !c || status.value !== 'ready') return
-  if (v.readyState >= 2 && v.videoWidth) {
-    c.width = v.videoWidth
-    c.height = v.videoHeight
-    try {
-      const highlighted = scanner.highlightPaper(v)
-      const ctx = c.getContext('2d')
-      ctx.clearRect(0, 0, c.width, c.height)
-      ctx.drawImage(highlighted, 0, 0, c.width, c.height)
-    } catch (_) { /* jscanify иногда кидает в первые кадры — игнор */ }
-  }
-  rafId = requestAnimationFrame(loopOverlay)
+const drawToResult = (source, w, h) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  canvas.getContext('2d').drawImage(source, 0, 0, w, h)
+  capturedCanvas = canvas
+  const r = resultEl.value
+  r.width = w
+  r.height = h
+  r.getContext('2d').drawImage(canvas, 0, 0)
+  status.value = 'captured'
 }
 
-const capture = () => {
+const capture = async () => {
   const v = videoEl.value
-  if (!v || !scanner) return
-  const w = v.videoWidth
-  const h = v.videoHeight
-  // ширина результата — в долгой стороне, в 2 раза больше
-  const resultW = Math.max(w, h)
-  const resultH = Math.round(resultW * 1.414) // A4
+  if (!v || !stream) return
   try {
-    const extracted = scanner.extractPaper(v, resultW, resultH)
-    capturedCanvas = extracted
-    const r = resultEl.value
-    r.width = extracted.width
-    r.height = extracted.height
-    r.getContext('2d').drawImage(extracted, 0, 0)
-    status.value = 'captured'
-    if (rafId) cancelAnimationFrame(rafId)
+    // ImageCapture использует полное разрешение матрицы (до десятков МП),
+    // а не 720/1080 с превью.
+    if (typeof window.ImageCapture === 'function') {
+      const track = stream.getVideoTracks()[0]
+      if (track) {
+        try {
+          const capturer = new window.ImageCapture(track)
+          const caps = typeof capturer.getPhotoCapabilities === 'function'
+            ? await capturer.getPhotoCapabilities().catch(() => null)
+            : null
+          const settings = {}
+          if (caps?.imageWidth?.max)  settings.imageWidth  = caps.imageWidth.max
+          if (caps?.imageHeight?.max) settings.imageHeight = caps.imageHeight.max
+          const blob = await capturer.takePhoto(Object.keys(settings).length ? settings : undefined)
+          const bmp = await createImageBitmap(blob)
+          drawToResult(bmp, bmp.width, bmp.height)
+          return
+        } catch (e) {
+          console.warn('[PhotoCapture] ImageCapture не сработал, fallback на canvas', e)
+        }
+      }
+    }
+    // Fallback — кадр из <video> в размере превью
+    drawToResult(v, v.videoWidth, v.videoHeight)
   } catch (e) {
-    errorMsg.value = 'Не удалось обрезать: ' + (e.message || e)
+    errorMsg.value = e.message || String(e)
     status.value = 'error'
   }
 }
@@ -195,7 +175,6 @@ const capture = () => {
 const retake = () => {
   capturedCanvas = null
   status.value = 'ready'
-  loopOverlay()
 }
 
 const uploadCaptured = async () => {
@@ -209,7 +188,7 @@ const uploadCaptured = async () => {
     const fd = new FormData()
     fd.append('path', props.uploadPath)
     fd.append('source', String(props.mediaSource))
-    fd.append('files[]', blob, `${base}.jpg`)
+    fd.append('file', blob, `${base}.jpg`)
 
     const resp = await fetch(`/api/files?action=upload&source=${encodeURIComponent(props.mediaSource)}`, {
       method: 'POST',
@@ -220,7 +199,6 @@ const uploadCaptured = async () => {
     const json = await resp.json()
     if (!json?.success) throw new Error(json?.message || 'Ошибка загрузки')
 
-    // Получаем URL только что загруженного файла
     const listResp = await fetch(`/api/files?path=${encodeURIComponent(props.uploadPath)}&source=${encodeURIComponent(props.mediaSource)}`, {
       credentials: 'include',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -240,7 +218,6 @@ const uploadCaptured = async () => {
 const close = () => { internalVisible.value = false }
 
 const cleanup = () => {
-  if (rafId) { cancelAnimationFrame(rafId); rafId = null }
   if (stream) {
     stream.getTracks().forEach(t => t.stop())
     stream = null
@@ -248,6 +225,10 @@ const cleanup = () => {
   capturedCanvas = null
   status.value = 'idle'
 }
+
+onMounted(() => {
+  if (props.visible) start()
+})
 
 onBeforeUnmount(cleanup)
 </script>
@@ -265,19 +246,7 @@ onBeforeUnmount(cleanup)
   background: #000;
   min-height: 0;
 }
-.video {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-.overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  object-fit: contain;
-}
+.video { max-width: 100%; max-height: 100%; object-fit: contain; }
 .result { max-width: 100%; max-height: 100%; object-fit: contain; }
 .footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

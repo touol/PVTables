@@ -5,3 +5,8 @@ This template should help get you started developing with Vue 3 in Vite. The tem
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (previously Volar) and disable Vetur
+
+## TODO
+
+- Убрать диагностические `console.log` в `src/components/filebrowser/PhotoCapture.vue` (блок с комментарием `// TODO: remove diagnostics`) — оставлены для отладки ограничений камеры / разрешения.
+
