@@ -431,6 +431,31 @@ const dataColDefs = computed(() =>
         case 'date':     return formatDate(value)
         case 'datetime': return formatDateTime(value)
         case 'html':     return h('span', { innerHTML: String(value) })
+        case 'file': {
+          const s = String(value || '')
+          const shortName = s ? (s.split('/').pop() || s) : ''
+          const browseBtn = h('i', {
+            class: 'pi pi-folder-open',
+            style: 'cursor:pointer;padding:2px 4px;flex-shrink:0;',
+            title: 'Выбрать файл',
+            onClick: (e) => { e.stopPropagation(); openFileBrowserForCell(col, data) },
+          })
+          if (!s) {
+            return h('div', { class: 'tan-file-cell', style: 'display:flex;gap:4px;align-items:center;' }, [
+              h('span', { style: 'color:#9ca3af;flex:1;' }, '—'),
+              browseBtn,
+            ])
+          }
+          return h('div', { class: 'tan-file-cell', style: 'display:flex;gap:4px;align-items:center;overflow:hidden;' }, [
+            h('span', {
+              class: 'tan-file-link',
+              style: 'cursor:pointer;color:#1d4ed8;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;',
+              title: s,
+              onClick: (e) => { e.stopPropagation(); onFilePreview(s, col.mediaSource) },
+            }, shortName),
+            browseBtn,
+          ])
+        }
         case 'autocomplete': {
           if (!value || value == 0) return ''
           const lbl = getACContent(col.field, value)
@@ -607,6 +632,64 @@ const activeInline = customRef((track, trigger) => ({
   set(v) { _activeInlineVal = v; trigger() },
 }))  // { cellId, col, data }
 const activeFull     = ref(null)  // { cellId, col, data }
+const fileEditOpen   = ref(false)
+const imagePreviewOpen = ref(false)
+const imagePreviewSrc  = ref('')
+const imagePreviewName = ref('')
+
+const IMAGE_EXTS = new Set(['jpg','jpeg','png','gif','webp','bmp','svg'])
+
+const getFileExt = (path) => {
+  if (!path) return ''
+  const q = path.indexOf('?')
+  const clean = q >= 0 ? path.slice(0, q) : path
+  const dot = clean.lastIndexOf('.')
+  return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : ''
+}
+
+const resolveFileUrl = async (value, mediaSource) => {
+  if (!value) return value
+  // Если путь уже абсолютный (http/https или начинается с /assets и т.п.) — берём как есть.
+  if (/^(https?:)?\/\//i.test(value)) return value
+  // Разбираем на dir/name. value может быть вида "/claude1.png" или "subdir/claude1.png".
+  const clean = value.replace(/^\/+/, '')
+  const lastSlash = clean.lastIndexOf('/')
+  const dir = lastSlash >= 0 ? '/' + clean.slice(0, lastSlash) + '/' : '/'
+  const name = lastSlash >= 0 ? clean.slice(lastSlash + 1) : clean
+  try {
+    const src = mediaSource || 1
+    const resp = await fetch(`/api/files?path=${encodeURIComponent(dir)}&source=${src}`, {
+      credentials: 'include',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    const json = await resp.json()
+    const files = json?.data?.files || []
+    const hit = files.find(f => f.name === name)
+    if (hit?.url) return hit.url
+  } catch (e) {
+    console.error('resolveFileUrl', e)
+  }
+  return value
+}
+
+const onFilePreview = async (path, mediaSource) => {
+  if (!path) return
+  const resolved = await resolveFileUrl(path, mediaSource)
+  const ext = getFileExt(path)
+  if (IMAGE_EXTS.has(ext)) {
+    imagePreviewSrc.value = resolved
+    imagePreviewName.value = (path.split('/').pop() || path)
+    imagePreviewOpen.value = true
+  } else {
+    window.open(resolved, '_blank', 'noopener')
+  }
+}
+
+const openFileBrowserForCell = (col, data) => {
+  fullEditValue.value = data?.[col.field] ?? ''
+  activeFull.value = { cellId: null, col, data }
+  fileEditOpen.value = true
+}
 const fullEditValue  = ref(null)
 const fullPopoverRef = ref(null)
 
@@ -673,6 +756,10 @@ const onCellClick = (cell, event) => {
     saveCellUpdate(data, cell.column.id, next)
     return
   }
+  // Тип 'file' рендерится кастомно: клик по имени → превью/открытие в новой
+  // вкладке, кнопка-папка рядом открывает файл-браузер. Сам клик по ячейке
+  // ничего не запускает.
+  if (col.type === 'file') return
   if (isInlineType(col, data)) activateInlineCell(cell)
   else activateFullCell(cell, event.currentTarget)
 }
@@ -1420,6 +1507,51 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     @toggle-checklist="val => toggleChecklistValue(openFilterColId, val)"
     @toggle-checklist-all="toggleChecklistAll(openFilterColId)"
   />
+
+  <!-- ── Image preview (для type=file изображений) ── -->
+  <Dialog
+    v-model:visible="imagePreviewOpen"
+    :header="imagePreviewName || 'Превью'"
+    :modal="true"
+    :dismissableMask="true"
+    :style="{ maxWidth: '90vw', maxHeight: '90vh' }"
+  >
+    <div style="display:flex; align-items:center; justify-content:center;">
+      <img
+        v-if="imagePreviewSrc"
+        :src="imagePreviewSrc"
+        :alt="imagePreviewName"
+        style="max-width:85vw; max-height:78vh; object-fit:contain;"
+      />
+    </div>
+  </Dialog>
+
+  <!-- ── File field editor: отдельный Dialog, не Popover ── -->
+  <Dialog
+    v-model:visible="fileEditOpen"
+    :header="activeFull?.col?.label ?? 'Файл'"
+    :modal="true"
+    :dismissableMask="false"
+    :style="{ width: '92vw', height: '84vh' }"
+    @hide="() => { activeFull = null; fullEditValue = null }"
+  >
+    <div v-if="activeFull" style="min-width: 320px;">
+      <EditField
+        v-model="fullEditValue"
+        :field="activeFull.col"
+        :data="activeFull.data"
+        :use_data="false"
+        :autocompleteSettings="autocompleteSettings"
+        :selectSettings="selectSettings"
+        :customFields="customFields[activeFull.data._rowKey] ?? {}"
+        :use_readonly="false"
+      />
+      <div class="tan-full-popup-actions" style="margin-top:1rem;">
+        <button class="tan-action-btn" @click="() => { fileEditOpen = false }">Отмена</button>
+        <button class="tan-action-btn p-button-success" @click="() => { onFullEditSave(); fileEditOpen = false }">Сохранить</button>
+      </div>
+    </div>
+  </Dialog>
 
   <!-- ── EditField popup (double-click inline edit) ── -->
   <Popover ref="fullPopoverRef" @hide="if (!fullPopoverRepositioning) { activeFull = null; fullEditValue = null } else { fullPopoverRepositioning = false }">

@@ -129,7 +129,7 @@ const openRemoveDirectoryDialog = () => {
 // Метод для выбора текущего файла и передачи его пути
 const selectCurrentFile = () => {
   if (state.selectedFile && !state.selectedFile.is_dir) {
-    const filePath = state.currentDirectory + state.selectedFile.name;
+    const filePath = state.selectedFile.url || (state.currentDirectory + state.selectedFile.name);
     emit('fileSelected', filePath);
   }
 };

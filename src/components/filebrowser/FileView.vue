@@ -211,7 +211,7 @@ const isSelected = (file) => {
 const onFileDoubleClick = (file) => {
   // Если компонент находится в режиме выбора и это файл (не директория)
   if (fileBrowser && fileBrowser.selectionMode && !file.is_dir) {
-    const filePath = state.currentDirectory + file.name;
+    const filePath = file.url || (state.currentDirectory + file.name);
     fileBrowser.emit('fileSelected', filePath);
   } else {
     // Для файлов можно реализовать предпросмотр или другие действия
