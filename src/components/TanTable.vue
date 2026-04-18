@@ -30,6 +30,7 @@ import Popover  from 'primevue/popover'
 import PVForm              from './PVForm.vue'
 import PVTabs              from './PVTabs.vue'
 import PVTablesSplitButton from './PVTablesSplitButton.vue'
+import FileBrowser         from './filebrowser/FileBrowser.vue'
 
 import { useNotifications }    from './useNotifications'
 import apiCtor                 from './api'
@@ -685,10 +686,25 @@ const onFilePreview = async (path, mediaSource) => {
   }
 }
 
+// Прямое открытие файл-браузера из ячейки (один клик).
+const browserOpen       = ref(false)
+const browserMediaSource = ref(1)
+const browserInitialPath = ref('')
+const browserTarget     = ref(null)  // { col, data }
+
 const openFileBrowserForCell = (col, data) => {
-  fullEditValue.value = data?.[col.field] ?? ''
-  activeFull.value = { cellId: null, col, data }
-  fileEditOpen.value = true
+  browserMediaSource.value = col.mediaSource || 1
+  browserInitialPath.value = data?.[col.field] ?? ''
+  browserTarget.value = { col, data }
+  browserOpen.value = true
+}
+
+const onBrowserFileSelected = (filePath) => {
+  const tgt = browserTarget.value
+  browserOpen.value = false
+  if (!tgt) return
+  saveCellUpdate(tgt.data, tgt.col.field, filePath)
+  browserTarget.value = null
 }
 const fullEditValue  = ref(null)
 const fullPopoverRef = ref(null)
@@ -1507,6 +1523,25 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     @toggle-checklist="val => toggleChecklistValue(openFilterColId, val)"
     @toggle-checklist-all="toggleChecklistAll(openFilterColId)"
   />
+
+  <!-- ── Прямой файл-браузер из ячейки (один клик) ── -->
+  <Dialog
+    v-model:visible="browserOpen"
+    header="Выбор файла"
+    :modal="true"
+    :dismissableMask="false"
+    :style="{ width: '92vw', height: '86vh' }"
+  >
+    <div style="height: 100%;">
+      <FileBrowser
+        v-if="browserOpen"
+        :mediaSource="browserMediaSource"
+        :initialPath="browserInitialPath"
+        :selectionMode="true"
+        @fileSelected="onBrowserFileSelected"
+      />
+    </div>
+  </Dialog>
 
   <!-- ── Image preview (для type=file изображений) ── -->
   <Dialog

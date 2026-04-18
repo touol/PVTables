@@ -10,9 +10,15 @@
           </div>
         </div>
         <div class="actions">
-          <Button 
-            icon="pi pi-upload" 
-            label="Загрузить" 
+          <Button
+            icon="pi pi-camera"
+            label="Сфотографировать"
+            class="mr-2 p-button-info"
+            @click="photoCaptureOpen = true"
+          />
+          <Button
+            icon="pi pi-upload"
+            label="Загрузить"
             class="mr-2"
             @click="openUploadDialog"
           />
@@ -63,6 +69,15 @@
     <CreateDirectoryDialog />
     <RenameFileDialog />
     <RemoveFileDialog />
+
+    <!-- Съёмка документа через камеру (OpenCV + jscanify, лениво) -->
+    <PhotoCapture
+      v-if="photoCaptureOpen"
+      v-model:visible="photoCaptureOpen"
+      :mediaSource="mediaSource"
+      :uploadPath="currentPath || '/'"
+      @fileUploaded="onPhotoUploaded"
+    />
   </div>
   <Toast/>
 </template>
@@ -78,7 +93,9 @@ import FileUploadDialog from './dialogs/FileUploadDialog.vue';
 import CreateDirectoryDialog from './dialogs/CreateDirectoryDialog.vue';
 import RenameFileDialog from './dialogs/RenameFileDialog.vue';
 import RemoveFileDialog from './dialogs/RemoveFileDialog.vue';
+import PhotoCapture from './PhotoCapture.vue';
 import fileStore from '../../store/fileStore';
+import { ref } from 'vue';
 
 // Пропсы
 const props = defineProps({
@@ -112,6 +129,19 @@ const { state, actions } = fileStore;
 const currentPath = computed(() => {
   return state.currentDirectory;
 });
+
+// Диалог съёмки документа
+const photoCaptureOpen = ref(false);
+
+const onPhotoUploaded = async ({ url, name }) => {
+  photoCaptureOpen.value = false;
+  // Перечитываем список файлов текущей директории, чтобы новый файл появился
+  await fileStore.actions.loadFiles(state.currentDirectory, props.mediaSource);
+  // В режиме выбора сразу эмитим результат
+  if (props.selectionMode && url) {
+    emit('fileSelected', url);
+  }
+};
 
 // Методы
 const openUploadDialog = () => {
