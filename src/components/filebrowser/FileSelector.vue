@@ -15,12 +15,13 @@
     </InputGroup>
     
     <!-- Модальное окно с файловым браузером -->
-    <Dialog 
-      v-model:visible="showFileBrowser" 
-      :header="'Выбор файла'" 
-      :modal="true" 
+    <Dialog
+      v-model:visible="showFileBrowser"
+      :header="'Выбор файла'"
+      :modal="true"
       :style="{ width: '90vw', height: '80vh' }"
-      :dismissableMask="true"
+      :dismissableMask="false"
+      :closeOnEscape="true"
     >
       <div class="file-browser-container" style="height: 100%;">
         <FileBrowser 
