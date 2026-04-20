@@ -18,7 +18,7 @@
 .tan-table { border-collapse: collapse; table-layout: fixed; }
 
 /* ── Head ── */
-.tan-thead { position: sticky; top: 0; z-index: 10; background: var(--p-surface-100, #f8f9fa); }
+.tan-thead { position: sticky; top: 0; z-index: 1; background: var(--p-surface-100, #f8f9fa); }
 .tan-th {
   padding: 0; border: 1px solid var(--p-surface-300, #dee2e6);
   position: relative; vertical-align: top; user-select: none;
