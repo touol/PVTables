@@ -3,38 +3,35 @@
     <!-- Панель инструментов -->
     <Toolbar class="mb-4">
       <template #start>
-        <div class="flex items-center">
-          <span class="p-input-icon-left mr-4">
+        <div class="fv-toolbar-start">
+          <span class="p-input-icon-left fv-search">
             <i class="pi pi-search" />
-            <InputText 
-              v-model="filter" 
-              placeholder="Поиск файлов" 
+            <InputText
+              v-model="filter"
+              placeholder="Поиск файлов"
               @input="onFilterChange"
             />
           </span>
-          
-          <div class="flex items-center">
-            <span class="mr-2">Сортировка:</span>
-            <Button 
+
+          <div class="fv-sort">
+            <span class="fv-sort-label">Сортировка:</span>
+            <Button
               :class="{ 'p-button-outlined': sortField !== 'name' }"
               @click="setSortField('name')"
-              class="mr-2"
             >
               Имя
               <i v-if="sortField === 'name'" :class="getSortIcon()"></i>
             </Button>
-            <Button 
+            <Button
               :class="{ 'p-button-outlined': sortField !== 'size' }"
               @click="setSortField('size')"
-              class="mr-2"
             >
               Размер
               <i v-if="sortField === 'size'" :class="getSortIcon()"></i>
             </Button>
-            <Button 
+            <Button
               :class="{ 'p-button-outlined': sortField !== 'lastmod' }"
               @click="setSortField('lastmod')"
-              class="mr-2"
             >
               Дата
               <i v-if="sortField === 'lastmod'" :class="getSortIcon()"></i>
@@ -182,8 +179,24 @@ const selectedFile = computed({
   set: (value) => actions.selectFile(value)
 });
 
-// Фильтруем только файлы (без директорий)
+// На узких экранах (< 768px) дерево папок скрыто — показываем папки прямо
+// в списке, чтобы можно было проваливаться внутрь. На десктопе — только файлы.
+const isNarrow = ref(false)
+const updateNarrow = () => { isNarrow.value = typeof window !== 'undefined' && window.innerWidth < 768 }
+if (typeof window !== 'undefined') {
+  updateNarrow()
+  window.addEventListener('resize', updateNarrow)
+}
+
 const filesOnly = computed(() => {
+  if (isNarrow.value) {
+    // Сортируем так, чтобы папки были сверху
+    return [...filteredFiles.value].sort((a, b) => {
+      if (a.is_dir && !b.is_dir) return -1
+      if (!a.is_dir && b.is_dir) return 1
+      return 0
+    })
+  }
   return filteredFiles.value.filter(file => !file.is_dir);
 });
 
@@ -209,13 +222,16 @@ const isSelected = (file) => {
 };
 
 const onFileDoubleClick = (file) => {
-  // Если компонент находится в режиме выбора и это файл (не директория)
-  if (fileBrowser && fileBrowser.selectionMode && !file.is_dir) {
+  // Директория — проваливаемся внутрь (удобно на мобильном без дерева)
+  if (file.is_dir) {
+    const target = (state.currentDirectory || '/').replace(/\/$/, '') + '/' + file.name + '/';
+    fileStore.actions.loadFiles(target, state.mediaSource);
+    return;
+  }
+  // Файл в режиме выбора — эмитим выбор
+  if (fileBrowser && fileBrowser.selectionMode) {
     const filePath = file.url || (state.currentDirectory + file.name);
     fileBrowser.emit('fileSelected', filePath);
-  } else {
-    // Для файлов можно реализовать предпросмотр или другие действия
-    // console.log('Двойной клик по файлу:', file);
   }
 };
 
@@ -298,5 +314,66 @@ const formatDate = (date) => {
 .file-name {
   max-width: 100%;
   font-size: 0.9rem;
+}
+
+/* Toolbar start — собственный layout, поиск + сортировка */
+.fv-toolbar-start {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.fv-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.fv-search > i.pi-search {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #6b7280;
+}
+.fv-search :deep(.p-inputtext) { padding-left: 2rem; }
+
+.fv-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.fv-sort-label { font-size: 0.9rem; }
+
+/* ── Мобильный вид (≤ 768px) ── */
+@media (max-width: 768px) {
+  .fv-toolbar-start {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .fv-search { width: 100%; }
+  .fv-search :deep(.p-inputtext) { width: 100%; }
+
+  .fv-sort {
+    display: grid;
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+    align-items: center;
+    width: 100%;
+  }
+  .fv-sort :deep(.p-button) {
+    padding: 0.35rem 0.4rem;
+    font-size: 0.85rem;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  /* Сетка файлов — 2 колонки вместо 4 */
+  .file-view .grid.grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 </style>

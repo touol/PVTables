@@ -463,3 +463,53 @@
 .tan-drag-handle:active { cursor: grabbing; }
 .tan-row-dragging { opacity: 0.4; }
 .tan-row-drag-over td { border-top: 2px solid var(--p-primary-color, #3b82f6) !important; }
+
+/* ── Image preview dialog (type=file) ── */
+.image-preview-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0.5rem;
+  min-height: 0;
+}
+.image-preview-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+}
+.image-preview-stage img {
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  will-change: transform;
+  transform-origin: center center;
+}
+.image-preview-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+.image-preview-ctrl .ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.image-preview-ctrl .ctrl:hover { background: #e2e8f0; }
+.image-preview-ctrl .zoom-range {
+  flex: 1;
+  min-width: 140px;
+}

@@ -44,13 +44,17 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject } from 'vue';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import fileStore from '../../../store/fileStore';
 
 // Состояние из хранилища
 const { state, actions } = fileStore;
+
+// Сообщаем родителю (FileBrowser → наружу) что файл удалён — полезно
+// чтобы привязанная к этому файлу запись БД могла сбросить своё поле.
+const fileBrowser = inject('fileBrowser', null);
 
 // Локальное состояние
 const error = ref('');
@@ -85,7 +89,12 @@ watch(() => state.dialogs.remove, (newValue) => {
 // Удаление файла
 const removeFile = async () => {
   try {
+    const snapshot = state.selectedFile ? { ...state.selectedFile } : null;
     await actions.removeFile();
+    if (snapshot && !snapshot.is_dir && fileBrowser && typeof fileBrowser.emit === 'function') {
+      const path = snapshot.url || ((state.currentDirectory || '/') + snapshot.name);
+      fileBrowser.emit('fileDeleted', path);
+    }
     closeDialog();
   } catch (err) {
     error.value = `Ошибка при удалении ${isDirectory.value ? 'директории' : 'файла'}: ${err.message}`;

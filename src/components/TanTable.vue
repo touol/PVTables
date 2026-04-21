@@ -638,6 +638,14 @@ const fileEditOpen   = ref(false)
 const imagePreviewOpen = ref(false)
 const imagePreviewSrc  = ref('')
 const imagePreviewName = ref('')
+const imagePreviewZoom = ref(1)
+const imagePreviewRotation = ref(0)
+const imagePreviewDragging = ref(false)
+
+const resetImagePreview = () => {
+  imagePreviewZoom.value = 1
+  imagePreviewRotation.value = 0
+}
 
 const IMAGE_EXTS = new Set(['jpg','jpeg','png','gif','webp','bmp','svg'])
 
@@ -681,6 +689,7 @@ const onFilePreview = async (path, mediaSource) => {
   if (IMAGE_EXTS.has(ext)) {
     imagePreviewSrc.value = resolved
     imagePreviewName.value = (path.split('/').pop() || path)
+    resetImagePreview()
     imagePreviewOpen.value = true
   } else {
     window.open(resolved, '_blank', 'noopener')
@@ -705,6 +714,28 @@ const onBrowserFileSelected = (filePath) => {
   browserOpen.value = false
   if (!tgt) return
   saveCellUpdate(tgt.data, tgt.col.field, filePath)
+  browserTarget.value = null
+}
+
+const onBrowserFileDeleted = (deletedPath) => {
+  const tgt = browserTarget.value
+  if (!tgt) return
+  // Если удалили именно тот файл, что привязан к ячейке → сбрасываем поле
+  const current = tgt.data?.[tgt.col.field] ?? ''
+  if (!current) return
+  // Сравниваем с учётом возможных вариаций: точное совпадение или совпадение по имени файла
+  const same = current === deletedPath
+    || current.endsWith('/' + (deletedPath.split('/').pop() || ''))
+  if (same) {
+    saveCellUpdate(tgt.data, tgt.col.field, '')
+  }
+}
+
+const onBrowserClearBinding = () => {
+  const tgt = browserTarget.value
+  browserOpen.value = false
+  if (!tgt) return
+  saveCellUpdate(tgt.data, tgt.col.field, '')
   browserTarget.value = null
 }
 const fullEditValue  = ref(null)
@@ -1531,15 +1562,18 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     header="Выбор файла"
     :modal="true"
     :dismissableMask="false"
-    :style="{ width: '92vw', height: '86vh' }"
+    :style="isMobile ? { width: '100vw', height: '100vh', maxHeight: '100vh', margin: 0 } : { width: '92vw', height: '86vh' }"
   >
     <div style="height: 100%;">
       <FileBrowser
         v-if="browserOpen"
         :mediaSource="browserMediaSource"
         :initialPath="browserInitialPath"
+        :boundPath="browserInitialPath"
         :selectionMode="true"
         @fileSelected="onBrowserFileSelected"
+        @fileDeleted="onBrowserFileDeleted"
+        @clearBinding="onBrowserClearBinding"
       />
     </div>
   </Dialog>
@@ -1550,15 +1584,47 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     :header="imagePreviewName || 'Превью'"
     :modal="true"
     :dismissableMask="true"
-    :style="{ maxWidth: '90vw', maxHeight: '90vh' }"
+    :maximizable="true"
+    :style="isMobile ? { width: '100vw', height: '100vh', maxHeight: '100vh', margin: 0 } : { width: '80vw', height: '80vh', maxWidth: '95vw', maxHeight: '95vh' }"
+    @hide="resetImagePreview"
   >
-    <div style="display:flex; align-items:center; justify-content:center;">
-      <img
-        v-if="imagePreviewSrc"
-        :src="imagePreviewSrc"
-        :alt="imagePreviewName"
-        style="max-width:85vw; max-height:78vh; object-fit:contain;"
-      />
+    <div class="image-preview-body">
+      <div class="image-preview-stage">
+        <img
+          v-if="imagePreviewSrc"
+          :src="imagePreviewSrc"
+          :alt="imagePreviewName"
+          :style="{
+            transform: `rotate(${imagePreviewRotation}deg) scale(${imagePreviewZoom})`,
+            transition: imagePreviewDragging ? 'none' : 'transform 0.15s ease',
+          }"
+        />
+      </div>
+      <div class="image-preview-ctrl">
+        <button type="button" class="ctrl" title="Повернуть против часовой" @click="imagePreviewRotation -= 90">
+          <i class="pi pi-undo"></i>
+        </button>
+        <button type="button" class="ctrl" title="Повернуть по часовой" @click="imagePreviewRotation += 90">
+          <i class="pi pi-refresh"></i>
+        </button>
+        <button type="button" class="ctrl" title="Уменьшить" @click="imagePreviewZoom = Math.max(0.1, imagePreviewZoom - 0.25)">
+          <i class="pi pi-search-minus"></i>
+        </button>
+        <input
+          type="range"
+          min="0.1"
+          max="5"
+          step="0.05"
+          v-model.number="imagePreviewZoom"
+          class="zoom-range"
+        />
+        <button type="button" class="ctrl" title="Увеличить" @click="imagePreviewZoom = Math.min(5, imagePreviewZoom + 0.25)">
+          <i class="pi pi-search-plus"></i>
+        </button>
+        <button type="button" class="ctrl" title="Сбросить" @click="resetImagePreview">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
     </div>
   </Dialog>
 
