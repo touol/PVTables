@@ -262,7 +262,9 @@ export function useTanCRUD(
 
     // ── Обычное обновление ────────────────────────────────────────────────
     const dataBefore = { ...lineItems.value[findIndexById(Number(data.id))] ?? data };
-    const payload = { id: data.id, [field]: newValue, update_from_row: 1 };
+    // Нормализуем пустое значение: server-side isset($request[field]) для null
+    // вернёт false и поле НЕ обновится. Передаём '' для явной очистки.
+    const payload = { id: data.id, [field]: newVal, update_from_row: 1 };
     try {
       const response = await api.update(payload, { filters: prepFilters?.() });
       emit('get-response', { table: props.table, action: 'update', response });
