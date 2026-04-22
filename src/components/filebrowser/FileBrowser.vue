@@ -369,7 +369,7 @@ const selectCurrentFile = () => {
      чтобы последние файлы не заезжали под bottom-sheet. Компактный вариант
      (только action-bar) — ~4.5rem; разворот с деталями — до 70vh. */
   .file-browser .file-view-panel.has-bottom-sheet {
-    margin-bottom: 4.5rem;
+    margin-bottom: 6rem;
   }
   .file-browser .file-view-panel.has-bottom-sheet-expanded {
     margin-bottom: 70vh;
@@ -386,14 +386,17 @@ const selectCurrentFile = () => {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    /* Поднимаем панель над системной навигацией телефона.
+       env() даёт точное значение safe-area на iOS/части Android, на остальных
+       fallback — фиксированный отступ, чтобы кнопку не резал бар браузера/ОС. */
+    bottom: max(env(safe-area-inset-bottom, 0.75rem), 0.75rem);
     width: 100%;
     background: #fff;
     border: none;
     border-top: 1px solid #e5e7eb;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     z-index: 100;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: 0.25rem;
     transition: max-height 0.25s ease;
     overflow-y: auto;
   }
