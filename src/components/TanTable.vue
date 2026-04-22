@@ -641,6 +641,31 @@ const imagePreviewName = ref('')
 const imagePreviewZoom = ref(1)
 const imagePreviewRotation = ref(0)
 const imagePreviewDragging = ref(false)
+const imagePreviewNaturalW = ref(0)
+const imagePreviewNaturalH = ref(0)
+
+const onImagePreviewLoad = (e) => {
+  imagePreviewNaturalW.value = e.target.naturalWidth
+  imagePreviewNaturalH.value = e.target.naturalHeight
+}
+
+// Меняем реальный размер img через width/height, а не через transform:scale —
+// иначе при зуме верх картинки уходит за пределы центрированного флекс-контейнера
+// и недоступен через скролл. Transform оставляем только для rotate.
+const imagePreviewImgStyle = computed(() => {
+  const w = imagePreviewNaturalW.value * imagePreviewZoom.value
+  const h = imagePreviewNaturalH.value * imagePreviewZoom.value
+  return {
+    width: w ? w + 'px' : 'auto',
+    height: h ? h + 'px' : 'auto',
+    maxWidth: 'none',
+    maxHeight: 'none',
+    display: 'block',
+    margin: 'auto',
+    transform: `rotate(${imagePreviewRotation.value}deg)`,
+    transition: imagePreviewDragging.value ? 'none' : 'transform 0.15s ease',
+  }
+})
 
 const resetImagePreview = () => {
   imagePreviewZoom.value = 1
@@ -1594,10 +1619,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
           v-if="imagePreviewSrc"
           :src="imagePreviewSrc"
           :alt="imagePreviewName"
-          :style="{
-            transform: `rotate(${imagePreviewRotation}deg) scale(${imagePreviewZoom})`,
-            transition: imagePreviewDragging ? 'none' : 'transform 0.15s ease',
-          }"
+          @load="onImagePreviewLoad"
+          :style="imagePreviewImgStyle"
         />
       </div>
       <div class="image-preview-ctrl">

@@ -476,15 +476,12 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: #111;
+  /* Блочный контейнер + margin:auto на img даёт центрирование когда картинка
+     меньше контейнера и полноценный скролл во все стороны при зуме.
+     Flex-центрирование обрезало верх, т.к. overflow не скроллит "вверх от центра". */
 }
 .image-preview-stage img {
-  max-width: none;
-  max-height: none;
-  object-fit: contain;
   will-change: transform;
   transform-origin: center center;
 }

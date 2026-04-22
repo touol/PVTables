@@ -28,6 +28,7 @@
     "@tanstack/vue-table": "^8.21.3",
     "@tanstack/vue-virtual": "^3.13.21",
     "axios": "^1.6.8",
+    "jspdf": "^4.2.1",
     "ofetch": "^1.4.1",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.1",

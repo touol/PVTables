@@ -19,7 +19,7 @@
         Ошибка: {{ errorMsg }}
       </div>
       <div v-else-if="status === 'uploading'" class="notice">
-        Загрузка на сервер…
+        {{ uploadMsg || 'Загрузка на сервер…' }}
       </div>
 
       <!-- Live preview -->
@@ -61,20 +61,51 @@
         <button type="button" class="ctrl-btn" title="Сбросить" @click="resetEdits">
           <i class="pi pi-times"></i>&nbsp;Сброс
         </button>
+        <button type="button" class="ctrl-btn ctrl-btn-add" title="Добавить страницу и снять ещё один лист" @click="addPageAndContinue">
+          <i class="pi pi-plus"></i>&nbsp;Добавить лист
+        </button>
+      </div>
+
+      <!-- Миниатюры уже сфотографированных листов -->
+      <div v-if="pages.length" class="pages-strip">
+        <div class="pages-strip-label">Листов: {{ pages.length }}</div>
+        <div class="pages-strip-scroll">
+          <div
+            v-for="(p, idx) in pages"
+            :key="p.id"
+            class="page-thumb"
+          >
+            <img :src="p.thumb" :alt="`Лист ${idx + 1}`" />
+            <span class="page-num">{{ idx + 1 }}</span>
+            <button class="remove-thumb" title="Удалить страницу" @click="removePage(idx)">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <template #footer>
       <div class="footer">
         <button v-if="status === 'ready'" class="p-button p-component" @click="capture">
-          <i class="pi pi-camera"></i>&nbsp;Снять
+          <i class="pi pi-camera"></i>&nbsp;
+          <span>{{ pages.length ? `Снять лист ${pages.length + 1}` : 'Снять' }}</span>
+        </button>
+        <button
+          v-if="status === 'ready' && pages.length"
+          class="p-button p-component p-button-success"
+          @click="finalizeUpload"
+        >
+          <i class="pi pi-check"></i>&nbsp;Сохранить PDF ({{ pages.length }} лист.)
         </button>
         <template v-if="status === 'captured'">
           <button class="p-button p-component p-button-secondary" @click="retake">
             <i class="pi pi-refresh"></i>&nbsp;Переснять
           </button>
           <button class="p-button p-component p-button-success" @click="uploadCaptured">
-            <i class="pi pi-check"></i>&nbsp;Использовать
+            <i class="pi pi-check"></i>&nbsp;
+            <span v-if="pages.length">Сохранить PDF ({{ pages.length + 1 }} лист.)</span>
+            <span v-else>Использовать</span>
           </button>
         </template>
         <button class="p-button p-component p-button-text" @click="close">Отмена</button>
@@ -86,6 +117,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Dialog from 'primevue/dialog'
+import { jsPDF } from 'jspdf'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -98,18 +130,22 @@ const emit = defineEmits(['update:visible', 'fileUploaded'])
 const internalVisible = ref(props.visible)
 const status   = ref('idle')
 const errorMsg = ref('')
+const uploadMsg = ref('')
 const videoEl  = ref(null)
 const stageEl  = ref(null)
 const displayEl = ref(null)
 
 let stream = null
-let capturedCanvas = null   // исходник в полном разрешении
-let editedCanvas   = null   // с применённым поворотом — источник для отрисовки и crop
+let capturedCanvas = null
+let editedCanvas   = null
 
-const rotation = ref(0)     // 0 | 90 | 180 | 270
+const rotation = ref(0)
 const zoom     = ref(1)
-// crop в координатах displayEl (px), 0..display size
 const crop = ref({ x: 0, y: 0, w: 0, h: 0 })
+
+// Накопленные страницы: каждая содержит canvas с финальным изображением + thumb (dataURL)
+const pages = ref([])
+let pageCounter = 0
 
 watch(() => props.visible, v => { internalVisible.value = v; if (v) start() })
 watch(internalVisible, v => { emit('update:visible', v); if (!v) cleanup() })
@@ -135,7 +171,6 @@ const start = async () => {
     v.srcObject = stream
     await v.play()
 
-    // TODO: remove diagnostics
     try {
       const track = stream.getVideoTracks()[0]
       const caps = track.getCapabilities?.() ?? {}
@@ -219,7 +254,6 @@ const renderDisplay = () => {
   const d = displayEl.value
   const stage = stageEl.value
   if (!d || !editedCanvas || !stage) return
-  // подбираем размер под stage с сохранением пропорций
   const maxW = stage.clientWidth
   const maxH = stage.clientHeight
   const ratio = editedCanvas.width / editedCanvas.height
@@ -228,7 +262,6 @@ const renderDisplay = () => {
   d.width  = Math.round(w)
   d.height = Math.round(h)
   d.getContext('2d').drawImage(editedCanvas, 0, 0, d.width, d.height)
-  // сбрасываем crop в полный кадр при ре-рендере
   crop.value = { x: 0, y: 0, w: d.width, h: d.height }
 }
 
@@ -262,8 +295,6 @@ const onCropPointerMove = (e) => {
   if (!dragMode || !dragStart) return
   const d = displayEl.value
   if (!d) return
-  // координаты корректируем под текущий zoom (событийные пиксели уже «экранные»,
-  // а crop хранится в координатах самого canvas)
   const dx = (e.clientX - dragStart.x) / zoom.value
   const dy = (e.clientY - dragStart.y) / zoom.value
   const c0 = dragStart.crop
@@ -298,7 +329,7 @@ const onCropPointerUp = () => {
   window.removeEventListener('pointermove', onCropPointerMove)
 }
 
-/* ─── Использовать ─── */
+/* ─── Сборка финального canvas ─── */
 const retake = () => {
   capturedCanvas = null; editedCanvas = null
   status.value = 'ready'
@@ -319,39 +350,129 @@ const buildFinalCanvas = () => {
   return out
 }
 
-const uploadCaptured = async () => {
-  const finalCanvas = buildFinalCanvas()
-  if (!finalCanvas) return
+// Делает маленький thumb из canvas для миниатюры внизу
+const makeThumb = (canvas, maxSide = 140) => {
+  const ratio = canvas.width / canvas.height
+  const w = ratio > 1 ? maxSide : Math.round(maxSide * ratio)
+  const h = ratio > 1 ? Math.round(maxSide / ratio) : maxSide
+  const t = document.createElement('canvas')
+  t.width = w; t.height = h
+  t.getContext('2d').drawImage(canvas, 0, 0, w, h)
+  return t.toDataURL('image/jpeg', 0.75)
+}
+
+/* ─── Страницы (многостраничный режим) ─── */
+const addPageAndContinue = () => {
+  const fc = buildFinalCanvas()
+  if (!fc) return
+  pages.value.push({
+    id: ++pageCounter,
+    canvas: fc,
+    thumb: makeThumb(fc),
+  })
+  capturedCanvas = null
+  editedCanvas = null
+  status.value = 'ready'
+}
+
+const removePage = (idx) => {
+  pages.value.splice(idx, 1)
+}
+
+/* ─── Сохранение ─── */
+const sanitizeBaseName = () => {
+  const base = props.fileName?.trim()
+    ? props.fileName.replace(/[^\w\-а-яё]/gi, '_')
+    : `photo_${Date.now()}`
+  return base
+}
+
+// Собирает все страницы в единый PDF (A4 portrait, картинка центрирована с сохранением пропорций)
+const buildPdfBlob = (canvases) => {
+  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true })
+  const pageW = pdf.internal.pageSize.getWidth()
+  const pageH = pdf.internal.pageSize.getHeight()
+  canvases.forEach((cv, i) => {
+    if (i > 0) pdf.addPage()
+    const imgRatio = cv.width / cv.height
+    const pageRatio = pageW / pageH
+    let drawW, drawH
+    if (imgRatio > pageRatio) { drawW = pageW; drawH = pageW / imgRatio }
+    else                      { drawH = pageH; drawW = pageH * imgRatio }
+    const x = (pageW - drawW) / 2
+    const y = (pageH - drawH) / 2
+    const dataUrl = cv.toDataURL('image/jpeg', 0.85)
+    pdf.addImage(dataUrl, 'JPEG', x, y, drawW, drawH)
+  })
+  return pdf.output('blob')
+}
+
+const uploadFile = async (blob, ext) => {
   status.value = 'uploading'
+  const base = sanitizeBaseName()
+  const filename = `${base}.${ext}`
+  const fd = new FormData()
+  fd.append('path',   props.uploadPath)
+  fd.append('source', String(props.mediaSource))
+  fd.append('file',   blob, filename)
+
+  const resp = await fetch(`/api/files?action=upload&source=${encodeURIComponent(props.mediaSource)}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd,
+  })
+  const json = await resp.json()
+  if (!json?.success) throw new Error(json?.message || 'Ошибка загрузки')
+
+  const listResp = await fetch(`/api/files?path=${encodeURIComponent(props.uploadPath)}&source=${encodeURIComponent(props.mediaSource)}`, {
+    credentials: 'include',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+  })
+  const listJson = await listResp.json()
+  const match = (listJson?.data?.files || []).find(f => f.name === filename)
+  const url = match?.url || `${props.uploadPath.replace(/\/$/, '')}/${filename}`
+
+  emit('fileUploaded', { url, name: filename })
+  close()
+}
+
+// Вызывается из стадии 'captured' — собирает все страницы (вкл. текущий crop) и загружает
+const uploadCaptured = async () => {
+  const fc = buildFinalCanvas()
+  if (!fc) return
   try {
-    const blob = await new Promise(res => finalCanvas.toBlob(res, 'image/jpeg', 0.9))
-    const base = props.fileName?.trim()
-      ? props.fileName.replace(/[^\w\-а-яё]/gi, '_')
-      : `photo_${Date.now()}`
-    const fd = new FormData()
-    fd.append('path',   props.uploadPath)
-    fd.append('source', String(props.mediaSource))
-    fd.append('file', blob, `${base}.jpg`)
+    if (pages.value.length === 0) {
+      // один лист → JPG как раньше
+      uploadMsg.value = 'Загрузка снимка…'
+      const blob = await new Promise(res => fc.toBlob(res, 'image/jpeg', 0.9))
+      await uploadFile(blob, 'jpg')
+    } else {
+      // несколько листов → PDF
+      uploadMsg.value = `Сборка PDF (${pages.value.length + 1} лист.)…`
+      status.value = 'uploading'
+      await nextTick()
+      const allCanvases = [...pages.value.map(p => p.canvas), fc]
+      const pdfBlob = buildPdfBlob(allCanvases)
+      uploadMsg.value = 'Загрузка PDF на сервер…'
+      await uploadFile(pdfBlob, 'pdf')
+    }
+  } catch (e) {
+    errorMsg.value = e.message || 'Ошибка загрузки'
+    status.value = 'error'
+  }
+}
 
-    const resp = await fetch(`/api/files?action=upload&source=${encodeURIComponent(props.mediaSource)}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      body: fd,
-    })
-    const json = await resp.json()
-    if (!json?.success) throw new Error(json?.message || 'Ошибка загрузки')
-
-    const listResp = await fetch(`/api/files?path=${encodeURIComponent(props.uploadPath)}&source=${encodeURIComponent(props.mediaSource)}`, {
-      credentials: 'include',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    })
-    const listJson = await listResp.json()
-    const match = (listJson?.data?.files || []).find(f => f.name === `${base}.jpg`)
-    const url = match?.url || `${props.uploadPath.replace(/\/$/, '')}/${base}.jpg`
-
-    emit('fileUploaded', { url, name: `${base}.jpg` })
-    close()
+// Вызывается из стадии 'ready', когда уже есть страницы и пользователь решил больше не снимать
+const finalizeUpload = async () => {
+  if (!pages.value.length) return
+  try {
+    uploadMsg.value = `Сборка PDF (${pages.value.length} лист.)…`
+    status.value = 'uploading'
+    await nextTick()
+    const pdfBlob = buildPdfBlob(pages.value.map(p => p.canvas))
+    uploadMsg.value = 'Загрузка PDF на сервер…'
+    await uploadFile(pdfBlob, 'pdf')
   } catch (e) {
     errorMsg.value = e.message || 'Ошибка загрузки'
     status.value = 'error'
@@ -363,14 +484,16 @@ const close = () => { internalVisible.value = false }
 const cleanup = () => {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null }
   capturedCanvas = null; editedCanvas = null
+  pages.value = []
+  pageCounter = 0
+  uploadMsg.value = ''
   status.value = 'idle'
 }
 
 onMounted(() => { if (props.visible) start() })
 onBeforeUnmount(cleanup)
 
-// ре-рендер при изменении размеров stage/zoom
-watch(zoom, () => { /* zoom — чисто CSS, без ре-рендера canvas */ })
+watch(zoom, () => { /* zoom — чисто CSS */ })
 if (typeof window !== 'undefined') {
   window.addEventListener('resize', () => { if (status.value === 'captured') renderDisplay() })
 }
@@ -443,6 +566,13 @@ if (typeof window !== 'undefined') {
   font-size: 0.9rem;
 }
 .ctrl-btn:hover { background: #e2e8f0; }
+.ctrl-btn-add {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+  font-weight: 600;
+}
+.ctrl-btn-add:hover { background: #d1fae5; }
 .zoom {
   display: inline-flex;
   align-items: center;
@@ -452,5 +582,76 @@ if (typeof window !== 'undefined') {
 }
 .zoom input[type='range'] { flex: 1; }
 
-.footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
+/* Миниатюры страниц */
+.pages-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: #f1f5f9;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.pages-strip-label {
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pages-strip-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 2px;
+}
+.page-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.page-thumb .page-num {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.page-thumb .remove-thumb {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  padding: 0;
+}
+.page-thumb .remove-thumb:hover { background: #dc2626; }
+
+.footer { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
 </style>

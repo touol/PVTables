@@ -54,15 +54,19 @@
         :id="col.field"
         v-model="numericModel"
         @update:modelValue="setValue()"
-        :minFractionDigits="col.FractionDigits"
+        @focus="onNumericFocus"
+        @blur="isNumericFocused = false"
+        :minFractionDigits="isNumericFocused ? 0 : col.FractionDigits"
         :maxFractionDigits="col.FractionDigits"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
-    <InputNumber 
-        v-else-if="col.type == 'number'" 
+    <InputNumber
+        v-else-if="col.type == 'number'"
         v-model="numericModel"
         @update:modelValue="setValue()"
+        @focus="onNumericFocus"
+        @blur="isNumericFocused = false"
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
@@ -185,6 +189,20 @@
             model.value = value;
         }
     });
+
+    // Флаг фокуса — пока true, убираем minFractionDigits чтобы не ломался ввод
+    // (иначе после набора "121" поле показывает "121,00", и набор ",12" становится "12112,00"
+    // потому что курсор оказывается в integer-части)
+    const isNumericFocused = ref(false);
+
+    // Выделять всё содержимое InputNumber при фокусе и снимать паддинг дробной части
+    const onNumericFocus = (event) => {
+        isNumericFocused.value = true;
+        const input = event.target;
+        if (input && typeof input.select === 'function') {
+            setTimeout(() => input.select(), 0);
+        }
+    };
     
     // Computed свойство для преобразования объекта в JSON с отступами для Textarea
     const textareaModel = computed({

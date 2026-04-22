@@ -107,7 +107,7 @@
           'file-details-expanded': detailsExpanded,
         }"
       >
-        <!-- Mobile-only: крестик закрытия + кнопка «Выбрать этот файл» + разворот деталей -->
+        <!-- Mobile-only: крестик закрытия + компактная панель действий в одну строку -->
         <template v-if="isMobile">
           <button
             v-if="state.selectedFile"
@@ -125,16 +125,17 @@
             <Button
               icon="pi pi-check"
               label="Выбрать этот файл"
-              class="p-button-success"
+              class="p-button-success select-main-btn"
               @click="selectCurrentFile"
             />
             <button
               class="file-details-expand-btn"
               type="button"
               @click="detailsExpanded = !detailsExpanded"
+              :title="detailsExpanded ? 'Скрыть детали' : 'Показать детали'"
+              :aria-label="detailsExpanded ? 'Скрыть детали' : 'Показать детали'"
             >
               <i :class="detailsExpanded ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"></i>
-              {{ detailsExpanded ? 'Скрыть детали' : 'Детали' }}
             </button>
           </div>
         </template>
@@ -364,18 +365,19 @@ const selectCurrentFile = () => {
     flex: 1;
     min-height: 0;
   }
-  /* Когда снизу всплыла панель деталей — прижимаем низ файл-вью к верху
-     bottom-sheet, чтобы содержимое не заезжало под неё, а пустого места
-     не было, если файлов мало */
+  /* Когда снизу всплыла панель деталей — резервируем под неё высоту,
+     чтобы последние файлы не заезжали под bottom-sheet. Компактный вариант
+     (только action-bar) — ~4.5rem; разворот с деталями — до 70vh. */
   .file-browser .file-view-panel.has-bottom-sheet {
-    margin-bottom: 22vh;
+    margin-bottom: 4.5rem;
   }
   .file-browser .file-view-panel.has-bottom-sheet-expanded {
     margin-bottom: 70vh;
   }
 
   /* Панель деталей по умолчанию скрыта; при выборе файла —
-     всплывает снизу как компактный bottom-sheet */
+     всплывает снизу как компактный bottom-sheet. Без max-height в компактном
+     виде, чтобы размер совпадал с реальным содержимым (избегаем пустой полосы). */
   .file-browser .file-details-panel {
     display: none;
   }
@@ -386,8 +388,6 @@ const selectCurrentFile = () => {
     right: 0;
     bottom: 0;
     width: 100%;
-    max-height: 22vh;        /* компактно, оставляем список файлов видимым */
-    overflow-y: auto;
     background: #fff;
     border: none;
     border-top: 1px solid #e5e7eb;
@@ -395,31 +395,19 @@ const selectCurrentFile = () => {
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom, 0);
     transition: max-height 0.25s ease;
+    overflow-y: auto;
   }
   .file-browser .file-details-panel.file-details-bottom.file-details-expanded {
     max-height: 70vh;
   }
-  .file-browser .file-details-expand-btn {
-    margin-top: 0.4rem;
-    width: 100%;
-    padding: 0.35rem;
-    border: 1px dashed #cbd5e1;
-    background: #f8fafc;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-  }
+  /* Крестик закрытия в правом верхнем углу */
   .file-browser .file-details-close {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 2;
-    width: 2rem;
-    height: 2rem;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 4;
+    width: 1.75rem;
+    height: 1.75rem;
     border-radius: 999px;
     border: 1px solid #e5e7eb;
     background: #fff;
@@ -428,7 +416,7 @@ const selectCurrentFile = () => {
     align-items: center;
     justify-content: center;
   }
-  /* Кнопка «Выбрать файл» поверх всего, закреплена сверху bottom-sheet */
+  /* Панель действий в одну строку: [«Выбрать этот файл» занимает остаток] [chevron] */
   .file-browser .file-details-select-bar {
     position: sticky;
     top: 0;
@@ -436,9 +424,23 @@ const selectCurrentFile = () => {
     background: #fff;
     padding: 0.5rem 3rem 0.5rem 0.5rem;
     border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: stretch;
+    gap: 0.4rem;
   }
-  .file-browser .file-details-select-bar .p-button {
-    width: 100%;
+  .file-browser .file-details-select-bar .select-main-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .file-browser .file-details-expand-btn {
+    flex: 0 0 2.75rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
     justify-content: center;
   }
 }
