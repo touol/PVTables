@@ -138,12 +138,9 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer(force)); return }
 
     if (!force) {
-      const now = performance.now()
       if (Math.abs(containerWidth - _lastFitWidth) < FIT_WIDTH_THRESHOLD) return
-      if (now - _lastFitAt < FIT_COOLDOWN_MS) return
-      _lastFitAt = now
+      if (performance.now() - _lastFitAt < FIT_COOLDOWN_MS) return
     }
-    _lastFitWidth = containerWidth
 
     const btnSlot = (actionBtnSize?.value ?? 32) + 2  // кнопка + gap
     const fixedWidth =
@@ -205,6 +202,8 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     })
 
     columnSizing.value = { ...columnSizing.value, ...newSizing }
+    _lastFitWidth = containerWidth
+    _lastFitAt    = performance.now()
   }
 
   // ─── Server save / reset ──────────────────────────────────────────────────
