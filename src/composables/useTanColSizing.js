@@ -137,7 +137,9 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     const containerWidth = scrollRef.value.clientWidth - 2
     if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer(force)); return }
 
-    if (!force) {
+    // Пороги работают только если уже был хотя бы один успешный фит — иначе
+    // на быстрой загрузке (performance.now() < 100мс) cooldown блокирует первый фит.
+    if (!force && _lastFitAt) {
       if (Math.abs(containerWidth - _lastFitWidth) < FIT_WIDTH_THRESHOLD) return
       if (performance.now() - _lastFitAt < FIT_COOLDOWN_MS) return
     }
