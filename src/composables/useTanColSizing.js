@@ -27,6 +27,13 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
   const resizingColId     = ref(null)
 
   let _resizeObserver = null
+  // Анти-осцилляция авто-фита: если refit меняет высоту строк → появляется/пропадает
+  // вертикальный скролл → clientWidth прыгает на ~17px → ResizeObserver снова стреляет.
+  // Гасим петлю порогом по ширине + cooldown'ом по времени.
+  let _lastFitWidth = 0
+  let _lastFitAt    = 0
+  const FIT_WIDTH_THRESHOLD = 20  // px
+  const FIT_COOLDOWN_MS     = 100
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -123,12 +130,20 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
    *  2. Если сумма влезает в контейнер — пропорционально растягиваем.
    *  3. Иначе — оставляем измеренные размеры (появится горизонтальный скролл).
    */
-  const fitColumnsToContainer = () => {
+  const fitColumnsToContainer = (force = false) => {
     if (!scrollRef.value) return
     // clientWidth — внутренняя ширина без скроллбара и бордеров.
     // CSS width:100%;min-width:0 гарантирует что контейнер не расширяется по таблице.
     const containerWidth = scrollRef.value.clientWidth - 2
-    if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer()); return }
+    if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer(force)); return }
+
+    if (!force) {
+      const now = performance.now()
+      if (Math.abs(containerWidth - _lastFitWidth) < FIT_WIDTH_THRESHOLD) return
+      if (now - _lastFitAt < FIT_COOLDOWN_MS) return
+      _lastFitAt = now
+    }
+    _lastFitWidth = containerWidth
 
     const btnSlot = (actionBtnSize?.value ?? 32) + 2  // кнопка + gap
     const fixedWidth =
@@ -216,7 +231,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
       autoFitCols.value = false
     } else {
       autoFitCols.value = true
-      nextTick(() => fitColumnsToContainer())
+      nextTick(() => fitColumnsToContainer(true))
     }
     notify('success', { detail: 'Локальная ширина колонок сброшена' })
   }
@@ -228,7 +243,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
         serverFieldsStyle.value = null
         localStorage.removeItem(WIDTH_LS_KEY)
         autoFitCols.value = true
-        nextTick(() => fitColumnsToContainer())
+        nextTick(() => fitColumnsToContainer(true))
         notify('success', { detail: 'Ширина колонок на сервере сброшена' })
       } else {
         notify('error', { detail: response.data?.message || 'Ошибка сброса' })
@@ -248,7 +263,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
   watch(autoFitCols, v => {
     try { localStorage.setItem(AUTOFIT_KEY, String(v)) } catch {}
-    if (v) nextTick(() => fitColumnsToContainer())
+    if (v) nextTick(() => fitColumnsToContainer(true))
   })
 
   // Сохранять ширины в localStorage когда ресайз закончен
