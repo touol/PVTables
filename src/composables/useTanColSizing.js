@@ -260,12 +260,18 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
   onMounted(() => {
     if (typeof ResizeObserver === 'undefined') return
-    _resizeObserver = new ResizeObserver(() => {
-      if (autoFitCols.value) fitColumnsToContainer()
+    // Наблюдаем РОДИТЕЛЯ scroll-контейнера: появление/пропадание вертикального
+    // скроллбара меняет clientWidth самого .tan-scroll, но не его родителя.
+    // При этом родитель содержит toolbar, чья ВЫСОТА меняется — а ResizeObserver
+    // срабатывает на любое изменение размера. Поэтому фильтруем по ширине вручную.
+    let _observedWidth = 0
+    _resizeObserver = new ResizeObserver(entries => {
+      if (!autoFitCols.value) return
+      const w = entries[0]?.contentRect?.width ?? 0
+      if (w && Math.abs(w - _observedWidth) < 1) return  // сменилась только высота — игнор
+      _observedWidth = w
+      fitColumnsToContainer()
     })
-    // Наблюдаем РОДИТЕЛЯ scroll-контейнера, а не сам .tan-scroll.
-    // Появление/пропадание вертикального скроллбара меняет clientWidth самого
-    // .tan-scroll, но не его родителя — поэтому петли «refit→scrollbar→refit» нет.
     nextTick(() => {
       const target = scrollRef.value?.parentElement || scrollRef.value
       if (target) _resizeObserver.observe(target)
