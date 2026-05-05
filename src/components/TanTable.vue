@@ -492,14 +492,14 @@ const dataColDefs = computed(() =>
           return parts.length ? parts.join(' ') : String(value)
         }
         case 'select': {
-          const lbl = getSelectContent(col.field, value)
-          if (lbl) return lbl
-          // fallback: select_data из customFields конкретной строки
+          // customFields[data.id][field].select_data имеет приоритет над колоночным
           const cfRows = customFields.value[data.id]?.[col.field]?.select_data
           if (cfRows) {
             const found = cfRows.find(o => String(o.id) === String(value))
             if (found) return found.content ?? found.label ?? String(value)
           }
+          const lbl = getSelectContent(col.field, value)
+          if (lbl) return lbl
           return String(value)
         }
         default: {
