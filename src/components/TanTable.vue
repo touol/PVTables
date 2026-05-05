@@ -1395,6 +1395,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                   :initial-value="getFieldValue(cell.row.original, cell.column.id)"
                   :selectSettings="selectSettings"
                   :autocompleteSettings="autocompleteSettings"
+                  :customRows="customFields[cell.row.original.id]?.[cell.column.id]?.select_data ?? null"
                   @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"

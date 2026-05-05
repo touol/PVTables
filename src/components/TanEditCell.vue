@@ -93,6 +93,8 @@ const props = defineProps({
   initialValue:     { default: '' },
   selectSettings:   { type: Object, default: () => ({}) },
   autocompleteSettings: { type: Object, default: () => ({}) },
+  // per-row select_data из customFields[rowId][field].select_data — приоритетнее колоночного
+  customRows:       { type: Array, default: null },
 })
 
 const emit = defineEmits(['save', 'cancel', 'navigate'])
@@ -105,7 +107,8 @@ const displayText = computed(() => {
   const v = props.initialValue
   if (v === null || v === undefined) return ''
   if (props.col.type === 'select') {
-    const rows = props.selectSettings?.[props.col.field]?.rows
+    const rows = props.customRows
+      ?? props.selectSettings?.[props.col.field]?.rows
       ?? props.col.select_data
       ?? props.col.rows
     if (rows) {
@@ -230,7 +233,8 @@ const hideOptionsPopover = () => {
 }
 
 const loadSelectOptions = (query) => {
-  const rows = props.selectSettings?.[props.col.field]?.rows
+  const rows = props.customRows
+    ?? props.selectSettings?.[props.col.field]?.rows
     ?? props.col.select_data
     ?? props.col.rows
     ?? []
