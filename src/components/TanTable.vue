@@ -127,6 +127,7 @@ watch(() => props.filters, () => {
 
 const refresh = (from_parent, tbl) => {
   if (!tbl || tbl == props.table) {
+    skipScroll?.()  // не сбрасывать скролл на ручном refresh — UX
     loadLazyData?.()
     if (!from_parent) emit('refresh-table')
   } else if (tbl && childComponentRefs.value) {
@@ -144,7 +145,7 @@ let lineItem, lineItemDialog, deleteLineItemDialog, deleteLineItemsDialog
 let openNew, editLineItem, hideDialog, saveLineItem
 let confirmDeleteLineItem, deleteLineItem, confirmDeleteSelected, deleteSelectedLineItems
 let mywatch
-let saveCellUpdate, consumeSkip
+let saveCellUpdate, consumeSkip, skipScroll
 
 // ─── Actions (инициализируется в onMounted) ───────────────────────────────
 const cur_actions      = ref([])
@@ -1131,6 +1132,7 @@ onMounted(async () => {
     deleteSelectedLineItems = crudComposable.deleteSelectedLineItems
     saveCellUpdate          = crudComposable.saveCellUpdate
     consumeSkip             = crudComposable.consumeSkip
+    skipScroll              = crudComposable.skipScroll
 
     // Expand composable
     const expandComposable = usePVTableExpand(table_tree, () => filters, dataFields, props.table)
