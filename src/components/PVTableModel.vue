@@ -72,7 +72,7 @@
     >
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
       <Column
-        v-for="col of columns.filter((x) => x.modal_only != true)"
+        v-for="col of columns.filter((x) => x.modal_only != true && x.mobile_only != true)"
         :field="col.field"
         :header="col.label"
         sortable

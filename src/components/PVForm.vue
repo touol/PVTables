@@ -68,7 +68,7 @@
       </TabPanels>
     </Tabs>
     <div v-else :class="{'flex flex-wrap gap-4':inline}">
-      <template v-for="col of columns2.filter((x) => x.table_only != true && x.type != 'hidden')">
+      <template v-for="col of columns2.filter((x) => x.table_only != true && x.mobile_only != true && x.type != 'hidden')">
         <div class="flex flex-wrap items-start gap-4 mb-4">
           <label :for="col.field" class="font-semibold w-24 pt-2">
             {{ col.label }}
@@ -196,7 +196,7 @@ export default {
       }
     },
     availableFields() {
-      return this.columns2.filter((x) => x.table_only != true && x.type != 'hidden')
+      return this.columns2.filter((x) => x.table_only != true && x.mobile_only != true && x.type != 'hidden')
     },
     additionalFields() {
       if (!this.form || !this.form.tabs) return []

@@ -42,9 +42,12 @@
         {{ subtitleParts.join(' · ') }}
       </div>
 
-      <!-- Артикул (кастомный Vue-шаблон из mobile_card.article) -->
+      <!-- Артикул (кастомный Vue-шаблон из mobile_card.article ИЛИ простое значение из mobile_card.article_field) -->
       <div v-if="articleComponent" class="tan-mc-article">
         <component :is="articleComponent" :row="row" :cols="cols" :selectSettings="selectSettings" />
+      </div>
+      <div v-else-if="articleField && articleValue" class="tan-mc-article">
+        {{ articleValue }}
       </div>
 
       <!-- Метрики (числовые поля) -->
@@ -188,6 +191,12 @@ const metrics = computed(() => {
 })
 
 const bodyFields = computed(() => roles.value.bodyFields ?? [])
+
+const articleField = computed(() => roles.value.articleField || null)
+const articleValue = computed(() => {
+  const f = articleField.value
+  return f ? cellText(f, props.row[f.field]) : ''
+})
 </script>
 
 <style scoped>

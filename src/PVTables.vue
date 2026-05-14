@@ -694,7 +694,7 @@
   const dataFields = ref([])
   const hideId = ref(false)
   const visibleColumns = computed(() =>
-    columns.value.filter(x => x.modal_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id'))
+    columns.value.filter(x => x.modal_only != true && x.mobile_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id'))
   );
   const noEditorTypes = new Set(['multiautocomplete', 'boolean', 'date', 'datetime', 'html', 'view', 'file']);
   const actionsFrozen = ref(null)

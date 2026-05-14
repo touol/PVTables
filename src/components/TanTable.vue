@@ -88,7 +88,7 @@ const actions1      = ref({})
 
 const visibleColumns = computed(() =>
   columns.value.filter(
-    x => x.modal_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id')
+    x => x.modal_only != true && x.mobile_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id')
   )
 )
 
@@ -345,6 +345,20 @@ const dragColDef = {
   cell: () => h('span', { class: 'tan-drag-handle', title: 'Перетащить' }, '⠿'),
 }
 
+// Эвристика: строка считается «синтетической» (служебный header/итог) если
+// для неё в customFields хотя бы одно поле имеет type='empty'. Триггеры
+// (например vk24Snab triggerReadPayRegistryList) прокидывают type='empty' на
+// большинство полей синтетической строки — это и есть маркер. На таких
+// строках не рендерим чекбокс выделения.
+const isSyntheticRow = (row) => {
+  const cf = customFields.value[row.original?.id]
+  if (!cf) return false
+  for (const k in cf) {
+    if (cf[k]?.type === 'empty') return true
+  }
+  return false
+}
+
 const selectionColDef = {
   id: '__select__', size: 38, minSize: 38, maxSize: 38,
   enableResizing: false, enableSorting: false, enableColumnFilter: false,
@@ -354,11 +368,14 @@ const selectionColDef = {
     'onUpdate:modelValue': () => table.toggleAllRowsSelected(),
     style: 'display:flex; align-items:center; justify-content:center',
   }),
-  cell: ({ row }) => h(Checkbox, {
-    modelValue: row.getIsSelected(),
-    binary: true,
-    'onUpdate:modelValue': () => row.toggleSelected(),
-  }),
+  cell: ({ row }) => {
+    if (isSyntheticRow(row)) return null
+    return h(Checkbox, {
+      modelValue: row.getIsSelected(),
+      binary: true,
+      'onUpdate:modelValue': () => row.toggleSelected(),
+    })
+  },
 }
 
 const expandColDef = {
@@ -426,9 +443,15 @@ const dataColDefs = computed(() =>
     cell: ({ getValue, row }) => {
       const value = getValue()
       const data  = row.original
+      // customField может переопределить type для конкретной (rowId, fieldName).
+      // type='empty' — явно пустая ячейка (для синтетических header/итог строк).
+      // type='text' — значение как есть, без преобразований (для названий групп).
+      const cf = customFields.value[data?.id]?.[col.field]
+      const effectiveType = cf?.type || col.type
+      if (effectiveType === 'empty') return ''
       // Для file-поля рендерим даже при пустом значении — нужна кнопка выбора.
-      if ((value === null || value === undefined) && col.type !== 'file') return ''
-      switch (col.type) {
+      if ((value === null || value === undefined || value === '') && effectiveType !== 'file') return ''
+      switch (effectiveType) {
         case 'decimal':  return formatDecimal(value, col.FractionDigits)
         case 'boolean':  return h(Checkbox, { modelValue: value == 1 || value === true, binary: true, disabled: true })
         case 'date':     return formatDate(value)

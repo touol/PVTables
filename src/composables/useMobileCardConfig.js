@@ -4,10 +4,10 @@ import { compile } from '@vue/compiler-dom'
 
 // ─── Эвристики автоопределения ролей полей ────────────────────────────────
 
-const TITLE_HINTS    = ['name', 'title', 'caption', 'наименование', 'product', 'description']
+const TITLE_HINTS    = ['mark', 'маркировка', 'name', 'title', 'caption', 'наименование', 'product', 'description']
 const BADGE_HINTS    = ['status', 'state', 'статус', 'состояние']
 const METRIC_HINTS   = ['sum', 'amount', 'total', 'price', 'qty', 'quantity', 'сумма', 'количество', 'цена', 'итого']
-const SUBTITLE_HINTS = ['client', 'customer', 'article', 'sku', 'code', 'date', 'клиент', 'артикул', 'дата', 'заказчик']
+const SUBTITLE_HINTS = ['client', 'customer', 'article', 'sku', 'code', 'date', 'room', 'cell', 'клиент', 'артикул', 'дата', 'заказчик', 'ячейка']
 
 function fieldMatchesHints(fieldName, hints) {
   const f = fieldName.toLowerCase()
@@ -21,7 +21,7 @@ function fieldMatchesHints(fieldName, hints) {
  * @returns {{ titleField, badgeField, subtitleFields, metricFields, bodyFields }}
  */
 export function detectCardRoles(cols) {
-  const visible = cols.filter(c => c.type !== 'hidden' && c.field !== 'id')
+  const visible = cols.filter(c => c.type !== 'hidden' && c.field !== 'id' && c.desktop_only != true)
 
   let titleField    = null
   let badgeField    = null
@@ -107,6 +107,53 @@ export function compileTplComponent(tplString) {
 }
 
 /**
+ * Применить явные роли из конфига `mobile_card` поверх авто-определённых.
+ * Конфиг может содержать поля title_field, badge_field, subtitle_fields, metric_fields, body_fields
+ * со значениями = именами field. Указанные поля изымаются из bodyFields и проставляются в свою роль.
+ *
+ * @param {Object} auto — результат detectCardRoles
+ * @param {Object|null} cfg — mobileCardConfig.value
+ * @param {Array} cols — visible columns
+ */
+function applyExplicitRoles(auto, cfg, cols) {
+  if (!cfg) return { ...auto, articleField: null }
+  const byField = {}
+  for (const c of cols) byField[c.field] = c
+
+  const pickOne = (name) => byField[name] || null
+  const pickMany = (names) => (Array.isArray(names) ? names.map(n => byField[n]).filter(Boolean) : [])
+
+  const explicitTitle    = pickOne(cfg.title_field)
+  const explicitBadge    = pickOne(cfg.badge_field)
+  const explicitSub      = pickMany(cfg.subtitle_fields)
+  const explicitMetrics  = pickMany(cfg.metric_fields)
+  const explicitBody     = pickMany(cfg.body_fields)
+  const explicitArticle  = pickOne(cfg.article_field)
+
+  // Если явно задан title — он перебивает авто.
+  const titleField    = explicitTitle    || auto.titleField
+  const badgeField    = explicitBadge    || auto.badgeField
+  const subtitleFields = explicitSub.length   ? explicitSub    : auto.subtitleFields
+  const metricFields   = explicitMetrics.length ? explicitMetrics : auto.metricFields
+  const articleField   = explicitArticle
+  // body: если задан явно — берём его; иначе все visible cols, не попавшие в роли выше.
+  // Так не теряются поля, которые автоэвристика отнесла в subtitle/metric,
+  // но явный subtitle/metric_fields их перебил.
+  const usedFields = new Set([
+    titleField?.field,
+    badgeField?.field,
+    articleField?.field,
+    ...subtitleFields.map(c => c.field),
+    ...metricFields.map(c => c.field),
+  ].filter(Boolean))
+  const bodyFields = explicitBody.length
+    ? explicitBody
+    : cols.filter(c => !usedFields.has(c.field))
+
+  return { titleField, badgeField, subtitleFields, metricFields, bodyFields, articleField }
+}
+
+/**
  * Основной composable.
  *
  * @param {Ref<Object|null>} mobileCardConfig — reactive ref из api.options() → data.mobile_card
@@ -114,7 +161,12 @@ export function compileTplComponent(tplString) {
  * @returns {{ cardRoles, tplComponent }}
  */
 export function useMobileCardConfig(mobileCardConfig, columns) {
-  const cardRoles = computed(() => detectCardRoles(columns.value ?? []))
+  const cardRoles = computed(() => {
+    const cols = columns.value ?? []
+    const visible = cols.filter(c => c.type !== 'hidden' && c.field !== 'id' && c.desktop_only != true)
+    const auto = detectCardRoles(cols)
+    return applyExplicitRoles(auto, mobileCardConfig.value, visible)
+  })
 
   const tplComponent = computed(() => {
     const tpl = mobileCardConfig.value?.tpl
