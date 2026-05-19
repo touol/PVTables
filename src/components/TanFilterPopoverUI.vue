@@ -264,7 +264,7 @@ const getConstraintDisplay = (c, idx) => {
                 <input
                   :ref="idx === 0 ? (el) => { firstInputRef = el } : undefined"
                   class="tan-filter-popover-input"
-                  :type="colType === 'date' ? 'date' : 'text'"
+                  :type="colType === 'date' ? 'date' : (colType === 'datetime' ? 'datetime-local' : 'text')"
                   :value="c.value"
                   placeholder="Значение…"
                   @input="emit('update:constraint-value', { idx, value: $event.target.value })"
