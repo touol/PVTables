@@ -87,6 +87,10 @@
 /* ── Row highlight classes (row_setting / row_class_trigger) ── */
 .tan-row.hit      { background-color: #60cc2fe6; }
 .tan-row.attention{ background-color: rgba(252, 3, 3, 0.8); }
+.tan-row.row-blue { background-color: #dbeafe; }
+.tan-row.row-blue:hover { background-color: #bfdbfe; }
+.tan-row.row-green { background-color: #dcfce7; }
+.tan-row.row-green:hover { background-color: #bbf7d0; }
 .tan-row.work     { background-color: #89d7f1; }
 .tan-row.outwork  { background-color: #eff189; }
 .tan-row.onsklad  { background-color: #f19989; }
