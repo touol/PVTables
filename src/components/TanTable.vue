@@ -61,6 +61,7 @@ const props = defineProps({
   filters:        { type: Object,  default: () => ({}) },
   sorting:        { type: Array,   default: () => [] },
   child:          { type: Boolean, default: false },
+  embeddedInRow:  { type: Boolean, default: false },
   scrollHeight:   { type: String,  default: '85vh' },
   autoFitHeight:  { type: Boolean, default: false },
   emptyRowsCount: { type: Number,  default: 0 },
@@ -1075,7 +1076,10 @@ onMounted(async () => {
     initColumnWidths()
     // Для дочерних таблиц — масштабировать сохранённые ширины под реальный контейнер.
     // Отступы фиксированы: .tan-expansion-td padding 16px*2=32 + .p-3 12px*2=24 = 56px
-    if (props.child && !autoFitCols.value) {
+    // Scale-down активен только для таблиц-вкладок ВНУТРИ row-expansion (subtables/subtabs).
+    // Для PVTabs-вкладок верхнего уровня (одна таблица на табе) — НЕ применяется,
+    // иначе сохранённые «Сохранить локально» ширины уезжают на ~120/total после reload.
+    if (props.embeddedInRow && !autoFitCols.value) {
       const savedWidths = { ...columnSizing.value }
       const totalSaved = Object.values(savedWidths).reduce((s, w) => s + w, 0)
       if (totalSaved > 0) {
@@ -1454,6 +1458,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                       :filters="subfiltersComposable?.[flatItems[vItem.index].row.original._rowKey]"
                       @refresh-table="refresh(false)"
                       :child="true"
+                      :embeddedInRow="true"
                       :ref="el => { if (el) childComponentRefs[flatItems[vItem.index].row.original._rowKey] = el }"
                       @get-response="emit('get-response', $event)"
                     />
@@ -1466,6 +1471,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                       :filters="subfiltersComposable?.[flatItems[vItem.index].row.original._rowKey]"
                       @refresh-table="refresh(false)"
                       :child="true"
+                      :embeddedInRow="true"
                       :ref="el => { if (el) childComponentRefs[flatItems[vItem.index].row.original._rowKey] = el }"
                       @get-response="emit('get-response', $event)"
                     />

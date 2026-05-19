@@ -26,6 +26,7 @@
     :scrollHeight="tableScrollHeight"
     :autoFitHeight="autoFitHeight"
     :child="child"
+    :embeddedInRow="embeddedInRow"
     :emptyRowsCount="emptyRowsCount"
     @get-response="emit('get-response', $event)"
     @refresh-table="emit('refresh-table', $event)"
@@ -393,6 +394,7 @@
             :filters="subfiltersComposable[slotProps.data._rowKey]"
             @refresh-table="refresh(false)"
             :child="true"
+            :embeddedInRow="true"
             :ref="el => { if (el) childComponentRefsComposable[slotProps.data._rowKey] = el }"
             @get-response="get_response($event)"
             />
@@ -405,6 +407,7 @@
             :filters="subfiltersComposable[slotProps.data._rowKey]"
             @refresh-table="refresh(false)"
             :child="true"
+            :embeddedInRow="true"
             :ref="el => { if (el) childComponentRefsComposable[slotProps.data._rowKey] = el }"
             @get-response="get_response($event)"
             />
@@ -607,7 +610,13 @@
       default: () => []
     },
     child:{
-      type: Boolean, //и не понятно зачем это. Вроде нет использования переменной.
+      type: Boolean, // Универсальный «вложенная таблица» — влияет на skip URL filters и mobile scroll
+      default: false
+    },
+    embeddedInRow:{
+      // Узкая семантика: таблица отрендерена ВНУТРИ row-expansion (subtables/subtabs).
+      // Активирует scale-down ширин в TanTable (-120px). НЕ ставить для PVTabs-табов.
+      type: Boolean,
       default: false
     },
     styleTable: {

@@ -68,6 +68,7 @@
             :key="table.key"
             @refresh-table="refresh(false)"
             :child="true"
+            :embeddedInRow="embeddedInRow"
             :scrollHeight="autoUpdateHeights ? (tableScrollHeights[table.key] || '400px') : undefined"
             :ref="el => { if (el) childComponentRefs[table.key] = el }"
             @get-response="get_response($event)"
@@ -83,6 +84,7 @@
           :key="tab.key"
           @refresh-table="refresh(false)"
           :child="true"
+          :embeddedInRow="embeddedInRow"
           :scrollHeight="autoUpdateHeights ? (tableScrollHeights[tab.key] || '400px') : undefined"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           @get-response="get_response($event)"
@@ -134,6 +136,10 @@
       default: 0
     },
     child:{
+      type: Boolean,
+      default: false
+    },
+    embeddedInRow:{
       type: Boolean,
       default: false
     },
