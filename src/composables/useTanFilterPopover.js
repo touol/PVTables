@@ -115,6 +115,13 @@ export function useTanFilterPopover({
           label = formatDateFn?.(raw) || key
           break
         }
+        case 'boolean': {
+          // raw в БД хранится как 0/1, в JS приходит number/boolean. Любая
+          // truthy не-нулевая запись → «Да», иначе → «Нет».
+          const truthy = raw === true || raw === 1 || raw === '1' || raw === 'true'
+          label = truthy ? 'Да' : 'Нет'
+          break
+        }
       }
       seen.set(key, label)
     }
