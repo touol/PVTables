@@ -82,11 +82,16 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
   // ─── Save / load ───────────────────────────────────────────────────────────
 
-  /** Сохранить columnSizing в localStorage в формате PVTables */
+  /** Сохранить ширины ВСЕХ видимых колонок в localStorage в формате PVTables.
+   *  Для каждой колонки эффективная ширина = columnSizing[field] (если юзер
+   *  ресайзил) либо getColDefaultSize(col). Иначе после reload не-ресайзенные
+   *  столбцы падали бы в default — таблица выглядела бы иначе чем при сохранении. */
   const saveWidthsToLocal = () => {
     const columnWidths = {}
-    Object.entries(columnSizing.value).forEach(([field, width], i) => {
-      columnWidths[field] = { width: `${width}px`, domIndex: i + 3 }
+    const cols = visibleColumns?.value || []
+    cols.forEach((col, i) => {
+      const w = columnSizing.value[col.field] ?? getColDefaultSize(col)
+      columnWidths[col.field] = { width: `${w}px`, domIndex: i + 3 }
     })
     try {
       localStorage.setItem(WIDTH_LS_KEY, JSON.stringify({ columnWidths }))
@@ -199,14 +204,16 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
   // ─── Server save / reset ──────────────────────────────────────────────────
 
   const saveFieldsStyleToServer = async () => {
-    // Берём ширины из in-memory columnSizing (а не из LS), чтобы работало
-    // даже когда юзер ресайзил, но не нажал «Сохранить локально».
-    if (!Object.keys(columnSizing.value).length) {
+    // Берём ширины из in-memory columnSizing + дефолты для не-ресайзенных
+    // (та же логика что и в saveWidthsToLocal — чтобы reload давал точную копию).
+    const cols = visibleColumns?.value || []
+    if (!cols.length) {
       notify('warning', { detail: 'Нет настроенных ширин для сохранения' }); return
     }
     const columnWidths = {}
-    Object.entries(columnSizing.value).forEach(([field, width], i) => {
-      columnWidths[field] = { width: `${width}px`, domIndex: i + 3 }
+    cols.forEach((col, i) => {
+      const w = columnSizing.value[col.field] ?? getColDefaultSize(col)
+      columnWidths[col.field] = { width: `${w}px`, domIndex: i + 3 }
     })
     const payload = { columnWidths }
     try {
