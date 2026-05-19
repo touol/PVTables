@@ -36,6 +36,7 @@ export function useTanFilterPopover({
     autocomplete: ['equals', 'notEquals'],
     select:       ['equals', 'notEquals'],
     date:     ['dateAfter', 'dateBefore', 'equals'],
+    datetime: ['dateAfter', 'dateBefore', 'equals'],
     boolean:  ['equals'],
   }
 
