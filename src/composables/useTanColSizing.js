@@ -14,16 +14,20 @@ import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
  */
 export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow, rowActions, visibleColumns, tableTree, speedDialEnabled, rowsGetter, actionBtnSize, rowDrag }) {
   const WIDTH_LS_KEY = `pvtables-${tableName}-column-widths-v2`
-  const AUTOFIT_KEY  = `tan-autofit-${tableName}-v2`
-  // Очистить устаревшие ключи предыдущих версий
+  // Очистить устаревшие ключи предыдущих версий (включая AUTOFIT_KEY — больше не нужен,
+  // autoFitCols выводится из наличия WIDTH_LS_KEY: есть сохранённые ширины — autoFit off)
   try {
     localStorage.removeItem(`pvtables-${tableName}-column-widths`)
     localStorage.removeItem(`tan-autofit-${tableName}`)
+    localStorage.removeItem(`tan-autofit-${tableName}-v2`)
   } catch {}
 
   const serverFieldsStyle = ref(null)
   const columnSizing      = ref({})
-  const autoFitCols       = ref(localStorage.getItem(AUTOFIT_KEY) !== 'false')
+  // autoFitCols=true только если нет сохранённых локальных ширин.
+  // Юзер начал resize → переключаем в false (in-memory, не persistent).
+  // После reload снова true, если не нажал «Сохранить локально».
+  const autoFitCols       = ref(!localStorage.getItem(WIDTH_LS_KEY))
   const resizingColId     = ref(null)
 
   let _resizeObserver = null
@@ -195,12 +199,20 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
   // ─── Server save / reset ──────────────────────────────────────────────────
 
   const saveFieldsStyleToServer = async () => {
-    const local = localStorage.getItem(WIDTH_LS_KEY)
-    if (!local) { notify('warning', { detail: 'Нет локальных настроек ширины для сохранения' }); return }
+    // Берём ширины из in-memory columnSizing (а не из LS), чтобы работало
+    // даже когда юзер ресайзил, но не нажал «Сохранить локально».
+    if (!Object.keys(columnSizing.value).length) {
+      notify('warning', { detail: 'Нет настроенных ширин для сохранения' }); return
+    }
+    const columnWidths = {}
+    Object.entries(columnSizing.value).forEach(([field, width], i) => {
+      columnWidths[field] = { width: `${width}px`, domIndex: i + 3 }
+    })
+    const payload = { columnWidths }
     try {
-      const response = await api.action('save_fields_style', { fields_style: JSON.parse(local) })
+      const response = await api.action('save_fields_style', { fields_style: payload })
       if (response.success) {
-        serverFieldsStyle.value = JSON.parse(local)
+        serverFieldsStyle.value = payload
         notify('success', { detail: 'Ширина колонок сохранена на сервере' })
       } else {
         notify('error', { detail: response.data?.message || 'Ошибка сохранения' })
@@ -240,21 +252,25 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
   const onResizeMouseDown = (e, header) => {
     if (!header.column.getCanResize()) return
+    // Юзер начал ресайз — отключаем авто-подгонку чтобы ResizeObserver
+    // не перезатёр уже изменённые столбцы при следующем тике. In-memory only:
+    // после reload без явного «Сохранить локально» autoFitCols снова true.
+    autoFitCols.value = false
     resizingColId.value = header.column.id
     header.getResizeHandler()(e)
   }
 
   // ─── Watchers ─────────────────────────────────────────────────────────────
 
+  // При включении автоподгонки — перерассчитать ширины. Persist в LS не делаем:
+  // autoFitCols выводится из наличия сохранённых ширин (см. инициализацию).
   watch(autoFitCols, v => {
-    try { localStorage.setItem(AUTOFIT_KEY, String(v)) } catch {}
     if (v) nextTick(() => fitColumnsToContainer())
   })
 
-  // Сохранять ширины в localStorage когда ресайз закончен
-  watch(resizingColId, (cur, prev) => {
-    if (prev && !cur && !autoFitCols.value) saveWidthsToLocal()
-  })
+  // Ширины НЕ сохраняем автоматически после resize — только по явной команде
+  // юзера через UI «Сохранить локально» (saveWidthsToLocal вызывается из TanTable
+  // по @save-local).
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
