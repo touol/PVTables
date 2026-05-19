@@ -54,6 +54,23 @@
 }
 .tan-resize-handle:hover, .tan-resizing { background: var(--p-primary-color, #3b82f6); opacity: 0.4; }
 
+/* ── Шестерёнка ширины столбца (верхний правый угол th, для тач-устройств) ── */
+.tan-colsize-cog {
+  position: absolute; top: 2px; right: 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border: none; border-radius: 3px; cursor: pointer;
+  background: transparent; color: var(--p-surface-400, #9ca3af);
+  font-size: 9px; padding: 0; opacity: 0.4; transition: opacity .15s, color .15s, background .15s;
+  z-index: 3;
+}
+.tan-th:hover .tan-colsize-cog { opacity: 1; }
+.tan-colsize-cog:hover { background: var(--p-surface-200, #e9ecef); color: var(--p-primary-color, #3b82f6); }
+.tan-colsize-cog--open { opacity: 1; background: var(--p-primary-50, #eff6ff); color: var(--p-primary-color, #3b82f6); }
+/* На тач-устройствах всегда показываем шестерёнку (hover не работает) */
+@media (hover: none) {
+  .tan-colsize-cog { opacity: 0.7; }
+}
+
 /* ── Body ── */
 .tan-tbody { position: relative; display: block; }
 .tan-row { display: flex; }

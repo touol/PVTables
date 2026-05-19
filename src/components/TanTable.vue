@@ -50,6 +50,7 @@ import { useTanRowDrag }     from '../composables/useTanRowDrag'
 import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
 import TanFilterPopoverUI from './TanFilterPopoverUI.vue'
+import TanColSizePopoverUI from './TanColSizePopoverUI.vue'
 import TanSettingsPopover from './TanSettingsPopover.vue'
 import TanEditCell        from './TanEditCell.vue'
 import EditField          from './EditField.vue'
@@ -791,6 +792,37 @@ const onBrowserClearBinding = () => {
 const fullEditValue  = ref(null)
 const fullPopoverRef = ref(null)
 
+// ─── Column size popover (для тача — кликаемая шестерёнка вместо resize handle) ──
+const openColSizeColId   = ref(null)
+const colSizePopoverPos  = ref({ top: 0, left: 0 })
+const openColSizePopover = (event, header) => {
+  if (!header.column.getCanResize()) return
+  // Юзер открыл попап для регулировки — отключаем autoFit как при resize handle.
+  autoFitCols.value = false
+  openColSizeColId.value = header.column.id
+  const rect = event.currentTarget.getBoundingClientRect()
+  colSizePopoverPos.value = { top: rect.bottom + 4, left: Math.max(8, rect.right - 260) }
+}
+const closeColSizePopover = () => { openColSizeColId.value = null }
+const setColSize = (width) => {
+  if (!openColSizeColId.value) return
+  columnSizing.value = { ...columnSizing.value, [openColSizeColId.value]: width }
+}
+const openColSizeWidth = computed(() => {
+  const id = openColSizeColId.value
+  if (!id) return 100
+  const cur = columnSizing.value[id]
+  if (cur != null) return cur
+  const col = visibleColumns.value.find(c => c.field === id)
+  return col ? getColDefaultSize(col) : 100
+})
+const openColSizeLabel = computed(() => {
+  const id = openColSizeColId.value
+  if (!id) return ''
+  const col = visibleColumns.value.find(c => c.field === id)
+  return col?.label || id
+})
+
 // data — необязателен; если передан, customFields[data.id]?.[col.field] может переопределить readonly/type
 const getCellCol = (col, data) => {
   if (!data?.id) return col
@@ -1360,6 +1392,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
               >
                 <i class="pi pi-filter" />
               </button>
+              <button
+                v-if="header.column.getCanResize()"
+                class="tan-colsize-cog"
+                :class="{ 'tan-colsize-cog--open': openColSizeColId === header.column.id }"
+                @click.stop="openColSizePopover($event, header)"
+                title="Ширина столбца"
+              >
+                <i class="pi pi-cog" />
+              </button>
               <div
                 v-if="header.column.getCanResize()"
                 class="tan-resize-handle"
@@ -1611,6 +1652,18 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     @remove-constraint="idx => removeConstraint(openFilterColId, idx)"
     @toggle-checklist="val => toggleChecklistValue(openFilterColId, val)"
     @toggle-checklist-all="toggleChecklistAll(openFilterColId)"
+  />
+
+  <!-- ── Column size popover (touch-friendly resize) ── -->
+  <TanColSizePopoverUI
+    :openColId="openColSizeColId"
+    :popoverPos="colSizePopoverPos"
+    :columnLabel="openColSizeLabel"
+    :currentWidth="openColSizeWidth"
+    :minSize="40"
+    :maxSize="1200"
+    @update:width="setColSize"
+    @close="closeColSizePopover()"
   />
 
   <!-- ── Прямой файл-браузер из ячейки (один клик) ── -->
