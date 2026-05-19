@@ -294,6 +294,12 @@
   font-size: 11px; font-weight: 600; text-transform: uppercase;
   color: var(--p-text-muted-color, #9ca3af); letter-spacing: .5px;
 }
+.tan-filter-section-hint {
+  font-size: 11px; line-height: 1.35; color: var(--p-text-muted-color, #6b7280);
+  background: var(--p-yellow-50, #fffbeb); border-left: 3px solid var(--p-yellow-400, #facc15);
+  padding: 6px 8px; border-radius: 3px; display: flex; gap: 6px; align-items: flex-start;
+}
+.tan-filter-section-hint .pi { color: var(--p-yellow-600, #ca8a04); margin-top: 1px; flex-shrink: 0; }
 
 /* Селект */
 .tan-filter-select {

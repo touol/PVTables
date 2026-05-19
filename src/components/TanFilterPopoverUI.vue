@@ -188,7 +188,7 @@ const getConstraintDisplay = (c, idx) => {
 
         <!-- ═══ Секция 1: Серверный фильтр ═══ -->
         <div class="tan-filter-section">
-          <div v-if="!inline" class="tan-filter-section-title">Фильтр</div>
+          <div v-if="!inline" class="tan-filter-section-title">Фильтр базы</div>
 
           <!-- Оператор -->
           <select
@@ -299,7 +299,12 @@ const getConstraintDisplay = (c, idx) => {
 
         <!-- ═══ Секция 2: Чеклист значений ═══ -->
         <div v-if="checklistAll.length > 0" class="tan-filter-section">
-          <div class="tan-filter-section-title">Значения</div>
+          <div class="tan-filter-section-title">Фильтр браузера</div>
+          <div class="tan-filter-section-hint">
+            <i class="pi pi-info-circle" />
+            Фильтрует только то, что есть на текущей странице.
+            Для всех значений используйте фильтр базы.
+          </div>
 
           <label class="tan-filter-checklist-item tan-filter-checklist-all">
             <input
