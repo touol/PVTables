@@ -12,7 +12,7 @@
 /* ── Scroll container ── */
 .tan-scroll {
   overflow: auto; position: relative; width: 100%; min-width: 0;
-  border: 1px solid var(--p-surface-300, #dee2e6);
+  border: 1px solid #cbd5e1;
   border-radius: 4px 4px 0 0;
 }
 .tan-table { border-collapse: collapse; table-layout: fixed; }
@@ -20,7 +20,9 @@
 /* ── Head ── */
 .tan-thead { position: sticky; top: 0; z-index: 1; background: var(--p-surface-100, #f8f9fa); }
 .tan-th {
-  padding: 0; border: 1px solid var(--p-surface-300, #dee2e6);
+  padding: 0;
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
   position: relative; vertical-align: top; user-select: none;
 }
 .tan-th-label {
@@ -93,8 +95,8 @@
 .tan-row.canceled { background-color: #ff684c; }
 .tan-td {
   padding: 4px 8px;
-  border-right: 1px solid var(--p-surface-300, #dee2e6);
-  border-bottom: 1px solid var(--p-surface-300, #dee2e6);
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
   display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis;
   min-height: 34px; box-sizing: border-box; flex-shrink: 0; font-size: 13px;
   background: inherit;
@@ -187,7 +189,7 @@
 .tan-paginator {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   padding: 4px 8px; font-size: 12px; color: var(--p-surface-600, #4b5563);
-  border: 1px solid var(--p-surface-300, #dee2e6); border-top: none;
+  border: 1px solid #cbd5e1; border-top: none;
   border-radius: 0 0 4px 4px; background: var(--p-surface-50, #fafafa); min-height: 34px;
 }
 .tan-pag-rpp { display: flex; align-items: center; gap: 4px; }
