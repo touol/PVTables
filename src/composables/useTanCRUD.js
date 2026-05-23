@@ -124,6 +124,10 @@ export function useTanCRUD(
         const response = await api.create(lineItem.value, params);
         emit('get-response', { table: props.table, action: 'create', response });
         if (!response.success) notify('error', { detail: response.message }, true);
+        // Backend может вернуть data.redirect → открываем страницу-редактор в новой вкладке.
+        if (response.success && response.data?.redirect) {
+          window.open(response.data.redirect, '_blank');
+        }
         skipScroll();
         refresh(false);
         lineItemDialog.value = false;

@@ -66,7 +66,7 @@ export function usePVTableData(emptyRowsCount = 0) {
    * @param {Function} getSorting - Функция, возвращающая текущую сортировку из пропсов
    * @returns {Function} Функция загрузки данных
    */
-  const createLoadLazyData = (api, fields, filters, prepFilters, notify, getSorting = () => []) => {
+  const createLoadLazyData = (api, fields, filters, prepFilters, notify, getSorting = () => [], onLoaded = null) => {
     return async (event) => {
       loading.value = true;
       lazyParams.value = {
@@ -155,6 +155,10 @@ export function usePVTableData(emptyRowsCount = 0) {
 
         totalRecords.value = response.data.total;
         loading.value = false;
+        // Хук для родителя — узнать total + rows без отдельного API-запроса.
+        if (typeof onLoaded === 'function') {
+          onLoaded({ total: response.data.total, rows: lineItems.value, response });
+        }
       } catch (error) {
         console.log('error', error);
         notify('error', { detail: error.message });

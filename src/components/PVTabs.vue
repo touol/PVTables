@@ -72,6 +72,7 @@
             :scrollHeight="autoUpdateHeights ? (tableScrollHeights[table.key] || '400px') : undefined"
             :ref="el => { if (el) childComponentRefs[table.key] = el }"
             @get-response="get_response($event)"
+            @rows-loaded="emit('rows-loaded', $event)"
           />
         </template>
         <PVTables
@@ -88,6 +89,7 @@
           :scrollHeight="autoUpdateHeights ? (tableScrollHeights[tab.key] || '400px') : undefined"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           @get-response="get_response($event)"
+          @rows-loaded="emit('rows-loaded', $event)"
         />
       </TabPanel>
     </TabPanels>
@@ -318,7 +320,7 @@
   
   
   // console.log('props.tabs',props.tabs)
-  const emit = defineEmits(['refresh-table','get-response','select-treenode','update-treenode-title','select-file'])
+  const emit = defineEmits(['refresh-table','get-response','rows-loaded','select-treenode','update-treenode-title','select-file'])
   const refresh = (from_parent,table) => {
     // console.log('childComponentRefs',childComponentRefs)
     if(!from_parent){

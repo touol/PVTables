@@ -68,7 +68,7 @@ const props = defineProps({
   emptyRowsCount: { type: Number,  default: 0 },
 })
 
-const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine'])
+const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine', 'rows-loaded'])
 
 // ─── API + Notifications ──────────────────────────────────────────────────
 const api = apiCtor(props.table)
@@ -1149,7 +1149,9 @@ onMounted(async () => {
     clearFilter    = filtersComposable.clearFilter
 
     // Load data functions
-    loadLazyData           = createLoadLazyData(api, fields, filters, () => prepFilters(), notify, () => props.sorting)
+    loadLazyData           = createLoadLazyData(api, fields, filters, () => prepFilters(), notify, () => props.sorting,
+      (info) => emit('rows-loaded', { table: props.table, ...info })
+    )
     composableLoadLazyData = loadLazyData
     onPage                 = createOnPage(loadLazyData)
     initFilters()

@@ -30,6 +30,7 @@
     :emptyRowsCount="emptyRowsCount"
     @get-response="emit('get-response', $event)"
     @refresh-table="emit('refresh-table', $event)"
+    @rows-loaded="emit('rows-loaded', $event)"
     @switch-engine="toggleTanTable"
   />
 
@@ -636,7 +637,7 @@
       default: 0
     }
   });
-  const emit = defineEmits(['get-response','refresh-table'])
+  const emit = defineEmits(['get-response','refresh-table','rows-loaded'])
 
   const api = apiCtor(props.table)
 
@@ -859,7 +860,9 @@
         clearFilter = filtersComposable.clearFilter;
 
         // Создаем функции загрузки данных
-        loadLazyData = createLoadLazyData(api, fields, filters, () => prepFilters(), notify, () => props.sorting);
+        loadLazyData = createLoadLazyData(api, fields, filters, () => prepFilters(), notify, () => props.sorting,
+          (info) => emit('rows-loaded', { table: props.table, ...info })
+        );
         composableLoadLazyData = loadLazyData; // Связываем прокси с реальной функцией
         onPage = createOnPage(loadLazyData);
         onSort = createOnSort(loadLazyData);
