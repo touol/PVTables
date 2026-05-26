@@ -986,7 +986,12 @@ const virtualizer = useVirtualizer({
   get count() { return flatItems.value.length },
   getScrollElement: () => scrollRef.value,
   estimateSize: i => flatItems.value[i]?.type === 'expansion' ? 250 : 34,
-  measureElement: el => el?.getBoundingClientRect().height ?? 34,
+  // Защита от h=0 в момент перерисовки/transition: возвращаем минимум 34
+  // (estimate), иначе кеш получит 0 и следующая строка наедет.
+  measureElement: el => {
+    const h = el?.getBoundingClientRect().height ?? 0
+    return h > 0 ? h : 34
+  },
   overscan: 8,
   getItemKey: i => flatItems.value[i]?.key ?? String(i),
 })
@@ -997,9 +1002,12 @@ const virtualizer = useVirtualizer({
 // consumeSkip() > 0 — подавить сброс скрола при обновлении ячейки
 // (saveCellUpdate из useTanCRUD).
 watch(lineItems, () => {
+  // measure() ОБЯЗАТЕЛЬНО до nextTick — иначе первый re-render использует
+  // старый itemSizeCache (позиции/высоты прошлого порядка строк), и строки
+  // накладываются. nextTick ниже потом скорректирует скролл.
+  virtualizer.value?.measure?.()
   const suppress = consumeSkip?.()
   nextTick(() => {
-    virtualizer.value?.measure?.()
     if (!suppress && !_scrollToLastPending) {
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
