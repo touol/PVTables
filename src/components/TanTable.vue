@@ -15,7 +15,6 @@ import {
   useVueTable,
   getCoreRowModel,
   getFilteredRowModel,
-  getSortedRowModel,
   getExpandedRowModel,
   FlexRender,
 } from '@tanstack/vue-table'
@@ -575,13 +574,28 @@ const tableInstance = useVueTable({
   onSortingChange:       u => { tanSorting.value    = typeof u === 'function' ? u(tanSorting.value)    : u },
   onExpandedChange:      u => { expanded.value      = typeof u === 'function' ? u(expanded.value)      : u },
   onColumnSizingChange:  u => { columnSizing.value  = typeof u === 'function' ? u(columnSizing.value)  : u },
+  // Серверная сортировка: TanStack только хранит state в tanSorting, реальная
+  // сортировка — на бэке через loadLazyData (см. watch(tanSorting) ниже).
+  manualSorting: true,
   getCoreRowModel:     getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
-  getSortedRowModel:   getSortedRowModel(),
   getExpandedRowModel: getExpandedRowModel(),
   columnResizeMode: 'onChange',
   enableRowSelection: true,
 })
+
+// При клике по заголовку колонки tanSorting обновляется → отправляем на сервер
+// новый sort и подтягиваем данные. Формат — multiSortMeta: [{field, order}],
+// order=1 asc, order=-1 desc.
+watch(tanSorting, (newSort) => {
+  if (!loadLazyData) return
+  const sortMeta = (newSort || []).map(s => ({ field: s.id, order: s.desc ? -1 : 1 }))
+  if (lazyParams.value) {
+    lazyParams.value.multiSortMeta = sortMeta
+    lazyParams.value.first = 0  // при смене сортировки — на первую страницу
+  }
+  loadLazyData()
+}, { deep: true })
 
 // ─── Filter popover composable ────────────────────────────────────────────
 const {
@@ -1001,11 +1015,25 @@ const virtualizer = useVirtualizer({
 // кеш позиций остаётся от старого порядка строк) и вернуться в начало.
 // consumeSkip() > 0 — подавить сброс скрола при обновлении ячейки
 // (saveCellUpdate из useTanCRUD).
+// При смене порядка строк (клиентская сортировка через TanStack) lineItems
+// не меняется, watcher на lineItems не сработает. Поэтому отдельно слушаем
+// tanSorting и expanded — это меняет последовательность row.id в rowModel
+// → flatItems[i].key для тех же i становится другим. virtualizer держит
+// measurementsCache с прежним key->index mapping; при scroll _measureElement
+// заполняет pendingMeasuredCacheIndexes, getMeasurements строит измерения
+// поверх старого среза → один key оказывается у двух индексов → Vue ругается
+// на duplicate keys и видны накладывающиеся строки.
+const resetVirtualizerCache = () => {
+  const v = virtualizer.value
+  if (!v) return
+  v.measure?.()                       // чистит itemSizeCache
+  v.measurementsCache = []            // чистит измеренные позиции
+  v.pendingMeasuredCacheIndexes = []  // и pending список
+}
+watch([tanSorting, expanded], () => { resetVirtualizerCache() }, { deep: true })
+
 watch(lineItems, () => {
-  // measure() ОБЯЗАТЕЛЬНО до nextTick — иначе первый re-render использует
-  // старый itemSizeCache (позиции/высоты прошлого порядка строк), и строки
-  // накладываются. nextTick ниже потом скорректирует скролл.
-  virtualizer.value?.measure?.()
+  resetVirtualizerCache()
   const suppress = consumeSkip?.()
   nextTick(() => {
     if (!suppress && !_scrollToLastPending) {
