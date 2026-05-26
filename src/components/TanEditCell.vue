@@ -95,6 +95,11 @@ const props = defineProps({
   autocompleteSettings: { type: Object, default: () => ({}) },
   // per-row select_data из customFields[rowId][field].select_data — приоритетнее колоночного
   customRows:       { type: Array, default: null },
+  // Уникальные значения этой колонки из остальных строк таблицы — для Excel-like
+  // автодополнения в текстовых ячейках (text/textarea). При вводе если префикс
+  // совпадает с началом существующего значения — дописывается «хвост» и выделяется,
+  // Tab/Enter принимают, Backspace/Delete отклоняют (стандартное поведение selection).
+  columnValues:     { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['save', 'cancel', 'navigate'])
@@ -388,9 +393,55 @@ const parseValue = (text) => {
   return t
 }
 
+// ── Excel-style автодополнение из columnValues ─────────────────────────────
+const SUGGEST_TYPES = new Set(['text', 'textarea'])
+
+const applyColumnSuggestion = () => {
+  if (!SUGGEST_TYPES.has(props.col.type)) return
+  if (!props.columnValues?.length) return
+  const el = divRef.value
+  if (!el) return
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return  // не дополняем если уже есть выделение
+
+  const text = el.textContent ?? ''
+  if (text.length === 0) return
+
+  // Проверяем, что каретка в самом конце элемента (стандартный сценарий печати)
+  const range = sel.getRangeAt(0)
+  const endRange = document.createRange()
+  endRange.selectNodeContents(el)
+  endRange.setStart(range.endContainer, range.endOffset)
+  if (endRange.toString() !== '') return  // не в конце
+
+  const lower = text.toLowerCase()
+  const match = props.columnValues.find(v =>
+    typeof v === 'string' && v !== text && v.toLowerCase().startsWith(lower)
+  )
+  if (!match) return
+  const tail = match.slice(text.length)
+  if (!tail) return
+
+  // Заменяем содержимое целиком и выделяем дописанный хвост
+  el.textContent = text + tail
+  const node = el.firstChild
+  if (!node) return
+  const newRange = document.createRange()
+  newRange.setStart(node, text.length)
+  newRange.setEnd(node, text.length + tail.length)
+  sel.removeAllRanges()
+  sel.addRange(newRange)
+}
+
 // ── events ─────────────────────────────────────────────────────────────────
 const onInput = (e) => {
   valid.value = validate(e.target.textContent)
+  // Дополняем только когда пользователь печатает (вставка символа/IME),
+  // НЕ на удалении/вставке из буфера — иначе backspace через ghost будет
+  // мгновенно его восстанавливать.
+  if (e.inputType === 'insertText' || e.inputType === 'insertCompositionText') {
+    applyColumnSuggestion()
+  }
 }
 
 const onBoolChange = (e) => {

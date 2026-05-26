@@ -651,6 +651,25 @@ const getRowLineIndex = (row) => {
 // Helper: get visible column index from column id
 const getColVisibleIndex = (colId) => visibleColumns.value.findIndex(c => c.field === colId)
 
+// Уникальные непустые значения колонки из текущих строк — для Excel-style
+// автодополнения текстовых ячеек (TanEditCell.columnValues).
+const getColumnUniqueValues = (field) => {
+  if (!field) return []
+  const rows = lineItems.value || []
+  const seen = new Set()
+  const out = []
+  for (const r of rows) {
+    const v = r?.[field]
+    if (v == null) continue
+    const s = String(v)
+    if (s.trim() === '') continue
+    if (seen.has(s)) continue
+    seen.add(s)
+    out.push(s)
+  }
+  return out
+}
+
 // ─── Cell editing ─────────────────────────────────────────────────────────
 const INLINE_TYPES = new Set(['text', 'view', 'number', 'decimal', 'boolean', 'date', 'select', 'autocomplete', 'textarea'])
 
@@ -1468,6 +1487,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                   :selectSettings="selectSettings"
                   :autocompleteSettings="autocompleteSettings"
                   :customRows="customFields[cell.row.original.id]?.[cell.column.id]?.select_data ?? null"
+                  :columnValues="getColumnUniqueValues(cell.column.id)"
                   @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"
