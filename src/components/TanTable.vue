@@ -992,11 +992,14 @@ const virtualizer = useVirtualizer({
 })
 
 // При смене данных (сортировка, фильтр, страница) — сбросить кеш высот
-// и вернуться в начало. consumeSkip() > 0 — подавить сброс скрола при
-// обновлении ячейки (saveCellUpdate из useTanCRUD).
+// virtualizer'а (иначе строки накладываются друг на друга после resort'а:
+// кеш позиций остаётся от старого порядка строк) и вернуться в начало.
+// consumeSkip() > 0 — подавить сброс скрола при обновлении ячейки
+// (saveCellUpdate из useTanCRUD).
 watch(lineItems, () => {
   const suppress = consumeSkip?.()
   nextTick(() => {
+    virtualizer.value?.measure?.()
     if (!suppress && !_scrollToLastPending) {
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
