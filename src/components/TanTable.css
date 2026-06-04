@@ -102,6 +102,10 @@
   background: inherit;
 }
 
+/* Actions-ячейка: оверлеи дочерних компонентов (popover/menu PVPrint и др.)
+   должны выходить за пределы ячейки. overflow:visible + z-index выше соседних. */
+.tan-td-actions { overflow: visible !important; z-index: 5; position: relative; }
+
 /* ── Expansion ── */
 .tan-expansion-row { display: flex; min-width: 100%; }
 .tan-expansion-td {

@@ -401,7 +401,7 @@ const actionsColDef = computed(() => ({
   id: '__actions__',
   size:
     rowActions.value.reduce(
-      (sum, a) => sum + (a.isRowPrint ? ROW_PRINT_BTN_WIDTH : (actionBtnSize.value + 2)),
+      (sum, a) => sum + (a.isRowPrint ? ROW_PRINT_BTN_WIDTH : (actionBtnSize.value + 2)) + 5,
       0
     )
     + (SpeedDialEnabled.value ? (actionBtnSize.value + 2) : 0)
@@ -1531,6 +1531,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                     'tan-td-fill-range': cellSelectionMode && isCellInFillRange(getRowLineIndex(cell.row), getColVisibleIndex(cell.column.id)),
                     'tan-frozen-right': actionsFrozen === 'right' && cell.column.id === '__actions__',
                     'tan-frozen-left':  actionsFrozen === 'left'  && cell.column.id === '__actions__',
+                    'tan-td-actions':   cell.column.id === '__actions__',
                   }
                 ]"
                 @click="cell.column.columnDef.meta && onCellClick(cell, $event)"
