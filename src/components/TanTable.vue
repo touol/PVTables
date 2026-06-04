@@ -53,6 +53,7 @@ import TanColSizePopoverUI from './TanColSizePopoverUI.vue'
 import TanSettingsPopover from './TanSettingsPopover.vue'
 import TanEditCell        from './TanEditCell.vue'
 import EditField          from './EditField.vue'
+import PVPrintAction      from './PVPrintAction.vue'
 
 // ─── Props (идентичны PVTables.vue) ───────────────────────────────────────
 const props = defineProps({
@@ -402,7 +403,16 @@ const actionsColDef = computed(() => ({
   header: () => '',
   cell: ({ row }) => h('div', { style: 'display:flex;gap:2px;align-items:center' }, [
     ...rowActions.value.map(action =>
-      action.compiledTemplate
+      action.isRowPrint
+        ? h(PVPrintAction, {
+            table: props.table,
+            filters,
+            api,
+            action: action.printAction || 'print',
+            row_id: row.original.id,
+            pageKey: `pvtables-${props.table}-row-${row.original.id}`,
+          })
+        : action.compiledTemplate
         ? h(action.compiledTemplate, {
             data: row.original,
             columns: columns.value,

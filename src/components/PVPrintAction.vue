@@ -31,6 +31,17 @@ const props = defineProps({
   pageKey: {
     type: String,
     default: 'pvtables-print'
+  },
+  // Endpoint backend-действия. Default 'print' — стандартный gtsAPI print.
+  // Для row_print можно указать кастомный, например 'pvtransport/print_routelist'.
+  action: {
+    type: String,
+    default: 'print'
+  },
+  // id строки для row_print (не используется в head-режиме).
+  row_id: {
+    type: [Number, String],
+    default: 0
   }
 })
 
@@ -79,14 +90,16 @@ const customPrintHandler = async (printer, options) => {
       is_virtual: printer.is_virtual,
       printOptions: options
     }
-    
+    // Для row_print передаём id конкретной строки.
+    if (props.row_id) requestData.id = props.row_id
+
     // Если не виртуальный принтер, добавляем printer_id
     if (printer.is_virtual !== 1) {
       requestData.printer_id = printer.id
     }
-    
-    // Отправляем запрос на печать
-    const response = await props.api.action('print', requestData)
+
+    // Отправляем запрос на печать (default 'print' либо кастомный action из конфига).
+    const response = await props.api.action(props.action, requestData)
     
     if (!response.success) {
       throw new Error(response.message || 'Ошибка печати')

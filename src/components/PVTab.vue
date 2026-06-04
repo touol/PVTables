@@ -15,7 +15,7 @@
   import Toast from 'primevue/toast';
   import { ref } from 'vue';
 
-  console.log('PVTabsConfigs',PVTabsConfigs)
+  // console.log('PVTabsConfigs',PVTabsConfigs)
   const PVTabsConfig = ref(PVTabsConfigs)
   const checkTabs = ref(false)
   checkTabs.value = PVTabsConfig?true:false;

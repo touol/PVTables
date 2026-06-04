@@ -285,6 +285,16 @@ export function usePVTableActions({
         case "print":
           addtmp = false;
           break;
+
+        // Row-кнопка печати: рендерится через <PVPrintAction> в actionsColDef.cell.
+        // Конфиг: actions: { row_print: { action: 'pvtransport/print_routelist' } }
+        case "row_print":
+          tmp.row = true;
+          tmp.isRowPrint = true;
+          // Эндпоинт берётся из tmp.action (например 'pvtransport/print_routelist').
+          tmp.printAction = tmp.action || 'print';
+          // Кнопка рендерится компонентом, не button — click отсутствует.
+          break;
           
         default:
           if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
