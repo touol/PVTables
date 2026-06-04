@@ -1045,9 +1045,22 @@ const virtualizer = useVirtualizer({
 const resetVirtualizerCache = () => {
   const v = virtualizer.value
   if (!v) return
-  v.measure?.()                       // чистит itemSizeCache
-  v.measurementsCache = []            // чистит измеренные позиции
+  // Пересобираем ТОЛЬКО позиции (measurementsCache), СОХРАНЯЯ измеренные высоты
+  // строк. itemSizeCache ключуется по ключу строки (стабильный _rowKey, который
+  // переживает reload — см. usePVTableData), поэтому при resort/expand/правке
+  // ячейки высоты не теряются. Новая ССЫЛКА на тот же Map инвалидирует memo
+  // getMeasurements → позиции считаются заново с нуля (убирает наложение строк
+  // после смены порядка), а высота каждой строки берётся из кеша по ключу
+  // (строка 489 virtual-core), а не переоценивается estimateSize=34px.
+  //
+  // Раньше тут вызывался v.measure(), который делает itemSizeCache = new Map() и
+  // СТИРАЕТ высоты. При сохранённом scrollTop (правка ячейки / раскрытие субтаба
+  // в середине таблицы) все строки выше вьюпорта — они не в DOM и повторно не
+  // измеряются — переоценивались в 34px, суммарная высота над вьюпортом
+  // сжималась, и таблица «проваливалась» на 8-12 строк вниз.
+  v.measurementsCache = []            // чистим позиции (убирает наложение)
   v.pendingMeasuredCacheIndexes = []  // и pending список
+  v.itemSizeCache = new Map(v.itemSizeCache)  // новая ссылка → пересчёт memo, высоты сохранены
 }
 watch([tanSorting, expanded], () => { resetVirtualizerCache() }, { deep: true })
 
