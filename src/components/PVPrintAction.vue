@@ -5,6 +5,7 @@
       v-if="isPVPrintLoaded"
       :custom-print-handler="customPrintHandler"
       :page-key="pageKey"
+      :compact="compact"
       @print-success="handlePrintSuccess"
       @print-error="handlePrintError"
       ref="printBtn"
@@ -149,12 +150,5 @@ onMounted(async () => {
 <style scoped>
 .pv-print-wrapper {
   display: inline-block;
-}
-/* Компактный режим (для row_print): уменьшаем padding/высоту, иконку и текст не трогаем. */
-.pv-print-wrapper.pv-print-compact :deep(button),
-.pv-print-wrapper.pv-print-compact :deep(.p-button) {
-  padding: 4px 8px;
-  height: 28px;
-  line-height: 1;
 }
 </style>

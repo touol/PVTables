@@ -395,8 +395,8 @@ const expandColDef = {
   },
 }
 
-// Ширина row_print кнопки (PVPrintAction "pdf"/"печать" с текстом) шире обычной row-кнопки.
-const ROW_PRINT_BTN_WIDTH = 80
+// Ширина row_print кнопки в compact-режиме (две иконки InputGroup: print + chevron).
+const ROW_PRINT_BTN_WIDTH = 65
 const actionsColDef = computed(() => ({
   id: '__actions__',
   size:
