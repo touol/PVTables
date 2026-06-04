@@ -140,11 +140,18 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer()); return }
 
     const btnSlot = (actionBtnSize?.value ?? 32) + 2  // кнопка + gap
+    // row_print (PVPrintAction с текстом "pdf") — шире обычной row-кнопки.
+    const ROW_PRINT_SLOT = 80
+    const actionsWidth = actionsRow.value
+      ? rowActions.value.reduce((s, a) => s + (a.isRowPrint ? ROW_PRINT_SLOT : btnSlot) + 5, 0)
+        + (speedDialEnabled?.value ? btnSlot : 0)
+        + 8
+      : 0
     const fixedWidth =
       (rowDrag?.value ? 28 : 0) +   // __drag__
       38 +   // __select__
       (tableTree?.value ? 34 : 0) +   // __expand__ (только для table_tree)
-      (actionsRow.value ? (rowActions.value.length * btnSlot + (speedDialEnabled?.value ? btnSlot : 0) + 8) : 0)
+      actionsWidth
 
     const dataCols = visibleColumns.value
     if (!dataCols.length) return
