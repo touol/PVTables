@@ -91,7 +91,7 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
     // Поддерживаемые форматы (ключи можно без кавычек — relaxed JSON):
     //   {id:1}                                                  — поле: значение
     //   {tablename:{id:1}}                                      — с неймспейсом таблицы
-    //   {id:{operator:"and",constraints:[{value:1,matchMode:"in"}]}}      — полный filter-объект
+    //   {id:{operator:"and",constraints:[{value:[1,2],matchMode:"in"}]}}      — полный filter-объект
     //   {tablename:{id:{operator:"and",constraints:[...]}}}              — неймспейс + filter-объект
     // Дочерние таблицы (subtable/subtabs) URL-фильтры игнорируют —
     // иначе фильтр по id=N родительской таблицы перекрывает подтаблицу.
@@ -107,16 +107,27 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
           try { parsed = JSON.parse(fixed); } catch { parsed = null; }
         }
         if (parsed && typeof parsed === 'object') {
-          // Снимаем неймспейс таблицы, если задан: {tablename:{...}} → {...}
-          let fieldMap = parsed;
-          if (parsed[props.table] && typeof parsed[props.table] === 'object' && !Array.isArray(parsed[props.table])) {
-            fieldMap = parsed[props.table];
-          }
-
           // Полный filter-объект (а не скалярное значение): есть constraints / matchMode / value
           const isFilterObj = (v) =>
             v && typeof v === 'object' && !Array.isArray(v) &&
             (Array.isArray(v.constraints) || v.hasOwnProperty('matchMode') || v.hasOwnProperty('value'));
+
+          // Снимаем неймспейс таблицы, если задан: {tablename:{...}} → {...}
+          let fieldMap = parsed;
+          if (parsed[props.table] && typeof parsed[props.table] === 'object' && !Array.isArray(parsed[props.table])) {
+            fieldMap = parsed[props.table];
+          } else {
+            // Если у root один ключ и это namespace-объект (значение — НЕ filter-объект,
+            // а dict подкючей), но для другой таблицы — фильтры не наши, игнорируем.
+            const rootKeys = Object.keys(parsed);
+            if (rootKeys.length === 1) {
+              const k = rootKeys[0];
+              const v = parsed[k];
+              if (v && typeof v === 'object' && !Array.isArray(v) && !isFilterObj(v)) {
+                throw new Error('skip url filters: namespace mismatch');
+              }
+            }
+          }
 
           for (const field in fieldMap) {
             const v = fieldMap[field];
