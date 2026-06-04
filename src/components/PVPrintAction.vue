@@ -1,6 +1,6 @@
 <template>
-  <div class="pv-print-wrapper" style="display: inline-block;">
-    <component 
+  <div class="pv-print-wrapper" :class="{ 'pv-print-compact': compact }" style="display: inline-block;">
+    <component
       :is="'PVPrint'"
       v-if="isPVPrintLoaded"
       :custom-print-handler="customPrintHandler"
@@ -42,6 +42,11 @@ const props = defineProps({
   row_id: {
     type: [Number, String],
     default: 0
+  },
+  // Компактный режим — только иконка принтера, без текста.
+  compact: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -144,5 +149,24 @@ onMounted(async () => {
 <style scoped>
 .pv-print-wrapper {
   display: inline-block;
+}
+/* Компактный режим (для row_print): только иконка, без текста, размер ≈ row-button. */
+.pv-print-wrapper.pv-print-compact :deep(button),
+.pv-print-wrapper.pv-print-compact :deep(.p-button) {
+  padding: 4px 6px;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  font-size: 0;
+  line-height: 1;
+}
+.pv-print-wrapper.pv-print-compact :deep(button > *:not(i):not(svg)),
+.pv-print-wrapper.pv-print-compact :deep(.p-button > *:not(i):not(svg)) {
+  display: none !important;
+}
+.pv-print-wrapper.pv-print-compact :deep(i),
+.pv-print-wrapper.pv-print-compact :deep(svg) {
+  font-size: 14px;
+  margin: 0;
 }
 </style>

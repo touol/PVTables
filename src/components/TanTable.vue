@@ -411,6 +411,7 @@ const actionsColDef = computed(() => ({
             action: action.printAction || 'print',
             row_id: row.original.id,
             pageKey: `pvtables-${props.table}-row-${row.original.id}`,
+            compact: true,
           })
         : action.compiledTemplate
         ? h(action.compiledTemplate, {
