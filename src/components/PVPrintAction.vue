@@ -150,23 +150,11 @@ onMounted(async () => {
 .pv-print-wrapper {
   display: inline-block;
 }
-/* Компактный режим (для row_print): только иконка, без текста, размер ≈ row-button. */
+/* Компактный режим (для row_print): уменьшаем padding/высоту, иконку и текст не трогаем. */
 .pv-print-wrapper.pv-print-compact :deep(button),
 .pv-print-wrapper.pv-print-compact :deep(.p-button) {
-  padding: 4px 6px;
-  min-width: 28px;
-  width: 28px;
+  padding: 4px 8px;
   height: 28px;
-  font-size: 0;
   line-height: 1;
-}
-.pv-print-wrapper.pv-print-compact :deep(button > *:not(i):not(svg)),
-.pv-print-wrapper.pv-print-compact :deep(.p-button > *:not(i):not(svg)) {
-  display: none !important;
-}
-.pv-print-wrapper.pv-print-compact :deep(i),
-.pv-print-wrapper.pv-print-compact :deep(svg) {
-  font-size: 14px;
-  margin: 0;
 }
 </style>

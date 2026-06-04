@@ -395,9 +395,17 @@ const expandColDef = {
   },
 }
 
+// Ширина row_print кнопки (PVPrintAction "pdf"/"печать" с текстом) шире обычной row-кнопки.
+const ROW_PRINT_BTN_WIDTH = 80
 const actionsColDef = computed(() => ({
   id: '__actions__',
-  size: rowActions.value.length * (actionBtnSize.value + 2) + (SpeedDialEnabled.value ? (actionBtnSize.value + 2) : 0) + 8,
+  size:
+    rowActions.value.reduce(
+      (sum, a) => sum + (a.isRowPrint ? ROW_PRINT_BTN_WIDTH : (actionBtnSize.value + 2)),
+      0
+    )
+    + (SpeedDialEnabled.value ? (actionBtnSize.value + 2) : 0)
+    + 8,
   minSize: actionBtnSize.value + 2,
   enableResizing: false, enableSorting: false, enableColumnFilter: false,
   header: () => '',
