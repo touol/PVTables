@@ -87,8 +87,12 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
       };
     }
 
-    // Применяем фильтры из GET-параметра ?filters={id:3,order_id:4}
-    // Поддерживаем как строгий JSON, так и relaxed (без кавычек у ключей).
+    // Применяем фильтры из GET-параметра ?filters=...
+    // Поддерживаемые форматы (ключи можно без кавычек — relaxed JSON):
+    //   {id:1}                                                  — поле: значение
+    //   {tablename:{id:1}}                                      — с неймспейсом таблицы
+    //   {id:{operator:"and",constraints:[{value:1,matchMode:"in"}]}}      — полный filter-объект
+    //   {tablename:{id:{operator:"and",constraints:[...]}}}              — неймспейс + filter-объект
     // Дочерние таблицы (subtable/subtabs) URL-фильтры игнорируют —
     // иначе фильтр по id=N родительской таблицы перекрывает подтаблицу.
     try {
@@ -98,23 +102,49 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
         let parsed = null;
         try { parsed = JSON.parse(raw); }
         catch {
-          // relaxed: {id:3,order_id:4} → оборачиваем ключи в кавычки
+          // relaxed: {id:3,matchMode:"in"} → оборачиваем неквотированные ключи в кавычки
           const fixed = raw.replace(/([{,]\s*)([A-Za-z_$][\w$]*)\s*:/g, '$1"$2":');
           try { parsed = JSON.parse(fixed); } catch { parsed = null; }
         }
         if (parsed && typeof parsed === 'object') {
-          for (const field in parsed) {
-            const v = parsed[field];
-            const existing = filters0[field];
-            if (existing && existing.hasOwnProperty('constraints')) {
-              existing.constraints[0] = { value: v, matchMode: FilterMatchMode.EQUALS };
-            } else if (existing && existing.hasOwnProperty('value')) {
-              existing.value = v;
+          // Снимаем неймспейс таблицы, если задан: {tablename:{...}} → {...}
+          let fieldMap = parsed;
+          if (parsed[props.table] && typeof parsed[props.table] === 'object' && !Array.isArray(parsed[props.table])) {
+            fieldMap = parsed[props.table];
+          }
+
+          // Полный filter-объект (а не скалярное значение): есть constraints / matchMode / value
+          const isFilterObj = (v) =>
+            v && typeof v === 'object' && !Array.isArray(v) &&
+            (Array.isArray(v.constraints) || v.hasOwnProperty('matchMode') || v.hasOwnProperty('value'));
+
+          for (const field in fieldMap) {
+            const v = fieldMap[field];
+            if (isFilterObj(v)) {
+              // Нормализуем в форму с constraints (matchMode берём как есть — напр. "in")
+              const constraints = Array.isArray(v.constraints)
+                ? v.constraints.map((c) => ({
+                    value: (c && c.value !== undefined) ? c.value : null,
+                    matchMode: (c && c.matchMode) ? c.matchMode : FilterMatchMode.EQUALS,
+                  }))
+                : [{
+                    value: v.value !== undefined ? v.value : null,
+                    matchMode: v.matchMode || FilterMatchMode.EQUALS,
+                  }];
+              filters0[field] = { operator: v.operator || FilterOperator.AND, constraints };
             } else {
-              filters0[field] = {
-                operator: FilterOperator.AND,
-                constraints: [{ value: v, matchMode: FilterMatchMode.EQUALS }],
-              };
+              // Скалярное значение (или массив для matchMode IN) → EQUALS
+              const existing = filters0[field];
+              if (existing && existing.hasOwnProperty('constraints')) {
+                existing.constraints[0] = { value: v, matchMode: FilterMatchMode.EQUALS };
+              } else if (existing && existing.hasOwnProperty('value')) {
+                existing.value = v;
+              } else {
+                filters0[field] = {
+                  operator: FilterOperator.AND,
+                  constraints: [{ value: v, matchMode: FilterMatchMode.EQUALS }],
+                };
+              }
             }
           }
         }
