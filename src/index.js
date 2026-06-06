@@ -5,6 +5,7 @@ import apiCtor from './components/api.js'
 import apiFetch from './components/api-ofetch.js'
 import gtsAutoComplete from './components/gtsAutoComplete.vue'
 import PVAutoComplete from './components/PVAutoComplete.vue'
+import PVMultiAutoComplete from './components/PVMultiAutoComplete.vue'
 import gtsDate from './components/gtsDate.vue'
 import PVDateTime from './components/PVDateTime.vue'
 import gtsSelect from './components/gtsSelect.vue'
@@ -102,7 +103,8 @@ export default {
         })
         app.component('gtsAutoComplete', gtsAutoComplete)
         app.component('PVAutoComplete', PVAutoComplete)
-        
+        app.component('PVMultiAutoComplete', PVMultiAutoComplete)
+
         app.component('PVTables', PVTables)
         app.component('PVTab', PVTab)
         app.component('apiCtor', apiCtor)
@@ -131,6 +133,7 @@ export {
     apiFetch as apiFetch,
     gtsAutoComplete as gtsAutoComplete,
     PVAutoComplete as PVAutoComplete,
+    PVMultiAutoComplete as PVMultiAutoComplete,
     gtsDate as gtsDate,
     PVDateTime as PVDateTime,
     PVTable as PVTable,
@@ -198,7 +201,7 @@ if (typeof window !== 'undefined' && !window.PVTables) {
         FileUpload, SpeedDial, Column, Toolbar, InputGroup, Tree,
         Select, Menubar, Card, Panel, Badge, Tag,
         PVTables, PVTab, PVTabs, apiCtor, apiFetch,
-        gtsAutoComplete, PVAutoComplete, gtsDate, PVDateTime,
+        gtsAutoComplete, PVAutoComplete, PVMultiAutoComplete, gtsDate, PVDateTime,
         PVTable, PVForm, PVTableModel, EditField, useNotifications,
         UniTree, UniTreePanel, UniTreeSplitButton, PVMenu,
         FileSelector, DataTable, ComponentLoader,
