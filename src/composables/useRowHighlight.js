@@ -15,7 +15,9 @@
  *     }
  *   }
  *
- * row_class_trigger — условный класс строки: если data[field] истинно → добавить класс.
+ * row_class_trigger — условный класс строки:
+ *   { field, class }            → если data[field] истинно (truthy);
+ *   { field, value, class }     → если data[field] == value (или входит в массив value).
  *
  * @param {Ref<Object>} row_setting
  * @param {Ref<Object>} row_class_trigger
@@ -47,8 +49,15 @@ export function useRowHighlight(row_setting, row_class_trigger) {
     if (row_setting.value[data.id]?.class) {
       return row_setting.value[data.id].class
     }
-    if (row_class_trigger.value?.field && data[row_class_trigger.value.field]) {
-      return row_class_trigger.value.class
+    const trig = row_class_trigger.value
+    if (trig?.field) {
+      const v = data[trig.field]
+      // Если задан value — сравниваем по значению (или вхождению в массив),
+      // иначе — старое поведение по truthy.
+      const match = trig.value !== undefined
+        ? (Array.isArray(trig.value) ? trig.value.some(x => x == v) : trig.value == v)
+        : !!v
+      if (match) return trig.class
     }
     return undefined
   }
