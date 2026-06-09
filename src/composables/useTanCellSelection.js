@@ -154,8 +154,16 @@ export function useTanCellSelection({
   // ─── Range selection helper ─────────────────────────────────────────────
 
   const selectRange = (minRow, minCol, maxRow, maxCol, additive) => {
+    const vis   = getVisibleRowKeySet()
+    const items = lineItemsGetter()
     const cells = []
     for (let r = minRow; r <= maxRow; r++) {
+      // Пропускаем строки, скрытые фильтром браузера — их не выделяем и не суммируем.
+      if (vis) {
+        const row = items[r]
+        const key = row?.id ?? row?._rowKey
+        if (!vis.has(key)) continue
+      }
       for (let c = minCol; c <= maxCol; c++) {
         const cell = buildCellData(r, c)
         if (cell) cells.push(cell)
@@ -259,12 +267,35 @@ export function useTanCellSelection({
     fillRange.value = []
   }
 
+  // ─── Видимость строк (клиентский фильтр браузера) ──────────────────────
+  // Набор ключей строк, видимых после клиентского фильтра (getFilteredRowModel).
+  // Возвращает null если инстанс таблицы недоступен → без ограничения.
+  const getVisibleRowKeySet = () => {
+    const table = tableInstanceGetter?.()
+    if (!table?.getFilteredRowModel) return null
+    const set = new Set()
+    for (const row of table.getFilteredRowModel().rows) {
+      const o = row.original
+      set.add(o?.id ?? o?._rowKey)
+    }
+    return set
+  }
+
+  // Выделенные ячейки БЕЗ строк, скрытых фильтром браузера. Используется для
+  // суммы/среднего/счётчика/копирования — иначе считались бы и скрытые строки
+  // (баг: сумма не менялась при фильтрации, т.к. selection по индексам lineItems).
+  const visibleSelectedCells = computed(() => {
+    const vis = getVisibleRowKeySet()
+    if (!vis) return selectedCells.value
+    return selectedCells.value.filter(c => vis.has(c.rowId))
+  })
+
   // ─── Computed: sum, average, count ──────────────────────────────────────
 
-  const cellCount = computed(() => selectedCells.value.length)
+  const cellCount = computed(() => visibleSelectedCells.value.length)
 
   const sum = computed(() => {
-    const nums = selectedCells.value
+    const nums = visibleSelectedCells.value
       .filter(c => c.summable)
       .map(c => {
         if (typeof c.value === 'number') return c.value
@@ -280,16 +311,17 @@ export function useTanCellSelection({
 
   const average = computed(() => {
     if (sum.value === null) return null
-    const cnt = selectedCells.value.filter(c => c.summable).length
+    const cnt = visibleSelectedCells.value.filter(c => c.summable).length
     return cnt > 0 ? sum.value / cnt : null
   })
 
   // ─── Copy to clipboard (TSV) ───────────────────────────────────────────
 
   const copyToClipboard = async () => {
-    if (selectedCells.value.length === 0) return
+    const cellsToCopy = visibleSelectedCells.value
+    if (cellsToCopy.length === 0) return
     const rowsMap = new Map()
-    for (const cell of selectedCells.value) {
+    for (const cell of cellsToCopy) {
       if (!rowsMap.has(cell.rowIndex)) rowsMap.set(cell.rowIndex, [])
       rowsMap.get(cell.rowIndex).push(cell)
     }
@@ -303,7 +335,7 @@ export function useTanCellSelection({
       .join('\n')
     try {
       await navigator.clipboard.writeText(tsv)
-      notify?.('success', { detail: `Скопировано ${selectedCells.value.length} ячеек` })
+      notify?.('success', { detail: `Скопировано ${cellsToCopy.length} ячеек` })
     } catch (e) {
       notify?.('error', { detail: 'Ошибка копирования: ' + e.message })
     }
