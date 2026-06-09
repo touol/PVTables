@@ -35,10 +35,17 @@ export function useTanFilterPopover({
     decimal:  ['equals', 'notEquals', 'gt', 'gte', 'lt', 'lte'],
     autocomplete: ['equals', 'notEquals'],
     select:       ['equals', 'notEquals'],
-    date:     ['dateAfter', 'dateBefore', 'equals'],
-    datetime: ['dateAfter', 'dateBefore', 'equals'],
+    date:     ['dateAfter', 'dateBefore', 'equals', 'isEmpty', 'isNotEmpty'],
+    datetime: ['dateAfter', 'dateBefore', 'equals', 'isEmpty', 'isNotEmpty'],
     boolean:  ['equals'],
   }
+
+  // Режимы, которым НЕ нужно значение (фильтр по пустоте/заполненности).
+  const VALUELESS_MODES = new Set(['isEmpty', 'isNotEmpty'])
+  const isValuelessMode = (m) => VALUELESS_MODES.has(m)
+  // Constraint считается активным если есть значение ИЛИ режим без значения.
+  const constraintActive = (c) =>
+    isValuelessMode(c.matchMode) || (c.value !== '' && c.value !== null && c.value !== undefined)
 
   const MATCH_MODE_LABELS = {
     startsWith: 'Начинается с',
@@ -51,6 +58,8 @@ export function useTanFilterPopover({
     lte:        'Меньше или равно',
     dateAfter:  'После',
     dateBefore: 'До',
+    isEmpty:    'Пусто (без даты)',
+    isNotEmpty: 'Не пусто (с датой)',
   }
 
   const OPERATOR_LABELS = { and: 'Сопоставить все', or: 'Сопоставить любой' }
@@ -83,10 +92,11 @@ export function useTanFilterPopover({
     if (!col) return []
 
     const seen = new Map()  // value → label
+    let hasEmpty = false    // есть ли в выборке пустые значения
 
     for (const row of items) {
       const raw = row[colId]
-      if (raw === null || raw === undefined || raw === '') continue
+      if (raw === null || raw === undefined || raw === '') { hasEmpty = true; continue }
       const key = String(raw)
       if (seen.has(key)) continue
 
@@ -126,7 +136,12 @@ export function useTanFilterPopover({
       seen.set(key, label)
     }
 
-    return Array.from(seen.entries()).map(([value, label]) => ({ value, label }))
+    const result = Array.from(seen.entries()).map(([value, label]) => ({ value, label }))
+    // Если в выборке есть пустые — добавляем пункт «(Пусто)» (value=''). Клиентский
+    // фильтр (stringIncludesFilter) матчит пустые как String(val ?? '') === '',
+    // поэтому такой чекбокс фильтрует пустые наравне с обычными значениями.
+    if (hasEmpty) result.unshift({ value: '', label: '(Пусто)' })
+    return result
   }
 
   // ─── Открыть / закрыть popover ──────────────────────────────────────────
@@ -173,13 +188,13 @@ export function useTanFilterPopover({
 
     // Применяем все серверные фильтры колонок
     for (const [cId, sf] of Object.entries(colServerFilters.value)) {
-      const hasValue = sf.constraints.some(c => c.value !== '' && c.value !== null && c.value !== undefined)
+      const hasValue = sf.constraints.some(constraintActive)
       if (hasValue && filters) {
         filters.value[cId] = {
           operator: sf.operator,
           constraints: sf.constraints
-            .filter(c => c.value !== '' && c.value !== null && c.value !== undefined)
-            .map(c => ({ value: c.value, matchMode: c.matchMode })),
+            .filter(constraintActive)
+            .map(c => ({ value: c.value ?? '', matchMode: c.matchMode })),
         }
       }
     }
@@ -255,7 +270,7 @@ export function useTanFilterPopover({
   const hasActiveServerFilter = (colId) => {
     const sf = colServerFilters.value[colId]
     if (!sf) return false
-    return sf.constraints.some(c => c.value !== '' && c.value !== null && c.value !== undefined)
+    return sf.constraints.some(constraintActive)
   }
 
   const hasActiveChecklistFilter = (colId) => {
@@ -285,11 +300,11 @@ export function useTanFilterPopover({
     if (!filters || !loadLazyData) return
     initFilters?.()
     for (const [cId, sf] of Object.entries(colServerFilters.value)) {
-      const hasValue = sf.constraints.some(c => c.value !== '' && c.value !== null)
+      const hasValue = sf.constraints.some(constraintActive)
       if (hasValue) {
         filters.value[cId] = {
           operator: sf.operator,
-          constraints: sf.constraints.filter(c => c.value !== '' && c.value !== null),
+          constraints: sf.constraints.filter(constraintActive),
         }
       }
     }

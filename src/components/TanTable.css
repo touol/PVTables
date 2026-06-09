@@ -307,6 +307,32 @@
 }
 .tan-filter-section-hint .pi { color: var(--p-yellow-600, #ca8a04); margin-top: 1px; flex-shrink: 0; }
 
+/* Быстрый фильтр по пустой/заполненной дате */
+.tan-filter-quick {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 6px 8px; border-radius: 4px;
+  background: var(--p-surface-50, #f8fafc); border: 1px solid var(--p-surface-200, #e5e7eb);
+}
+.tan-filter-quick-label {
+  font-size: 11px; font-weight: 600; color: var(--p-text-muted-color, #6b7280);
+}
+.tan-filter-quick-btns { display: flex; gap: 6px; }
+.tan-filter-quick-btn {
+  flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 5px 8px; font-size: 12px; cursor: pointer;
+  border: 1px solid var(--p-surface-300, #dee2e6); border-radius: 4px;
+  background: var(--p-surface-0, #fff); color: var(--p-text-color, #374151);
+}
+.tan-filter-quick-btn:hover { border-color: var(--p-primary-color, #3b82f6); color: var(--p-primary-color, #3b82f6); }
+.tan-filter-quick-btn--active {
+  background: var(--p-primary-color, #3b82f6); border-color: var(--p-primary-color, #3b82f6); color: #fff;
+}
+.tan-filter-quick-btn--active:hover { color: #fff; }
+.tan-filter-valueless-hint {
+  flex: 1 1 0; font-size: 12px; font-style: italic; color: var(--p-text-muted-color, #9ca3af);
+  display: inline-flex; align-items: center; padding: 0 4px;
+}
+
 /* Селект */
 .tan-filter-select {
   width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 13px;

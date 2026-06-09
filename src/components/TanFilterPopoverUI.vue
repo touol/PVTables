@@ -57,6 +57,20 @@ const operatorOptions = computed(() =>
 
 const isAcType = computed(() => props.colType === 'autocomplete')
 const isSelectType = computed(() => props.colType === 'select')
+const isDateType = computed(() => props.colType === 'date' || props.colType === 'datetime')
+
+// Режимы «пусто/не пусто» не требуют значения
+const isValuelessMode = (m) => m === 'isEmpty' || m === 'isNotEmpty'
+const firstMode = computed(() => props.serverFilter?.constraints?.[0]?.matchMode)
+
+// Быстрый фильтр по пустой/заполненной дате: ставим режим на первый constraint и применяем.
+// Повторный клик по активной кнопке — снимаем (возврат к дефолтному режиму даты → фильтр очищается).
+const setEmptyFilter = (mode) => {
+  const next = firstMode.value === mode ? (props.matchModes[0] || 'equals') : mode
+  emit('update:constraint-mode', { idx: 0, value: next })
+  emit('update:constraint-value', { idx: 0, value: '' })
+  emit('apply-server')
+}
 
 // ── Autocomplete dropdown ──────────────────────────────────────────────────
 const acDropdownOptions = ref([])
@@ -190,6 +204,27 @@ const getConstraintDisplay = (c, idx) => {
         <div class="tan-filter-section">
           <div v-if="!inline" class="tan-filter-section-title">Фильтр базы</div>
 
+          <!-- Быстрый фильтр по пустой/заполненной дате (date/datetime) -->
+          <div v-if="isDateType" class="tan-filter-quick">
+            <span class="tan-filter-quick-label">Быстрый фильтр:</span>
+            <div class="tan-filter-quick-btns">
+              <button
+                type="button"
+                class="tan-filter-quick-btn"
+                :class="{ 'tan-filter-quick-btn--active': firstMode === 'isEmpty' }"
+                @click="setEmptyFilter('isEmpty')"
+                title="Показать записи без даты"
+              ><i class="pi pi-calendar-times" /> Без даты</button>
+              <button
+                type="button"
+                class="tan-filter-quick-btn"
+                :class="{ 'tan-filter-quick-btn--active': firstMode === 'isNotEmpty' }"
+                @click="setEmptyFilter('isNotEmpty')"
+                title="Показать записи с заполненной датой"
+              ><i class="pi pi-calendar" /> С датой</button>
+            </div>
+          </div>
+
           <!-- Оператор -->
           <select
             v-if="serverFilter && serverFilter.constraints.length > 1"
@@ -259,9 +294,11 @@ const getConstraintDisplay = (c, idx) => {
                 </div>
               </template>
 
-              <!-- остальные типы — обычный инпут -->
+              <!-- остальные типы — обычный инпут (для «пусто/не пусто» значение не нужно) -->
               <template v-else>
+                <span v-if="isValuelessMode(c.matchMode)" class="tan-filter-valueless-hint">значение не требуется</span>
                 <input
+                  v-else
                   :ref="idx === 0 ? (el) => { firstInputRef = el } : undefined"
                   class="tan-filter-popover-input"
                   :type="colType === 'date' ? 'date' : (colType === 'datetime' ? 'datetime-local' : 'text')"
