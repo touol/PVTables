@@ -972,7 +972,7 @@ const getClassBody = (col, data) => {
   }
 
   .p-datatable tr.hit{
-    background-color: #60cc2fe6;
+    background-color: #e1f5d8;
   }
   .p-datatable tr.attention{
     background-color: rgba(252, 3, 3, 0.8);

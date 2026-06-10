@@ -87,7 +87,7 @@
 .tan-row-empty-locked .tan-td { pointer-events: none; }
 
 /* ── Row highlight classes (row_setting / row_class_trigger) ── */
-.tan-row.hit      { background-color: #60cc2fe6; }
+.tan-row.hit      { background-color: #e1f5d8; }
 .tan-row.attention{ background-color: rgba(252, 3, 3, 0.8); }
 .tan-row.work     { background-color: #89d7f1; }
 .tan-row.outwork  { background-color: #eff189; }
@@ -429,7 +429,7 @@
 .tan-row-selected > .tan-frozen-right,
 .tan-row-selected > .tan-frozen-left { background: var(--p-primary-50, #eff6ff); }
 .tan-row.hit > .tan-frozen-right,
-.tan-row.hit > .tan-frozen-left { background-color: #60cc2fe6; }
+.tan-row.hit > .tan-frozen-left { background-color: #e1f5d8; }
 .tan-row.attention > .tan-frozen-right,
 .tan-row.attention > .tan-frozen-left { background-color: rgba(252, 3, 3, 0.8); }
 .tan-row.work > .tan-frozen-right,
@@ -440,6 +440,16 @@
 .tan-row.onsklad > .tan-frozen-left { background-color: #f19989; }
 .tan-row.canceled > .tan-frozen-right,
 .tan-row.canceled > .tan-frozen-left { background-color: #ff684c; }
+
+/* ── Подсветка строки при наведении ──
+   Тонирует любой фон ячейки (hit/work/любой класс/без класса), сохраняя базовый
+   цвет; через background-image, чтобы не затронуть box-shadow тени frozen-колонок.
+   Размещено после frozen-правил, поэтому background-image не сбрасывается их shorthand. */
+.tan-row:hover > .tan-td,
+.tan-row:hover > .tan-frozen-left,
+.tan-row:hover > .tan-frozen-right {
+  background-image: linear-gradient(rgba(0,0,0,.07), rgba(0,0,0,.07));
+}
 
 /* ── Cell selection ── */
 .tan-cell-select-mode .tan-tbody { user-select: none; -webkit-user-select: none; }

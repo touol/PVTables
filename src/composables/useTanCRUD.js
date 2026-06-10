@@ -178,6 +178,48 @@ export function useTanCRUD(
     }
   };
 
+  // ── applyRowsDelta — точечное обновление строк без полной перезагрузки ─────
+  // Бек (raschet_row) возвращает data.rows_delta = { upsert, delete, customFields, row_setting }.
+  // upsert — строки с новыми/изменёнными id (формат как при чтении таблицы), delete — удалённые id.
+  // Дети/связанные при пересчёте пересоздаются с новыми id, поэтому это «замена поддерева».
+  const applyRowsDelta = (delta) => {
+    if (!delta) return;
+    const upsert = Array.isArray(delta.upsert) ? delta.upsert : [];
+    const delIds = new Set((Array.isArray(delta.delete) ? delta.delete : []).map(Number));
+    const upMap  = new Map(upsert.map(r => [Number(r.id), r]));
+
+    // customFields / row_setting: добавить новые, убрать удалённые
+    if (delta.customFields) for (const k in delta.customFields) customFields.value[k] = delta.customFields[k];
+    if (delta.row_setting)  for (const k in delta.row_setting)  row_setting.value[k]  = delta.row_setting[k];
+    for (const id of delIds) { delete customFields.value[id]; delete row_setting.value[id]; }
+
+    // Обновление НА МЕСТЕ (порядок строк сохраняется, пустые строки не трогаем):
+    // существующие id заменяем свежими версиями, удалённые выкидываем.
+    const arr = [];
+    for (const r of lineItems.value) {
+      const id = Number(r.id);
+      if (delIds.has(id)) continue;
+      if (upMap.has(id)) { arr.push(upMap.get(id)); upMap.delete(id); }
+      else arr.push(r);
+    }
+    // Оставшиеся в upMap — новые строки (новые связанные товары link_id=источник):
+    // вставляем сразу после строки-источника; иначе — перед пустыми строками.
+    const isEmpty = (id) => (typeof isEmptyRow === 'function') && isEmptyRow(id);
+    for (const r of upMap.values()) {
+      const srcId = Number(r.link_id) || 0;
+      let idx = srcId ? arr.findIndex(x => Number(x.id) === srcId) : -1;
+      if (idx >= 0) {
+        arr.splice(idx + 1, 0, r);
+      } else {
+        const firstEmpty = arr.findIndex(x => isEmpty(x.id));
+        if (firstEmpty >= 0) arr.splice(firstEmpty, 0, r);
+        else arr.push(r);
+      }
+    }
+    skipScroll();
+    lineItems.value = arr;
+  };
+
   // ── saveCellUpdate — TanStack inline cell edit ────────────────────────────
   const saveCellUpdate = async (data, field, newValue) => {
     const oldVal = data[field] ?? '';
@@ -250,7 +292,8 @@ export function useTanCRUD(
               row_setting.value[key] = response.data.row_setting[key];
             }
           }
-          if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
+          if (response.data?.rows_delta) { applyRowsDelta(response.data.rows_delta); }
+      else if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
         } else {
           resolveInsert(null);
           refresh(false);
@@ -305,7 +348,8 @@ export function useTanCRUD(
       }
       const dataAfter = response.data?.object ?? { ...dataBefore, [field]: newValue };
       cacheAction?.({ type: 'update', id: data.id, field, dataBefore, dataAfter, filters: prepFilters?.() });
-      if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
+      if (response.data?.rows_delta) { applyRowsDelta(response.data.rows_delta); }
+      else if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
     } catch (e) {
       notify('error', { detail: e.message }, true);
     }
