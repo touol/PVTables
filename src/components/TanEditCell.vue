@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import apiCtor from './api'
 
@@ -339,6 +339,7 @@ const selectOption = (opt) => {
 // ── mount ──────────────────────────────────────────────────────────────────
 const divRef = ref(null)
 let saved     = false
+let touched   = false   // пользователь реально вводил (input), а не просто прошёл стрелкой/табом
 let unmounting = false
 
 onBeforeUnmount(() => {
@@ -433,8 +434,35 @@ const applyColumnSuggestion = () => {
   sel.addRange(newRange)
 }
 
+// ── синхронизация со свежим значением строки ───────────────────────────────
+// Если пока ячейка открыта, значение строки обновилось извне (асинхронный
+// пересчёт формул по умолчанию пришёл уже после захода в ячейку) — показываем
+// свежее значение. Только если пользователь ещё НЕ начал вводить (touched=false),
+// иначе затрём его ввод.
+watch(() => props.initialValue, (nv) => {
+  if (touched || saved || unmounting) return
+  if (props.col.type === 'boolean') { boolValue.value = nv == 1 || nv === true; return }
+  if (props.col.type === 'date')    { dateValue.value = parseInitialDate(nv); return }
+  const el = divRef.value
+  if (!el) return
+  const fresh = displayText.value   // computed от props.initialValue (уже = nv)
+  if (el.textContent === fresh) return
+  el.textContent = fresh
+  // выделяем всё — чтобы пользователь мог сразу перебить свежее значение
+  nextTick(() => {
+    if (touched || !divRef.value) return
+    const sel = window.getSelection()
+    if (!sel) return
+    const range = document.createRange()
+    range.selectNodeContents(divRef.value)
+    sel.removeAllRanges()
+    sel.addRange(range)
+  })
+})
+
 // ── events ─────────────────────────────────────────────────────────────────
 const onInput = (e) => {
+  touched = true
   valid.value = validate(e.target.textContent)
   // Дополняем только когда пользователь печатает (вставка символа/IME),
   // НЕ на удалении/вставке из буфера — иначе backspace через ghost будет
@@ -493,6 +521,10 @@ const onSave = () => {
     }
     return
   }
+  // Пользователь не вводил (просто прошёл по ячейке стрелкой/табом) — НЕ коммитим.
+  // Иначе перетираем значение, которое мог обновить асинхронный пересчёт (формулы
+  // по умолчанию), и оно ошибочно фиксируется как «введённое вручную» (setDefault).
+  if (!touched) return
   const text = divRef.value?.textContent ?? ''
   if (!validate(text)) {
     saved = false
