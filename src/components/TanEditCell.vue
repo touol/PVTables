@@ -57,9 +57,9 @@
                 @click="selectOption(opt)"
               ><template v-if="col.type === 'autocomplete' && !col.hide_id">
                   <span class="tan-option-id">{{ (col.show_id && opt[col.show_id] > 0) ? opt[col.show_id] : opt.id }}</span>
-                  {{ opt.content }}
+                  <span v-html="opt.content"></span>
                 </template>
-                <template v-else>{{ opt.content }}</template>
+                <span v-else v-html="opt.content"></span>
               </div>
               <div v-if="dropdownOptions.length === 0" class="tan-option-empty">Не найдено</div>
             </template>
@@ -329,9 +329,18 @@ const onDropdownInput = () => {
   }, 250)
 }
 
+// content может быть HTML (название + путь). В поле ввода показываем чистое НАЗВАНИЕ (без пути и тегов).
+const stripToName = (s) => {
+  if (s == null) return ''
+  const html = String(s).replace(/<div[\s\S]*$/i, '') // отрезаем путь (div и далее)
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return (tmp.textContent || '').trim()
+}
+
 const selectOption = (opt) => {
   selectedId = opt.id
-  if (divRef.value) divRef.value.textContent = opt.content
+  if (divRef.value) divRef.value.textContent = stripToName(opt.content)
   hideOptionsPopover()
   onSave()
 }

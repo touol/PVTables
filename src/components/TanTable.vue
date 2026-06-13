@@ -505,14 +505,16 @@ const dataColDefs = computed(() =>
         case 'autocomplete': {
           if (!value || value == 0) return ''
           const lbl = getACContent(col.field, value)
-          if (col.hide_id) return lbl
-          if (col.show_id) {
+          let acHtml
+          if (col.hide_id) acHtml = String(lbl)
+          else if (col.show_id) {
             const fullRow = acFullMaps.value[col.field]?.get(String(value))
             const sv = fullRow?.[col.show_id]
             const showVal = (sv !== null && sv !== undefined && sv !== '' && sv != 0) ? sv : value
-            return `${showVal} ${lbl}`
-          }
-          return `${value} ${lbl}`
+            acHtml = `${showVal} ${lbl}`
+          } else acHtml = `${value} ${lbl}`
+          // content может содержать HTML (напр. название + путь по категориям) → рендерим как HTML
+          return h('span', { innerHTML: acHtml })
         }
         case 'multiautocomplete': {
           if (!value || value == 0) return ''
@@ -1545,6 +1547,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                     'tan-frozen-right': actionsFrozen === 'right' && cell.column.id === '__actions__',
                     'tan-frozen-left':  actionsFrozen === 'left'  && cell.column.id === '__actions__',
                     'tan-td-actions':   cell.column.id === '__actions__',
+                    'tan-td-bold':      cell.column.columnDef.meta?.bold,
                   }
                 ]"
                 @click="cell.column.columnDef.meta && onCellClick(cell, $event)"

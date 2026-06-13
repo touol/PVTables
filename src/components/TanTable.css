@@ -106,6 +106,9 @@
    должны выходить за пределы ячейки. overflow:visible + z-index выше соседних. */
 .tan-td-actions { overflow: visible !important; z-index: 5; position: relative; }
 
+/* Жирная колонка (свойство поля bold:1) — напр. цена/стоимость в расчёте */
+.tan-td-bold { font-weight: 700; }
+
 /* ── Expansion ── */
 .tan-expansion-row { display: flex; min-width: 100%; }
 .tan-expansion-td {

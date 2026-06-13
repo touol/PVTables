@@ -456,8 +456,13 @@
     // ВАЖНО: Список остается открытым, пользователь может выбрать другой элемент
   };
 
+  // Таймер отложенного авто-выбора (debounce) — чтобы промежуточный ввод не подставлялся
+  let autoSelectTimer = null;
+
   const search = async ({ query }) => {
     try {
+      // Отменяем отложенный авто-выбор от предыдущего ввода (юзер продолжил печатать)
+      if (autoSelectTimer) { clearTimeout(autoSelectTimer); autoSelectTimer = null; }
       // Сбрасываем пагинацию при новом поиске
       pagination.value.offset = 0;
       pagination.value.hasMore = true;
@@ -507,15 +512,20 @@
         apiTemplate.value = response.data.template;
       }
       
-      // ========== НОВАЯ ЛОГИКА: Автовыбор при точном совпадении ==========
-      if (items.value.length > 0 && query.trim() !== '') {
-        const exactMatch = findExactMatchByContent(query, items.value);
-        if (exactMatch) {
-          autoSelectItem(exactMatch);
-          // Список остается открытым для возможности выбора другого элемента
-        }
+      // ===== Автовыбор при точном совпадении — ТОЛЬКО после паузы в наборе =====
+      // Раньше срабатывал на каждый ввод: при наборе «3300» промежуточные «33»/«330»
+      // подставлялись преждевременно. Теперь debounce: авто-выбор откладывается и
+      // отменяется при следующем символе — срабатывает, только когда юзер перестал печатать.
+      // query === pagination.currentQuery — отбрасываем устаревшие ответы (гонка запросов).
+      if (query === pagination.value.currentQuery && items.value.length > 0 && query.trim() !== '') {
+        const matchQuery = query;
+        autoSelectTimer = setTimeout(() => {
+          autoSelectTimer = null;
+          const exactMatch = findExactMatchByContent(matchQuery, items.value);
+          if (exactMatch) autoSelectItem(exactMatch);
+        }, 600);
       }
-      // ===================================================================
+      // =======================================================================
       
       // Разрешаем ленивую загрузку только после успешного поиска
       setTimeout(() => {

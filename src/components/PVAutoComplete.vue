@@ -1,7 +1,7 @@
 <template>
   <span v-if="styleShow">
     <span v-if="show_id_enable">{{ show_id }}</span>
-    <span v-else-if="!field.hide_id">{{ model }}</span> {{ selectedItem.content }}
+    <span v-else-if="!field.hide_id">{{ model }}</span> <span v-html="selectedItem.content"></span>
   </span>
   <InputGroup v-else @keydown.tab.stop ref="inputGroupRef">
     <InputText 
@@ -22,7 +22,7 @@
     <AutoComplete
       v-model="selectedItem"
       dropdown
-      option-label="content"
+      option-label="content_plain"
       :suggestions="items"
       class="gts-ac__search-field"
       @complete="search"
@@ -34,8 +34,9 @@
       :panelStyle="{ width: 'auto' }"
       :overlayStyle="{ width: 'auto' }"
     >
-      <template v-if="compiledTemplate" #option="{ option, index }">
-        <component :is="compiledTemplate" :option="option" :index="index" />
+      <template #option="{ option, index }">
+        <component v-if="compiledTemplate" :is="compiledTemplate" :option="option" :index="index" />
+        <span v-else v-html="option.content"></span>
       </template>
     </AutoComplete>
   </InputGroup>
@@ -86,6 +87,19 @@
   const idCache = ref('')
   const items = ref([]);
   const selectedItem = ref({});
+
+  // content может быть HTML (название + путь по категориям). Для поля ввода нужно ЧИСТОЕ название
+  // (без пути и тегов) — кладём в content_plain (option-label). В выпадашке/дисплее рендерим content как HTML.
+  const stripToName = (s) => {
+    if (s == null) return ''
+    const html = String(s).replace(/<div[\s\S]*$/i, '') // отрезаем путь (div и далее)
+    const tmp = document.createElement('div'); tmp.innerHTML = html
+    return (tmp.textContent || '').trim()
+  }
+  const withPlain = (rows) => {
+    (rows || []).forEach(r => { if (r && r.content_plain === undefined) r.content_plain = stripToName(r.content) })
+    return rows || []
+  }
 
   // Состояние пагинации для виртуального скроллинга
   const pagination = ref({
@@ -169,7 +183,7 @@
         try {
           
           const response = await api.autocomplete({query:'',ids:''})
-          items.value = response.data.rows;
+          items.value = withPlain(response.data.rows);
           if(response.data.default) model.value = response.data.default
         } catch (error) {
           notify('error', { detail: error.message });
@@ -208,6 +222,7 @@
     if (props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
       const [ option ] = props.options.rows.filter((option) => model.value == option.id)
       if (option) {
+        if (option.content_plain === undefined) option.content_plain = stripToName(option.content)
         selectedItem.value = option
         if(props.field.show_id){
           if(option[props.field.show_id] > 0){
@@ -269,7 +284,7 @@
       }
       
       const response = await api.autocomplete(params);
-      items.value = response.data.rows;
+      items.value = withPlain(response.data.rows);
       pagination.value.total = response.data.total || 0;
       pagination.value.hasMore = items.value.length < pagination.value.total;
       
@@ -298,7 +313,7 @@
     }
     
     const response = await api.autocomplete(params);
-    return response.data.rows[0] || null;
+    return withPlain(response.data.rows)[0] || null;
   }
   async function getOptionByShowId(show_id) {
     const params = {
@@ -311,7 +326,7 @@
     }
     
     const response = await api.autocomplete(params);
-    return response.data.rows[0] || null;
+    return withPlain(response.data.rows)[0] || null;
   }
   const onUserInputEnd = async ($evt) => {
     const userInput = $evt.target.value
@@ -439,7 +454,7 @@
       }
       
       const response = await api.autocomplete(params);
-      items.value = [...items.value, ...response.data.rows];
+      items.value = [...items.value, ...withPlain(response.data.rows)];
       pagination.value.total = response.data.total || 0;
       pagination.value.hasMore = items.value.length < pagination.value.total;
     } catch (error) {
@@ -464,5 +479,14 @@
   /* Ширина панели AutoComplete по контенту */
   .p-virtualscroller-content {
     position: relative !important;
+  }
+
+  /* Путь по категориям под названием продукта (в выпадашке и ячейке) */
+  .gts-ac-path {
+    display: block;
+    color: #888;
+    font-size: 0.8em;
+    line-height: 1.15;
+    margin-top: 1px;
   }
 </style>
