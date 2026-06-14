@@ -11,11 +11,12 @@ checkTable.value = PVTableConfigTable?true:false;
 
 <template>
   <div v-if="checkTable">
-    <PVTables 
+    <PVTables
       :table="currentTable"
       :actions="{}"
       :filters="{}"
       :reload="false"
+      :autoFitHeight="true"
       :key="currentTable"
     />
   </div>
