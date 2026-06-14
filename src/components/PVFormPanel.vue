@@ -7,13 +7,29 @@
             :mywatch="mywatch"
             :form="form"
         />
-        <Button
-          label="Сохранить"
-          icon="pi pi-check"
-          class="p-button-text"
-          @click="saveItem"
-          />
+        <div class="flex gap-2 items-center">
+          <Button
+            label="Сохранить"
+            icon="pi pi-check"
+            class="p-button-text"
+            @click="saveItem"
+            />
+          <Button
+            v-if="saveVersionRow && (Item && Item.id || props.current_id)"
+            label="Версии" icon="pi pi-history"
+            class="p-button-sm p-button-text"
+            @click="versionsDialog = true"
+            />
+        </div>
     </div>
+    <RowVersionsDialog
+      v-if="saveVersionRow"
+      v-model:visible="versionsDialog"
+      :table="props.table"
+      :rowId="Item && Item.id ? Item.id : props.current_id"
+      :columns="columns"
+      @restored="onVersionRestored"
+    />
     <Toast/>
 </template>
 
@@ -22,6 +38,7 @@
     import Toast from 'primevue/toast';
     import Button from "primevue/button";
     import apiCtor from './api'
+    import RowVersionsDialog from './RowVersionsDialog.vue'
     import { useNotifications } from "./useNotifications";
 
     import { ref, watch, onMounted } from 'vue';
@@ -53,6 +70,8 @@
     let fields = {}
     const columns = ref([{field:'id',label:'id',type:'text'}])
     const form = ref({})
+    const versionsDialog = ref(false)
+    const saveVersionRow = ref(false)
 
     const loadForm = async () => { /* logic to load tree data */ 
         try {
@@ -63,6 +82,7 @@
             if(response.data.form){
                 form.value = response.data.form
             }
+            if(response.data.save_version_row) saveVersionRow.value = true
             columns.value = setCollumns(fields)
             if(props.current_id > 0){
                 const data = await api.get(props.current_id)
@@ -113,6 +133,8 @@
             notify('error', { detail: error.message });
         }
     }
+    const onVersionRestored = () => { loadForm() }
+
     const mywatch = ref({
         enabled: false,
         fields: [],

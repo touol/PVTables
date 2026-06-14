@@ -29,6 +29,7 @@ import Popover  from 'primevue/popover'
 import PVForm              from './PVForm.vue'
 import PVTabs              from './PVTabs.vue'
 import PVTablesSplitButton from './PVTablesSplitButton.vue'
+import RowVersionsDialog from './RowVersionsDialog.vue'
 import FileBrowser         from './filebrowser/FileBrowser.vue'
 
 import { useNotifications }    from './useNotifications'
@@ -139,6 +140,12 @@ const refresh = (from_parent, tbl) => {
   }
 }
 
+// После отката версии — перезагрузить таблицу и закрыть модалку редактирования
+const onVersionRestored = () => {
+  refresh()
+  if (hideDialog) hideDialog()
+}
+
 // ─── Row selection ────────────────────────────────────────────────────────
 const selectedlineItems = ref([])
 
@@ -161,6 +168,8 @@ const modalFormAction  = ref(null)
 const modalFormRowData = ref(null)
 const modalFormType    = ref(null)
 const modalFormColumns = ref([])
+const saveVersionRow   = ref(false)
+const versionsDialog   = ref(false)
 
 const headActions = computed(() => cur_actions.value.filter(x => x.head))
 const rowActions  = computed(() => cur_actions.value.filter(x => x.row && x.menu !== 1))
@@ -1158,6 +1167,7 @@ onMounted(async () => {
     if (response.data.row_class_trigger) row_class_trigger.value = response.data.row_class_trigger
     if (response.data.table_tree)        table_tree.value = response.data.table_tree
     if (response.data.row_drag)          rowDrag.value = true
+    if (response.data.save_version_row)  saveVersionRow.value = true
 
     // Top filters
     if (response.data.filters) {
@@ -1674,7 +1684,18 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     </div>
 
     <!-- ── CRUD Dialogs ── -->
-    <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" header="Редактировать" modal>
+    <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" modal>
+      <template #header>
+        <div class="flex items-center justify-between gap-3 w-full">
+          <span class="font-semibold">Редактировать</span>
+          <Button
+            v-if="saveVersionRow && lineItem && lineItem.id"
+            label="Версии" icon="pi pi-history"
+            class="p-button-sm p-button-text"
+            @click="versionsDialog = true"
+          />
+        </div>
+      </template>
       <PVForm
         v-model="lineItem" :columns="columns"
         :autocompleteSettings="autocompleteSettings" :selectSettings="selectSettings"
@@ -1685,6 +1706,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
         <Button label="Сохранить" icon="pi pi-check" class="p-button-text" @click="saveLineItem" />
       </template>
     </Dialog>
+
+    <RowVersionsDialog
+      v-if="saveVersionRow"
+      v-model:visible="versionsDialog"
+      :table="props.table"
+      :rowId="lineItem && lineItem.id ? lineItem.id : 0"
+      :columns="columns"
+      @restored="onVersionRestored"
+    />
 
     <Dialog v-if="deleteLineItemDialog" v-model:visible="deleteLineItemDialog" header="Confirm" modal>
       <div class="confirmation-content">
