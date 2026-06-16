@@ -39,6 +39,11 @@ export function useTanCRUD(
   // ── Map rowKey → Promise<realId> (concurrent-safe insert) ────────────────
   const _insertPromises = new Map();
 
+  // Счётчик _rowKey для новых строк из rows_delta (свой префикс, чтобы не
+  // конфликтовать с row_N из usePVTableData). _rowKey — главный ключ строки,
+  // на нём держится раскрытие (expand/subtabs) и реюз DOM виртуализатора.
+  let _deltaRowKey = 0;
+
   // ── Dialog state ─────────────────────────────────────────────────────────
   const lineItem              = ref({});
   const submitted             = ref(false);
@@ -129,7 +134,11 @@ export function useTanCRUD(
           window.open(response.data.redirect, '_blank');
         }
         skipScroll();
-        refresh(false);
+        // Дочерняя под-таблица (наряды/материалы под строкой расчёта): обновляем ТОЛЬКО себя
+        // (показать новую строку), без каскада reload на родителя — цену строки-владельца и
+        // итог расчёта обновит rows_delta + refresh_price через get-response (см. бек).
+        if (props.child) refresh(true);
+        else refresh(false);
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (e) {
@@ -147,12 +156,17 @@ export function useTanCRUD(
   const deleteLineItem = async () => {
     try {
       const deletedRow = { ...lineItem.value };
-      await api.delete({ ids: lineItem.value.id, filters: prepFilters() });
+      const response = await api.delete({ ids: deletedRow.id, filters: prepFilters() });
       cacheAction?.({ type: 'delete', deletedIds: [deletedRow.id], deletedRows: [deletedRow], filters: prepFilters() });
       skipScroll();
-      lineItems.value = lineItems.value.filter(v => v.id !== lineItem.value.id);
+      lineItems.value = lineItems.value.filter(v => v.id !== deletedRow.id);
       deleteLineItemDialog.value = false;
       lineItem.value = {};
+      // Бек на удалении дочерней пересчитывает родителя → rows_delta + refresh_price.
+      // Применяем к себе (своему scope) и пробрасываем выше (родительская строка/итог расчёта).
+      emit('get-response', { table: props.table, action: 'delete', response });
+      if (response?.data?.rows_delta) applyRowsDelta(response.data.rows_delta);
+      else if (response?.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
     } catch (e) {
       notify('error', { detail: e.message });
     }
@@ -167,53 +181,107 @@ export function useTanCRUD(
     const deletedRows = [...(selectedlineItems.value ?? [])];
     const ids = deletedRows.map(l => l.id).join(',');
     try {
-      await api.delete({ ids, filters: prepFilters() });
+      const response = await api.delete({ ids, filters: prepFilters() });
       cacheAction?.({ type: 'delete', deletedIds: deletedRows.map(r => r.id), deletedRows, filters: prepFilters() });
       skipScroll();
       lineItems.value = lineItems.value.filter(v => !selectedlineItems.value.includes(v));
       deleteLineItemsDialog.value = false;
       selectedlineItems.value = null;
+      emit('get-response', { table: props.table, action: 'delete', response });
+      if (response?.data?.rows_delta) applyRowsDelta(response.data.rows_delta);
+      else if (response?.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
     } catch (e) {
       notify('error', { detail: e.message });
     }
   };
 
+  // scope этой таблицы = parent_id, по которому она отфильтрована.
+  // Основная таблица расчёта → 0; под-таблица детей (expand) → id её родителя
+  // (берём из props.filters[parentIdField], который ставит usePVTableExpand).
+  const scopeParentId = () => {
+    if (!props.child) return 0;
+    const field = table_tree?.value?.parentIdField || 'parent_id';
+    const f = props?.filters?.[field];
+    if (!f) return 0;
+    if (Array.isArray(f.constraints) && f.constraints.length) return Number(f.constraints[0].value) || 0;
+    if (f.value !== undefined) return Number(f.value) || 0;
+    return 0;
+  };
+
   // ── applyRowsDelta — точечное обновление строк без полной перезагрузки ─────
   // Бек (raschet_row) возвращает data.rows_delta = { upsert, delete, customFields, row_setting }.
-  // upsert — строки с новыми/изменёнными id (формат как при чтении таблицы), delete — удалённые id.
-  // Дети/связанные при пересчёте пересоздаются с новыми id, поэтому это «замена поддерева».
+  // upsert — строки ВСЕХ уровней пересчитанного поддерева (формат как при чтении), delete — удалённые id.
+  // Каждый экземпляр таблицы берёт из дельты только свой scope (parent_id):
+  //   • основная (scope=0) — мерджит затронутый корень+ссылки, прочие товары не трогает;
+  //   • под-таблица детей (scope=X) — дельта несёт ПОЛНЫЙ актуальный набор детей X → заменяем целиком.
   const applyRowsDelta = (delta) => {
     if (!delta) return;
+    // Дельта помечена своей таблицей. Чужим (под-вкладки нарядов/материалов под строкой
+    // gsRaschetProduct) не применяем — её доставит наверх get-response к нужной таблице.
+    if (delta.table && delta.table !== props.table) return;
     const upsert = Array.isArray(delta.upsert) ? delta.upsert : [];
     const delIds = new Set((Array.isArray(delta.delete) ? delta.delete : []).map(Number));
-    const upMap  = new Map(upsert.map(r => [Number(r.id), r]));
 
-    // customFields / row_setting: добавить новые, убрать удалённые
+    // customFields / row_setting — по id (id уникальны во всём дереве), безопасно для всех таблиц
     if (delta.customFields) for (const k in delta.customFields) customFields.value[k] = delta.customFields[k];
     if (delta.row_setting)  for (const k in delta.row_setting)  row_setting.value[k]  = delta.row_setting[k];
     for (const id of delIds) { delete customFields.value[id]; delete row_setting.value[id]; }
 
-    // Обновление НА МЕСТЕ (порядок строк сохраняется, пустые строки не трогаем):
-    // существующие id заменяем свежими версиями, удалённые выкидываем.
+    const isEmpty = (id) => (typeof isEmptyRow === 'function') && isEmptyRow(id);
+    const scope = scopeParentId();
+    const scopedUp = upsert.filter(r => Number(r.parent_id || 0) === scope);
+
+    // Затронута ли эта таблица? (есть свои upsert ИЛИ удаляются её строки). Иначе дельта не про нас.
+    const touchedByDelete = lineItems.value.some(r => delIds.has(Number(r.id)));
+    if (scopedUp.length === 0 && !touchedByDelete) return;
+
+    // Существующие строки по id — чтобы ОБНОВЛЯТЬ ИХ НА МЕСТЕ (Object.assign), сохраняя
+    // ссылку на объект. Иначе при замене ссылки раскрытая строка (с открытой под-вкладкой
+    // наряда/материала) ре-рендерится → моргание. _rowKey тоже сохраняем за объектом.
+    const existingById = new Map();
+    for (const r of lineItems.value) existingById.set(Number(r.id), r);
+    const adopt = (fresh) => {
+      const old = existingById.get(Number(fresh.id));
+      if (old) {
+        const rk = old._rowKey != null ? old._rowKey : fresh._rowKey;
+        Object.assign(old, fresh);
+        if (rk != null) old._rowKey = rk;
+        return old; // та же ссылка → нет ремоунта, обновятся только изменённые ячейки
+      }
+      if (fresh._rowKey == null) fresh._rowKey = `rd_${fresh.id}_${++_deltaRowKey}`;
+      return fresh;
+    };
+
+    if (scope !== 0) {
+      // Под-таблица детей: scopedUp — полный набор детей этого родителя (sortfield ASC).
+      // Пересобираем, переиспользуя существующие объекты (без моргания), + пустые строки.
+      const rebuilt = scopedUp.map(adopt);
+      const empties = lineItems.value.filter(r => isEmpty(r.id));
+      skipScroll();
+      lineItems.value = [...rebuilt, ...empties];
+      return;
+    }
+
+    // Верхний уровень: мерджим по id (затронут только корень+ссылки), прочие строки не трогаем.
+    const upMap = new Map(scopedUp.map(r => [Number(r.id), r]));
     const arr = [];
     for (const r of lineItems.value) {
       const id = Number(r.id);
       if (delIds.has(id)) continue;
-      if (upMap.has(id)) { arr.push(upMap.get(id)); upMap.delete(id); }
+      if (upMap.has(id)) { arr.push(adopt(upMap.get(id))); upMap.delete(id); }
       else arr.push(r);
     }
-    // Оставшиеся в upMap — новые строки (новые связанные товары link_id=источник):
-    // вставляем сразу после строки-источника; иначе — перед пустыми строками.
-    const isEmpty = (id) => (typeof isEmptyRow === 'function') && isEmptyRow(id);
+    // Оставшиеся в upMap — новые связанные товары (link_id=источник): после строки-источника; иначе перед пустыми.
     for (const r of upMap.values()) {
-      const srcId = Number(r.link_id) || 0;
+      const row = adopt(r);
+      const srcId = Number(row.link_id) || 0;
       let idx = srcId ? arr.findIndex(x => Number(x.id) === srcId) : -1;
       if (idx >= 0) {
-        arr.splice(idx + 1, 0, r);
+        arr.splice(idx + 1, 0, row);
       } else {
         const firstEmpty = arr.findIndex(x => isEmpty(x.id));
-        if (firstEmpty >= 0) arr.splice(firstEmpty, 0, r);
-        else arr.push(r);
+        if (firstEmpty >= 0) arr.splice(firstEmpty, 0, row);
+        else arr.push(row);
       }
     }
     skipScroll();
@@ -356,13 +424,21 @@ export function useTanCRUD(
   };
 
   // ── Insert / Insert_child ─────────────────────────────────────────────────
+  // Дочерняя под-таблица (наряды/материалы под строкой расчёта): НЕ каскадим reload на
+  // родителя (refresh без bubble), цену строки-владельца обновит rows_delta через get-response.
+  const afterInsert = (response) => {
+    emit('get-response', { table: props.table, action: 'insert', response });
+    skipScroll();
+    if (props.child) refresh(true); // только своя таблица — без каскада на родителя (без моргания всех таблиц)
+    else refresh(false);
+  };
+
   const Insert = async () => {
     const filters0 = (typeof prepFilters === 'function') ? prepFilters() : {};
     try {
       const response = await api.action('insert', { filters: filters0 });
-      if (!response.success) notify('error', { detail: response.message }, true);
-      skipScroll();
-      refresh(false);
+      if (!response.success) { notify('error', { detail: response.message }, true); return; }
+      afterInsert(response);
     } catch (e) {
       notify('error', { detail: e.message });
     }
@@ -375,9 +451,8 @@ export function useTanCRUD(
         [table_tree.value.parentIdField]: data[table_tree.value.idField],
         filters: filters0,
       });
-      if (!response.success) notify('error', { detail: response.message }, true);
-      skipScroll();
-      refresh(false);
+      if (!response.success) { notify('error', { detail: response.message }, true); return; }
+      afterInsert(response);
     } catch (e) {
       notify('error', { detail: e.message });
     }
@@ -414,6 +489,9 @@ export function useTanCRUD(
 
     // TanStack inline cell edit
     saveCellUpdate,
+
+    // Применение rows_delta (в т.ч. для дельты, всплывшей от дочерней под-таблицы)
+    applyRowsDelta,
 
     // Scroll suppression (использовать в watch(lineItems) TanTable.vue)
     skipScroll,

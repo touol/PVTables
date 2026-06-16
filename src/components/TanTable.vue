@@ -154,7 +154,16 @@ let lineItem, lineItemDialog, deleteLineItemDialog, deleteLineItemsDialog
 let openNew, editLineItem, hideDialog, saveLineItem
 let confirmDeleteLineItem, deleteLineItem, confirmDeleteSelected, deleteSelectedLineItems
 let mywatch
-let saveCellUpdate, consumeSkip, skipScroll
+let saveCellUpdate, consumeSkip, skipScroll, applyRowsDelta
+
+// Ответ всплыл от дочерней под-таблицы/подвкладки: применяем rows_delta и к СЕБЕ
+// (своим scope — parent_id), чтобы родительская строка обновилась без перезагрузки,
+// затем пробрасываем выше по дереву таблиц.
+const onChildResponse = (event) => {
+  const delta = event?.response?.data?.rows_delta
+  if (delta && applyRowsDelta) applyRowsDelta(delta)
+  emit('get-response', event)
+}
 
 // ─── Actions (инициализируется в onMounted) ───────────────────────────────
 const cur_actions      = ref([])
@@ -1294,6 +1303,7 @@ onMounted(async () => {
     confirmDeleteSelected   = crudComposable.confirmDeleteSelected
     deleteSelectedLineItems = crudComposable.deleteSelectedLineItems
     saveCellUpdate          = crudComposable.saveCellUpdate
+    applyRowsDelta          = crudComposable.applyRowsDelta
     consumeSkip             = crudComposable.consumeSkip
     skipScroll              = crudComposable.skipScroll
 
@@ -1608,7 +1618,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                       :child="true"
                       :embeddedInRow="true"
                       :ref="el => { if (el) childComponentRefs[flatItems[vItem.index].row.original._rowKey] = el }"
-                      @get-response="emit('get-response', $event)"
+                      @get-response="onChildResponse"
                     />
                   </div>
                   <div v-else-if="subsComposable[flatItems[vItem.index].row.original._rowKey].action === 'subtabs'" class="p-3">
@@ -1621,7 +1631,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                       :child="true"
                       :embeddedInRow="true"
                       :ref="el => { if (el) childComponentRefs[flatItems[vItem.index].row.original._rowKey] = el }"
-                      @get-response="emit('get-response', $event)"
+                      @get-response="onChildResponse"
                     />
                   </div>
                 </template>
