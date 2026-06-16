@@ -190,6 +190,9 @@ const childComponentRefs = ref({})
 let subsComposable, subfiltersComposable, parentRowComposable
 let setExpandedRowComposable, toogleExpandRowComposable, expandedTableTreeRowsComposable
 
+// Экранирование пользовательского текста перед вставкой в innerHTML.
+const escHtml = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+
 // ─── acMaps / selectMaps (O(1) lookup) ───────────────────────────────────
 const acMaps = computed(() => {
   const maps = {}
@@ -523,6 +526,22 @@ const dataColDefs = computed(() =>
         case 'autocomplete': {
           if (!value || value == 0) return ''
           const lbl = getACContent(col.field, value)
+          // Заголовок ячейки из поля СТРОКИ (напр. имя детали нестандарта `name`), по условию
+          // col.cell_name_if (напр. {product_type_id:3}). content автокомплита — общий на продукт,
+          // поэтому имя детали берём из строки. Только в ячейке таблицы (выпадашка/редактор не задеты).
+          if (col.cell_name_field && data) {
+            let match = true
+            if (col.cell_name_if) {
+              for (const k in col.cell_name_if) { if (String(data[k]) !== String(col.cell_name_if[k])) { match = false; break } }
+            }
+            const rowName = data[col.cell_name_field]
+            if (match && rowName !== undefined && rowName !== null && rowName !== '') {
+              // имя детали жирным + путь категорий из content (всё после первого </b>); продуктовое
+              // название продукта (его <b>...</b>) опускаем как избыточное.
+              const tail = String(lbl ?? '').replace(/^[\s\S]*?<\/b>/, '')
+              return h('span', { innerHTML: `<b>${escHtml(rowName)}</b>${tail}` })
+            }
+          }
           let acHtml
           if (col.hide_id) acHtml = String(lbl)
           else if (col.show_id) {
