@@ -39,7 +39,7 @@ const emit = defineEmits([
 </script>
 
 <template>
-  <Toolbar class="p-mb-4">
+  <Toolbar class="p-mb-4 tan-toolbar">
     <template #start>
       <Button
         v-for="action in headActions"
@@ -100,3 +100,13 @@ const emit = defineEmits([
     </template>
   </Toolbar>
 </template>
+
+<style scoped>
+/* Расстояние между кнопками в тулбаре таблицы */
+.tan-toolbar :deep(.p-toolbar-start),
+.tan-toolbar :deep(.p-toolbar-center),
+.tan-toolbar :deep(.p-toolbar-end) {
+  gap: 5px;
+  flex-wrap: wrap;
+}
+</style>

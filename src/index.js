@@ -37,7 +37,44 @@ if (!window.PVTablesAPI) {
 import 'primeicons/primeicons.css'
 import './style.css'
 import Lara from '@primevue/themes/lara/'
+import { definePreset } from '@primevue/themes'
 import PrimeVue from "primevue/config";
+
+// Кастомный пресет кнопок: цвета severity-классов под дизайн gtsERP.
+// Меняет p-button-success / p-button-danger / p-button-secondary и др. везде в приложении.
+const gtsPreset = definePreset(Lara, {
+    components: {
+        button: {
+            colorScheme: {
+                light: {
+                    root: {
+                        // Вставить / Создать / Excel — сплошной зелёный
+                        success: {
+                            background: '#57a773', hoverBackground: '#4c9466', activeBackground: '#428457',
+                            borderColor: '#57a773', hoverBorderColor: '#4c9466', activeBorderColor: '#428457',
+                            color: '#ffffff', hoverColor: '#ffffff', activeColor: '#ffffff',
+                            focusRing: { color: '#57a773', shadow: '0 0 0 0.2rem rgba(87,167,115,.35)' }
+                        },
+                        // Удалить — мягкий красный: светлый фон, красный текст и бордюр
+                        danger: {
+                            background: '#fdecea', hoverBackground: '#fadedb', activeBackground: '#f6cfca',
+                            borderColor: '#f1b6b0', hoverBorderColor: '#e89c95', activeBorderColor: '#e08980',
+                            color: '#d65a4f', hoverColor: '#c4493e', activeColor: '#b53d33',
+                            focusRing: { color: '#e08980', shadow: '0 0 0 0.2rem rgba(214,90,79,.25)' }
+                        },
+                        // Excel / Выбрать принтер — нейтральный: белый фон, серый бордюр, тёмный текст
+                        secondary: {
+                            background: '#ffffff', hoverBackground: '#f3f5f7', activeBackground: '#e9edf1',
+                            borderColor: '#ced4da', hoverBorderColor: '#b9c1ca', activeBorderColor: '#aab3bd',
+                            color: '#3f4b5b', hoverColor: '#2c3645', activeColor: '#222b38',
+                            focusRing: { color: '#aab3bd', shadow: '0 0 0 0.2rem rgba(63,75,91,.18)' }
+                        }
+                    }
+                }
+            }
+        }
+    }
+});
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
@@ -89,7 +126,7 @@ export default {
         
         app.use(PrimeVue, {
             theme: {
-                preset: Lara,
+                preset: gtsPreset,
                 pt: Lara,
                 options: {
                     darkModeSelector: '.my-app-dark',
