@@ -47,13 +47,14 @@ export default class FileService {
         success: response.data.success,
         message: response.data.message,
         files: response.data.data.files || [],
-        directories: response.data.data.directories || []
+        directories: response.data.data.directories || [],
+        baseUrl: response.data.data.baseUrl || ''
       };
-      
+
       if (result.success !== 1) {
         notify('error', { detail: 'Ошибка при загрузке файлов: ' + result.message });
       }
-      
+
       return result;
     } catch (error) {
       console.error('Ошибка при получении списка файлов:', error);

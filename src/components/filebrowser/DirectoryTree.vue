@@ -179,10 +179,17 @@ const getNodeIcon = (node) => {
 // Функция для разбора пути на компоненты
 const parsePathComponents = (path) => {
   if (!path) return [];
-  
+
+  // Снимаем baseUrl источника: путь может прийти полным url файла
+  // (/assets/uploads/vk24snab/schet/2026/07/photo.jpg) — оставляем часть
+  // относительно источника (2026/07/photo.jpg), чтобы совпасть с ключами дерева.
+  let rel = path;
+  const baseUrl = fileStore.state.baseUrl || '';
+  if (baseUrl && rel.startsWith(baseUrl)) rel = rel.slice(baseUrl.length);
+
   // Удаляем имя файла, если оно есть (оставляем только путь к директории)
-  const dirPath = path.includes('.') ? path.substring(0, path.lastIndexOf('/') + 1) : path;
-  
+  const dirPath = rel.includes('.') ? rel.substring(0, rel.lastIndexOf('/') + 1) : rel;
+
   // Разбиваем путь на компоненты
   const components = dirPath.split('/').filter(c => c);
   
@@ -269,6 +276,9 @@ const expandNodePath = async (node, paths, level) => {
 // При монтировании компонента загружаем корневые директории и раскрываем дерево до указанной папки
 onMounted(async () => {
   if (props.initialPath) {
+    // Сначала грузим корень источника — так узнаём baseUrl (нужен, чтобы снять
+    // префикс с полного url файла), затем раскрываем дерево до его папки.
+    await fileStore.actions.loadFiles('/', props.mediaSource);
     const pathComponents = parsePathComponents(props.initialPath);
     await expandToPath(pathComponents);
   } else {

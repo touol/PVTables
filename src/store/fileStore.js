@@ -23,6 +23,8 @@ const state = reactive({
   filter: '',
   // Текущий источник медиа
   mediaSource: 1,
+  // baseUrl текущего источника (для снятия префикса с полного url файла)
+  baseUrl: '',
   // Загрузка данных
   loading: false,
   // Ошибка
@@ -97,6 +99,7 @@ const actions = {
       
       const result = await fileService.getFiles(directory, source);
       state.files = [...result.files, ...result.directories];
+      if (result.baseUrl) state.baseUrl = result.baseUrl;
       
       // Сбрасываем выбранный файл, если его нет в новом списке
       if (state.selectedFile && !state.files.find(f => f.name === state.selectedFile.name)) {
