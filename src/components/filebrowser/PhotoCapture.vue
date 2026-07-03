@@ -425,13 +425,18 @@ const uploadFile = async (blob, ext) => {
   const json = await resp.json()
   if (!json?.success) throw new Error(json?.message || 'Ошибка загрузки')
 
-  const listResp = await fetch(`/api/files?path=${encodeURIComponent(props.uploadPath)}&source=${encodeURIComponent(props.mediaSource)}`, {
-    credentials: 'include',
-    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-  })
-  const listJson = await listResp.json()
-  const match = (listJson?.data?.files || []).find(f => f.name === filename)
-  const url = match?.url || `${props.uploadPath.replace(/\/$/, '')}/${filename}`
+  // Бэк возвращает финальный url (с учётом распределения по год/месяц на источнике).
+  // Фолбэк на листинг папки — если старый бэк url не вернул.
+  let url = json?.data?.url || (Array.isArray(json?.data) ? json.data[0]?.url : '')
+  if (!url) {
+    const listResp = await fetch(`/api/files?path=${encodeURIComponent(props.uploadPath)}&source=${encodeURIComponent(props.mediaSource)}`, {
+      credentials: 'include',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    const listJson = await listResp.json()
+    const match = (listJson?.data?.files || []).find(f => f.name === filename)
+    url = match?.url || `${props.uploadPath.replace(/\/$/, '')}/${filename}`
+  }
 
   emit('fileUploaded', { url, name: filename })
   close()
