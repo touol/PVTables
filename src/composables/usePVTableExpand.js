@@ -115,7 +115,6 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
    * @param {Object} data - Данные строки
    */
   const toogleExpandRow = async (data) => {
-
     // Проверяем наличие table_tree
     if (!table_tree || !table_tree.value) {
       console.error('table_tree is not defined');
@@ -123,7 +122,7 @@ export function usePVTableExpand(table_tree, filters, dataFields, tableName) {
     }
 
     let tmp = { ...expandedRows.value };
-    
+
     if (expandedTableTreeRows.value[data._rowKey]) {
       delete expandedTableTreeRows.value[data._rowKey];
       delete tmp[data._rowKey];

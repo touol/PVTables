@@ -243,9 +243,14 @@ export function useTanCRUD(
     const adopt = (fresh) => {
       const old = existingById.get(Number(fresh.id));
       if (old) {
-        const rk = old._rowKey != null ? old._rowKey : fresh._rowKey;
+        let rk = old._rowKey != null ? old._rowKey : fresh._rowKey;
+        // НИКОГДА не оставляем _rowKey пустым: composable раскрытия ключует по сырому
+        // _rowKey, а TanStack getRowId фолбэчит на String(id) → при undefined рассинхрон
+        // (раскрытие/сабтабы пишутся в expandedRows[undefined] и не отображаются).
+        // Фолбэк на String(id) совпадает с getRowId → без ремоунта.
+        if (rk == null) rk = String(old.id);
         Object.assign(old, fresh);
-        if (rk != null) old._rowKey = rk;
+        old._rowKey = rk;
         return old; // та же ссылка → нет ремоунта, обновятся только изменённые ячейки
       }
       if (fresh._rowKey == null) fresh._rowKey = `rd_${fresh.id}_${++_deltaRowKey}`;
