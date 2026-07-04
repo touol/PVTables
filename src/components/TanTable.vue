@@ -1306,6 +1306,7 @@ onMounted(async () => {
       { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState },
       selectedlineItems, fieldsRef, activeInline,
       cacheAction,
+      autocompleteSettings,
     )
     initUndoRedo(api, lineItems, findIndexById, crudComposable.skipScroll, refresh)
     lineItem                = crudComposable.lineItem

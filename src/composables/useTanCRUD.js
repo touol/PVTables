@@ -26,6 +26,7 @@ export function useTanCRUD(
   fieldsRef = null,       // Ref<fields> — для updateEmptyRow после insert
   activeInline = null,    // Ref — для повторного фокуса после обновления ячейки
   cacheAction = null,     // из useActionsCaching — опционально
+  autocompleteSettings = null, // Ref<{field:{rows,...}}> — справочник опций автокомплитов (для мёржа дельты)
 ) {
   const { updateEmptyRow, isEmptyRow, isEditableEmptyRow, emptyRowsState } = emptyRowsHelpers;
 
@@ -214,6 +215,27 @@ export function useTanCRUD(
   // Каждый экземпляр таблицы берёт из дельты только свой scope (parent_id):
   //   • основная (scope=0) — мерджит затронутый корень+ссылки, прочие товары не трогает;
   //   • под-таблица детей (scope=X) — дельта несёт ПОЛНЫЙ актуальный набор детей X → заменяем целиком.
+  // Мёрж опций автокомплитов из дельты в общий справочник (autocompleteSettings).
+  // Приходит { field: { rows:[{id,content,...}], ... } } только под id из upsert-строк.
+  // Существующие опции сохраняем, новые/обновлённые кладём поверх по id. Объект поля
+  // переприсваиваем целиком — чтобы computed acMaps/acFullMaps в TanTable среагировали.
+  const mergeDeltaAutocomplete = (ac) => {
+    if (!ac || !autocompleteSettings || !autocompleteSettings.value) return;
+    for (const field in ac) {
+      const incoming = ac[field];
+      const incRows = Array.isArray(incoming?.rows) ? incoming.rows : [];
+      if (!incRows.length) continue;
+      const cur = autocompleteSettings.value[field];
+      if (!cur || !Array.isArray(cur.rows)) {
+        autocompleteSettings.value[field] = incoming;
+        continue;
+      }
+      const byId = new Map(cur.rows.map(r => [String(r.id), r]));
+      for (const r of incRows) byId.set(String(r.id), r);
+      autocompleteSettings.value[field] = { ...cur, rows: Array.from(byId.values()) };
+    }
+  };
+
   const applyRowsDelta = (delta) => {
     if (!delta) return;
     // Дельта помечена своей таблицей. Чужим (под-вкладки нарядов/материалов под строкой
@@ -226,6 +248,11 @@ export function useTanCRUD(
     if (delta.customFields) for (const k in delta.customFields) customFields.value[k] = delta.customFields[k];
     if (delta.row_setting)  for (const k in delta.row_setting)  row_setting.value[k]  = delta.row_setting[k];
     for (const id of delIds) { delete customFields.value[id]; delete row_setting.value[id]; }
+
+    // Опции автокомплитов для свежих значений (напр. только что выбранный продукт): бек кладёт
+    // в delta.autocomplete подписи РОВНО под id из upsert-строк. Мёрджим их в общий справочник
+    // (не заменяя полный список опций), иначе ячейка автокомплита показывала бы пусто до перезагрузки.
+    if (delta.autocomplete) mergeDeltaAutocomplete(delta.autocomplete);
 
     const isEmpty = (id) => (typeof isEmptyRow === 'function') && isEmptyRow(id);
     const scope = scopeParentId();
