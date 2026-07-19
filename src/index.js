@@ -20,7 +20,11 @@ import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
 import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
 import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGalleryAPI, fileUtils } from './components/gtsAPIFileGallery/index.js'
-import DataTable from "./components/DataTable/DataTable.vue";
+// Форк PrimeVue DataTable выпилен 19.07.2026. Имя DataTable оставлено в экспорте
+// как алиас на СТОКОВЫЙ primevue/datatable — им пользуется gtsShopAdmin
+// (TableVariables.vue импортирует DataTable из 'pvtables/dist/pvtables').
+// Сток и так в бандле (PVTableModel, filebrowser/FileView), лишнего веса нет.
+import DataTable from "primevue/datatable";
 import { ComponentLoader } from './utils/component-loader.js'
 
 // Создаем глобальный PVTablesAPI для использования в динамически загружаемых компонентах
