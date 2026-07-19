@@ -4,17 +4,22 @@ import Popover     from 'primevue/popover'
 import Button      from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputText   from 'primevue/inputtext'
+import MultiSelect from 'primevue/multiselect'
 
 const props = defineProps({
   scrollHeight:   { type: String,  default: '85vh' },
   autoFitCols:    { type: Boolean, default: true },
   autoFitHeight:  { type: Boolean, default: false },
+  // Колонки, доступные для выбора, и текущий показываемый набор
+  columns:         { type: Array, default: () => [] },
+  selectedColumns: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits([
   'update:scrollHeight',
   'update:autoFitCols',
   'update:autoFitHeight',
+  'update:selectedColumns',
   'fit-columns',
   'save-local',
   'save-server',
@@ -34,8 +39,28 @@ defineExpose({ toggle })
   <Popover ref="popRef">
     <div style="padding: 1rem; min-width: 300px; display:flex; flex-direction:column; gap:0.75rem;">
 
-      <!-- Высота таблицы -->
+      <!-- Колонки -->
       <div>
+        <div style="font-weight:600; font-size:13px; margin-bottom:0.5rem;">
+          <i class="pi pi-table" style="margin-right:4px" /> Колонки
+        </div>
+        <MultiSelect
+          :modelValue="selectedColumns"
+          :options="columns"
+          optionLabel="label"
+          dataKey="field"
+          @update:modelValue="emit('update:selectedColumns', $event)"
+          placeholder="Выберете столбцы"
+          :maxSelectedLabels="3"
+          :filter="true"
+          filterPlaceholder="Поиск столбца"
+          style="width:100%"
+          size="small"
+        />
+      </div>
+
+      <!-- Высота таблицы -->
+      <div style="border-top:1px solid var(--p-surface-200,#eee); padding-top:0.6rem;">
         <div style="font-weight:600; font-size:13px; margin-bottom:0.5rem;">
           <i class="pi pi-arrows-v" style="margin-right:4px" /> Высота таблицы
         </div>

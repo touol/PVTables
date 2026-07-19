@@ -12,8 +12,12 @@ import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
  * @param {Ref}      rowActions      - computed/ref с массивом row-actions
  * @param {Ref}      visibleColumns  - computed/ref с массивом видимых колонок
  */
-export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow, rowActions, visibleColumns, tableTree, speedDialEnabled, rowsGetter, actionBtnSize, rowDrag }) {
+export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow, rowActions, visibleColumns, tableTree, speedDialEnabled, rowsGetter, actionBtnSize, rowDrag, hiddenCols }) {
   const WIDTH_LS_KEY = `pvtables-${tableName}-column-widths-v2`
+  // Скрытые колонки храним ОТДЕЛЬНЫМ ключом, а не внутри WIDTH_LS_KEY:
+  // наличие WIDTH_LS_KEY выключает autoFitCols, и выбор колонок не должен
+  // побочно замораживать ширины. Пишется автоматически при каждом переключении.
+  const HIDDEN_LS_KEY = `pvtables-${tableName}-hidden-cols`
   // Очистить устаревшие ключи предыдущих версий (включая AUTOFIT_KEY — больше не нужен,
   // autoFitCols выводится из наличия WIDTH_LS_KEY: есть сохранённые ширины — autoFit off)
   try {
@@ -98,8 +102,40 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     } catch {}
   }
 
+  /** Сохранить выбор колонок локально. Зовётся сразу при переключении,
+   *  чтобы набор переживал reload без нажатия «Сохранить». */
+  const saveHiddenToLocal = () => {
+    if (!hiddenCols) return
+    try {
+      if (hiddenCols.value === null) {
+        // Набор не выбирался (или сброшен) — ключ не держим, действует конфиг.
+        localStorage.removeItem(HIDDEN_LS_KEY)
+      } else {
+        // Пустой массив тоже пишем: это осознанное «показать все»,
+        // и оно должно перекрывать конфиг после reload.
+        localStorage.setItem(HIDDEN_LS_KEY, JSON.stringify(hiddenCols.value))
+      }
+    } catch {}
+  }
+
+  /** Восстановить выбор колонок из localStorage.
+   *  Нет сохранённого — оставляем null: действует набор из конфига. */
+  const initHiddenCols = () => {
+    if (!hiddenCols) return
+    try {
+      const raw = localStorage.getItem(HIDDEN_LS_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) { hiddenCols.value = parsed; return }
+      }
+    } catch {}
+    hiddenCols.value = null
+  }
+
   /** Инициализация ширин: localStorage → сервер → авто-фит */
   const initColumnWidths = () => {
+    initHiddenCols()
+
     const ls = parseSavedWidths(localStorage.getItem(WIDTH_LS_KEY))
     if (ls) { columnSizing.value = ls; autoFitCols.value = false; return }
 
@@ -222,6 +258,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
       const w = columnSizing.value[col.field] ?? getColDefaultSize(col)
       columnWidths[col.field] = { width: `${w}px`, domIndex: i + 3 }
     })
+    // Выбор колонок НЕ отправляем на сервер — он сугубо локальный (см. HIDDEN_LS_KEY).
     const payload = { columnWidths }
     try {
       const response = await api.action('save_fields_style', { fields_style: payload })
@@ -236,15 +273,18 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
 
   const resetLocalWidths = () => {
     localStorage.removeItem(WIDTH_LS_KEY)
+    // Локальный выбор колонок тоже сбрасываем — откатываемся на серверный набор.
+    localStorage.removeItem(HIDDEN_LS_KEY)
+    initHiddenCols()
     const srv = serverFieldsStyle.value ? parseSavedWidths(serverFieldsStyle.value) : null
     if (srv) {
       columnSizing.value = srv
       autoFitCols.value = false
     } else {
       autoFitCols.value = true
-      nextTick(() => fitColumnsToContainer())
     }
-    notify('success', { detail: 'Локальная ширина колонок сброшена' })
+    nextTick(() => { if (autoFitCols.value) fitColumnsToContainer() })
+    notify('success', { detail: 'Локальные настройки колонок сброшены' })
   }
 
   const resetServerWidths = async () => {
@@ -321,6 +361,8 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     getColumnStyle,
     getColDefaultSize,
     saveWidthsToLocal,
+    saveHiddenToLocal,
+    initHiddenCols,
     initColumnWidths,
     fitColumnsToContainer,
     saveFieldsStyleToServer,

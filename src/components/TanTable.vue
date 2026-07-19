@@ -89,10 +89,28 @@ const rowDrag       = ref(false)
 const form          = ref({})
 const actions1      = ref({})
 
+// Всё, что вообще может быть показано в таблице. Из технических исключаем
+// только type='hidden' — остальное (в т.ч. скрытое конфигом) предлагаем в выборе,
+// иначе колонку, спрятанную конфигом, нельзя было бы включить руками.
+const selectableColumns = computed(() =>
+  columns.value.filter(x => x.type != 'hidden')
+)
+
+// Что конфиг прячет по умолчанию (пока пользователь сам не выбрал набор).
+const isConfigHidden = (x) =>
+  x.modal_only == true || x.mobile_only == true || (hideId.value && x.field == 'id')
+
+// Скрытые колонки храним ИМЕНАМИ полей, а не объектами: columns перезагружается
+// с сервера, и ссылки на объекты протухли бы.
+// null = пользователь ничего не выбирал → действует набор из конфига.
+const hiddenCols = ref(null)
+
+const effectiveHidden = computed(() =>
+  hiddenCols.value ?? selectableColumns.value.filter(isConfigHidden).map(c => c.field)
+)
+
 const visibleColumns = computed(() =>
-  columns.value.filter(
-    x => x.modal_only != true && x.mobile_only != true && x.type != 'hidden' && !(hideId.value && x.field == 'id')
-  )
+  selectableColumns.value.filter(x => !effectiveHidden.value.includes(x.field))
 )
 
 // Поля таблицы (нужны в saveCellUpdate для updateEmptyRow)
@@ -332,6 +350,7 @@ const {
   autoFitCols,
   getColDefaultSize,
   saveWidthsToLocal,
+  saveHiddenToLocal,
   initColumnWidths,
   fitColumnsToContainer,
   saveFieldsStyleToServer,
@@ -351,6 +370,7 @@ const {
   rowsGetter: () => tableInstance?.getRowModel?.().rows.map(r => r.original) ?? [],
   actionBtnSize,
   rowDrag,
+  hiddenCols,
 })
 
 // ─── TanStack column definitions ──────────────────────────────────────────
@@ -1152,6 +1172,21 @@ const onRowsPerPageChange = e => { currentPageSize.value = Number(e.target.value
 const settingsRef = ref(null)
 const toggleSettings = (e) => settingsRef.value?.toggle(e)
 
+// Выбор показываемых колонок. MultiSelect отдаёт список ОСТАВЛЕННЫХ колонок,
+// а храним мы скрытые — поэтому инвертируем относительно selectableColumns.
+const onToggleColumns = (val) => {
+  const keep = new Set((val || []).map(c => c.field))
+  hiddenCols.value = selectableColumns.value
+    .filter(c => !keep.has(c.field))
+    .map(c => c.field)
+  // Сохраняем сразу — набор должен пережить reload без нажатия «Сохранить».
+  // Только локально: на сервер выбор колонок не уходит.
+  saveHiddenToLocal()
+  // Набор колонок изменился — ширины сами не пересчитываются (watch'а на
+  // visibleColumns нет), поэтому при включённой автоподгонке пересчитываем руками.
+  if (autoFitCols.value) nextTick(() => fitColumnsToContainer())
+}
+
 // ─── Initialization (mirrors PVTables.vue onMounted) ─────────────────────
 onMounted(async () => {
   // Читаем реальный размер кнопки из CSS-переменной PrimeVue
@@ -1946,9 +1981,12 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     :scrollHeight="localScrollHeight"
     :autoFitCols="autoFitCols"
     :autoFitHeight="autoFitHeight"
+    :columns="selectableColumns"
+    :selectedColumns="visibleColumns"
     @update:scrollHeight="localScrollHeight = $event"
     @update:autoFitCols="autoFitCols = $event"
     @update:autoFitHeight="autoFitHeight = $event"
+    @update:selectedColumns="onToggleColumns"
     @fit-columns="fitColumnsToContainer()"
     @save-local="saveWidthsToLocal(); notify('success', { detail: 'Ширина сохранена локально' })"
     @save-server="saveFieldsStyleToServer()"
