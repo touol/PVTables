@@ -4,7 +4,7 @@
     v-if="useMobileView"
     ref="mobileListRef"
     :table="table"
-    :actions="actions"
+    :actions="mergedActions"
     :filters="props.filters"
     :sorting="sorting"
     :scrollHeight="scrollHeight"
@@ -20,7 +20,7 @@
     v-else
     ref="tanTableRef"
     :table="table"
-    :actions="actions"
+    :actions="mergedActions"
     :filters="props.filters"
     :sorting="sorting"
     :scrollHeight="scrollHeight"
@@ -39,7 +39,7 @@
 <script setup>
   import Toast from 'primevue/toast';
   import Tooltip from 'primevue/tooltip';
-  import { ref, defineComponent, computed } from "vue";
+  import { ref, defineComponent, computed, inject } from "vue";
   import TanTable from './components/TanTable.vue'
   import TanMobileList from './components/TanMobileList.vue'
   import { useMobileLayout } from './composables/useMobileLayout'
@@ -96,6 +96,20 @@
     }
   });
   const emit = defineEmits(['get-response','refresh-table','rows-loaded'])
+
+  // Внешние row-экшены, прокинутые предком через provide('externalRowActions', fn).
+  // fn(tableName) → объект экшенов (или null). Мёржим под именем СВОЕЙ таблицы, чтобы
+  // processActions (кейятся по props.table) их подхватил. Дефолт null → на любой
+  // таблице сайта без провайдера возвращается props.actions без изменений.
+  const externalRowActionsFn = inject('externalRowActions', null)
+  const mergedActions = computed(() => {
+    const base = (props.actions && typeof props.actions === 'object') ? props.actions : {}
+    if (typeof externalRowActionsFn !== 'function') return base
+    const ext = externalRowActionsFn(props.table)
+    if (!ext) return base
+    // Экшены конфига таблицы имеют приоритет — мёржим их поверх внешних.
+    return { ...base, [props.table]: { ...ext, ...(base[props.table] || {}) } }
+  })
 
 
 

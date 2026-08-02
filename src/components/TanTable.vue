@@ -200,7 +200,14 @@ const saveVersionRow   = ref(false)
 const versionsDialog   = ref(false)
 
 const headActions = computed(() => cur_actions.value.filter(x => x.head))
-const rowActions  = computed(() => cur_actions.value.filter(x => x.row && x.menu !== 1))
+// Стабильная сортировка по необязательному order (по умолчанию 0): экшены с
+// order<0 (напр. прокинутая «Наряды изделия», order:-10) встают перед конфиговыми.
+const rowActions  = computed(() =>
+  cur_actions.value
+    .filter(x => x.row && x.menu !== 1)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+)
 
 let actionsComposable, hideModalForm, submitModalForm
 
