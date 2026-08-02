@@ -100,6 +100,11 @@ const props = defineProps({
   // совпадает с началом существующего значения — дописывается «хвост» и выделяется,
   // Tab/Enter принимают, Backspace/Delete отклоняют (стандартное поведение selection).
   columnValues:     { type: Array, default: () => [] },
+  // Пользовательские горячие клавиши из конфига таблицы:
+  // { имя: { hotKey:'ctrl+enter', action:'nextRow', field:'product_id' } }.
+  // Комбинацию распознаём здесь, а переход в целевую ячейку делает TanTable
+  // по имени hotKey (эмитим через 'navigate').
+  hotKeys:          { type: Object, default: null },
 })
 
 const emit = defineEmits(['save', 'cancel', 'navigate'])
@@ -157,6 +162,16 @@ const onDateChange = (val) => {
   emit('navigate', 'next-row')
 }
 const onDateKeydown = (e) => {
+  if (props.hotKeys) {
+    const combo = eventCombo(e)
+    for (const name in props.hotKeys) {
+      const hk = props.hotKeys[name]
+      if (hk && String(hk.hotKey || '').toLowerCase().replace(/\s+/g, '') === combo) {
+        onSave(); emit('navigate', name)
+        e.preventDefault(); e.stopPropagation(); return
+      }
+    }
+  }
   if (e.key === 'Escape') {
     saved = true
     emit('cancel')
@@ -550,7 +565,34 @@ const onBlur = () => {
   if (!saved && !unmounting) onSave()
 }
 
+// Строим строку-комбо из события: 'ctrl+shift+enter' (порядок: ctrl, alt, shift, key)
+const eventCombo = (e) => [
+  (e.ctrlKey || e.metaKey) ? 'ctrl' : '',
+  e.altKey   ? 'alt'   : '',
+  e.shiftKey ? 'shift' : '',
+  (e.key || '').toLowerCase(),
+].filter(Boolean).join('+')
+
 const onKeydown = (e) => {
+  // ── Пользовательские горячие клавиши (hotKeys из конфига таблицы) ────────
+  // Проверяем ДО обычных Enter/Tab, иначе ctrl+enter перехватит plain-Enter.
+  if (props.hotKeys) {
+    const combo = eventCombo(e)
+    for (const name in props.hotKeys) {
+      const hk = props.hotKeys[name]
+      if (hk && String(hk.hotKey || '').toLowerCase().replace(/\s+/g, '') === combo) {
+        // Фиксируем значение: для открытого дропдауна — активную опцию.
+        if (isDropdownType.value && popoverOpen.value && activeIdx.value >= 0 && dropdownOptions.value[activeIdx.value]) {
+          selectOption(dropdownOptions.value[activeIdx.value])
+        } else {
+          onSave()
+        }
+        emit('navigate', name)
+        e.preventDefault(); e.stopPropagation(); return
+      }
+    }
+  }
+
   // ── Dropdown-специфичная навигация (когда попавер открыт) ───────────────
   if (isDropdownType.value && popoverOpen.value) {
     if (e.key === 'ArrowDown') {

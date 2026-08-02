@@ -86,6 +86,7 @@ const row_class_trigger  = ref({})
 const globalFilterFields = ref([])
 const actionsFrozen = ref(null)
 const rowDrag       = ref(false)
+const hotKeys       = ref(null)   // пользовательские горячие клавиши inline-редактора (из конфига таблицы)
 const form          = ref({})
 const actions1      = ref({})
 
@@ -1025,6 +1026,24 @@ const onInlineNavigate = (currentCell, dir) => {
   if (colIdx < 0) colIdx = 0
   if (rowIdx < 0) rowIdx = 0
 
+  // ── Пользовательская горячая клавиша (dir = имя hotKey из конфига) ────────
+  // Переходим в заданную колонку (field) соседней строки. Если целевая ячейка
+  // недоступна (readonly/не inline) — откатываемся на обычную навигацию по строке.
+  const hk = hotKeys.value?.[dir]
+  if (hk) {
+    const rowDir  = hk.action === 'prevRow' ? -1 : 1
+    const tRowIdx = Math.min(Math.max(rowIdx + rowDir, 0), allRows.length - 1)
+    const row     = allRows[tRowIdx]
+    const tCol    = editableCols.find(c => c.field === hk.field)
+    if (row && tCol && tRowIdx !== rowIdx &&
+        isCellEditable(tCol, row.original) && isInlineType(tCol, row.original)) {
+      const cell = row.getVisibleCells().find(c => c.column.id === tCol.field)
+      if (cell) { nextTick(() => activateInlineCell(cell)); return }
+    }
+    // fallback — обычный переход по строке
+    dir = hk.action === 'prevRow' ? 'prev-row' : 'next-row'
+  }
+
   const maxSteps = (editableCols.length * allRows.length) + 1
   for (let step = 0; step < maxSteps; step++) {
     const prevRow = rowIdx
@@ -1230,6 +1249,7 @@ onMounted(async () => {
     if (response.data.row_class_trigger) row_class_trigger.value = response.data.row_class_trigger
     if (response.data.table_tree)        table_tree.value = response.data.table_tree
     if (response.data.row_drag)          rowDrag.value = true
+    if (response.data.hotKeys)           hotKeys.value = response.data.hotKeys
     if (response.data.save_version_row)  saveVersionRow.value = true
 
     // Top filters
@@ -1638,6 +1658,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                   :autocompleteSettings="autocompleteSettings"
                   :customRows="customFields[cell.row.original.id]?.[cell.column.id]?.select_data ?? null"
                   :columnValues="getColumnUniqueValues(cell.column.id)"
+                  :hotKeys="hotKeys"
                   @save="(v) => { closeInline(); saveCellUpdate(cell.row.original, cell.column.id, v) }"
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"
