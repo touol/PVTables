@@ -381,6 +381,10 @@ export function useTanCRUD(
           // Переприсвоение: TanStack видит смену ссылки, watch(lineItems) стреляет
           skipScroll();
           lineItems.value = [...lineItems.value];
+          // Подписи автокомплитов НОВОЙ строки (product_id/материал): бек кладёт словари под её
+          // значения в data.autocomplete — иначе ячейки пустуют до F5 (rows_delta для верхнеуровневой
+          // детали пуст). Мёрджим в общий справочник (как при read), не заменяя полный список.
+          if (response.data?.autocomplete) mergeDeltaAutocomplete(response.data.autocomplete);
           cacheAction?.({ type: 'insert', insertedId: newObj.id, insertedData: newObj, filters: prepFilters?.() });
           if (response.data?.customFields) {
             for (const key in response.data.customFields) {
@@ -448,6 +452,8 @@ export function useTanCRUD(
       }
       const dataAfter = response.data?.object ?? { ...dataBefore, [field]: newValue };
       cacheAction?.({ type: 'update', id: data.id, field, dataBefore, dataAfter, filters: prepFilters?.() });
+      // Подписи автокомплитов обновлённой строки (data.autocomplete) — симметрично insert/read.
+      if (response.data?.autocomplete) mergeDeltaAutocomplete(response.data.autocomplete);
       if (response.data?.rows_delta) { applyRowsDelta(response.data.rows_delta); }
       else if (response.data?.refresh_table == 1) { skipScroll(3); refresh(false); }
     } catch (e) {
