@@ -112,7 +112,7 @@
     </template>
     <InputText 
         v-else 
-        v-model="model"
+        v-model="textareaModel"
         @update:modelValue="setValue()" 
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
@@ -122,6 +122,7 @@
     import { ref, watchEffect, computed } from "vue";
     import InputText from "primevue/inputtext";
     import Textarea from "primevue/textarea";
+    import { toDisplayText, fromDisplayText } from "../utils/value-format.js";
     import InputNumber from "primevue/inputnumber";
 
     import Checkbox from 'primevue/checkbox';
@@ -204,25 +205,18 @@
         }
     };
     
-    // Computed свойство для преобразования объекта в JSON с отступами для Textarea
+    // pdoTools разворачивает JSON-поля в объект: в поле такой объект показывался
+    // как «[object Object]». Показываем читаемый JSON, при сохранении — обратно.
+    // Работает и для textarea, и для обычного text.
     const textareaModel = computed({
         get() {
-            if (col.value.type === 'textarea' && typeof model.value === 'object' && model.value !== null) {
-                return JSON.stringify(model.value, null, 2);
+            if (typeof model.value === 'object' && model.value !== null) {
+                return toDisplayText(model.value);
             }
             return model.value;
         },
         set(value) {
-            // Пытаемся распарсить JSON, если не получается - сохраняем как строку
-            if (col.value.type === 'textarea') {
-                try {
-                    model.value = JSON.parse(value);
-                } catch (e) {
-                    model.value = value;
-                }
-            } else {
-                model.value = value;
-            }
+            model.value = fromDisplayText(value);
         }
     });
     

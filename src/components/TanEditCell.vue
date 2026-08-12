@@ -87,6 +87,7 @@
 import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import apiCtor from './api'
+import { toDisplayText } from '../utils/value-format.js'
 
 const props = defineProps({
   col:              { type: Object, required: true },
@@ -126,7 +127,8 @@ const displayText = computed(() => {
       if (found) return found.content
     }
   }
-  return String(v)
+  // Объект (pdoTools развернул JSON-поле) — редактируем как читаемый JSON
+  return toDisplayText(v)
 })
 
 // ── boolean state ──────────────────────────────────────────────────────────

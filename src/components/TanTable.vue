@@ -55,6 +55,7 @@ import TanSettingsPopover from './TanSettingsPopover.vue'
 import TanEditCell        from './TanEditCell.vue'
 import EditField          from './EditField.vue'
 import PVPrintAction      from './PVPrintAction.vue'
+import { toDisplayText } from '../utils/value-format.js'
 
 // ─── Props (идентичны PVTables.vue) ───────────────────────────────────────
 const props = defineProps({
@@ -614,7 +615,9 @@ const dataColDefs = computed(() =>
           return String(value)
         }
         default: {
-          const s = String(value)
+          // Объект (pdoTools развернул JSON-поле) показываем читаемым JSON,
+          // иначе в ячейке было «[object Object]»
+          const s = toDisplayText(value)
           if (col.truncate && s.length > col.truncate) return h('span', { title: s }, truncateText(s, col.truncate))
           return s
         }
