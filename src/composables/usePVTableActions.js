@@ -40,6 +40,10 @@ function resolveDefaultValue(field) {
  * @param {Ref} params.modalFormRowData - Ref для данных строки модальной формы
  * @param {Ref} params.modalFormType - Ref для типа модальной формы
  * @param {Ref} params.modalFormColumns - Ref для колонок модальной формы
+ * @param {Ref} params.modalFormTabs - Ref для вкладок модальной формы (форма из ответа сервера)
+ * @param {Ref} params.modalFormTitle - Ref для заголовка модальной формы
+ * @param {Ref} params.modalFormButtons - Ref для подписей кнопок модальной формы
+ * @param {Ref} params.modalFormWidth - Ref для ширины модального окна
  * @returns {Object} Объект с функциями действий
  */
 export function usePVTableActions({
@@ -59,6 +63,10 @@ export function usePVTableActions({
   modalFormRowData,
   modalFormType,
   modalFormColumns,
+  modalFormTabs,
+  modalFormTitle,
+  modalFormButtons,
+  modalFormWidth,
 }) {
   
   /**
@@ -392,6 +400,100 @@ export function usePVTableActions({
     modalFormRowData.value = null;
     modalFormData.value = {};
     modalFormColumns.value = [];
+    modalFormTabs.value = [];
+    modalFormTitle.value = '';
+    modalFormButtons.value = {};
+    modalFormWidth.value = '';
+  };
+
+  /**
+   * Поля формы (объект из ответа) → колонки для PVForm.
+   * Значения берём из values, а если их нет — из default поля.
+   */
+  const fieldsToColumns = (fields, values, target) => {
+    const columns = [];
+    for (let name in fields) {
+      const field = { ...fields[name] };
+      field.field = name;
+      if (!field.label) field.label = name;
+      if (!field.type) field.type = 'text';
+      columns.push(field);
+
+      if (values && values[name] !== undefined) {
+        target[name] = values[name];
+      } else if (field.default !== undefined) {
+        target[name] = resolveDefaultValue(field);
+      }
+    }
+    return columns;
+  };
+
+  /**
+   * Модалка по ответу сервера.
+   *
+   * Любое действие может вернуть в ответе описание формы — тогда мы её рисуем,
+   * а по кнопке отправляем в действие, которое сервер там же и назвал. Ответ на
+   * отправку снова может содержать модалку, поэтому шагов может быть сколько
+   * угодно: выбрали файл → показали, что в нём → подтвердили импорт.
+   *
+   * Ждём в resp.data.modal:
+   *   title    — заголовок окна
+   *   action   — куда слать по кнопке (если нет — повторяем текущее действие)
+   *   fields   — поля формы { имя: {label, type, …} }
+   *   tabs     — вместо fields: { ключ: {title, fields:{…}} }
+   *   values   — начальные значения
+   *   buttons  — { submit: {label, icon}, cancel: {label} }
+   *   width    — ширина окна, например '60vw'
+   *
+   * Строка вместо объекта — это старая модалка getTables в виде готового HTML.
+   * Мы её не рисуем: вставлять чужую вёрстку с её обработчиками в наш интерфейс
+   * нечем, и лучше честно сказать об этом в консоль, чем показать нерабочее окно.
+   *
+   * @returns {Boolean} показали ли модалку
+   */
+  const openModalFromResponse = (resp, context) => {
+    const payload = resp && resp.data ? resp.data.modal : null;
+    if (!payload) return false;
+
+    if (typeof payload === 'string') {
+      console.warn('[PVTables] действие вернуло HTML-модалку getTables — она не поддерживается. '
+        + 'Верните объект: { modal: { title, fields|tabs, values, action } }');
+      return false;
+    }
+    if (!payload.fields && !payload.tabs) {
+      console.warn('[PVTables] в modal нет ни fields, ни tabs — показывать нечего', payload);
+      return false;
+    }
+
+    const values = payload.values || {};
+    const data = {};
+
+    modalFormColumns.value = [];
+    modalFormTabs.value = [];
+    if (payload.tabs) {
+      for (let key in payload.tabs) {
+        const tab = payload.tabs[key];
+        modalFormTabs.value.push({
+          key,
+          title: tab.title || key,
+          columns: fieldsToColumns(tab.fields || {}, values, data),
+        });
+      }
+    } else {
+      modalFormColumns.value = fieldsToColumns(payload.fields, values, data);
+    }
+
+    modalFormData.value = data;
+    modalFormTitle.value = payload.title || '';
+    modalFormButtons.value = payload.buttons || {};
+    modalFormWidth.value = payload.width || '';
+    // Действие для кнопки: названное сервером либо то же, что и вызывали
+    modalFormAction.value = { action: payload.action || (context && context.action) };
+    modalFormRowData.value = context ? context.rowData : null;
+    modalFormType.value = context ? context.type : null;
+    modalFormDialog.value = true;
+
+    return true;
   };
 
   /**
@@ -421,13 +523,21 @@ export function usePVTableActions({
       }
     }
     try {
-      const resp = await api.action(modalFormAction.value.action, requestData);
-      emit('get-response', {table: props.table, action: modalFormAction.value.action, response: resp});
-      
+      const actionName = modalFormAction.value.action;
+      const rowData = modalFormRowData.value;
+      const type = modalFormType.value;
+      const resp = await api.action(actionName, requestData);
+      emit('get-response', {table: props.table, action: actionName, response: resp});
+
       if (!resp.success) {
         notify('error', { detail: resp.message });
       } else {
-        hideModalForm();
+        // Ответ может содержать следующий шаг — тогда окно не закрываем,
+        // а перерисовываем его новой формой
+        if (!openModalFromResponse(resp, { action: actionName, rowData, type })) {
+          hideModalForm();
+        }
+        if (resp.message) notify('success', { detail: resp.message });
         refresh(false);
       }
     } catch (error) {
@@ -461,7 +571,13 @@ export function usePVTableActions({
     
     try {
       const resp = await api.action(tmp.action, requestData)
-      if(!resp.success) notify('error', { detail: resp.message })
+      emit('get-response', {table: props.table, action: tmp.action, response: resp})
+      if(!resp.success) {
+        notify('error', { detail: resp.message })
+      } else {
+        // Действие может ответить формой — покажем её вместо простого «готово»
+        openModalFromResponse(resp, { action: tmp.action, rowData: null, type: 'head' })
+      }
       refresh(false)
     } catch (error) {
       console.log('error',error)
@@ -493,7 +609,11 @@ export function usePVTableActions({
     try {
       const resp = await api.action(tmp.action, requestData)
       emit('get-response', {table:props.table,action:tmp.action,response:resp})
-      if(!resp.success) notify('error', { detail: resp.message });
+      if(!resp.success) {
+        notify('error', { detail: resp.message });
+      } else {
+        openModalFromResponse(resp, { action: tmp.action, rowData: event, type: 'row' })
+      }
       refresh(false)
     } catch (error) {
       console.log('error',error)
@@ -676,6 +796,7 @@ export function usePVTableActions({
     showModalForm,
     hideModalForm,
     submitModalForm,
+    openModalFromResponse,
     processActions
   };
 }

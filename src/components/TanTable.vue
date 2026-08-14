@@ -22,6 +22,12 @@ import { useVirtualizer } from '@tanstack/vue-virtual'
 
 import Button   from 'primevue/button'
 import Dialog   from 'primevue/dialog'
+// Вкладки нужны для модалок, форма которых приходит от сервера
+import Tabs      from 'primevue/tabs'
+import TabList   from 'primevue/tablist'
+import Tab       from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
+import TabPanel  from 'primevue/tabpanel'
 import Toast    from 'primevue/toast'
 import Checkbox from 'primevue/checkbox'
 import Popover  from 'primevue/popover'
@@ -197,6 +203,12 @@ const modalFormAction  = ref(null)
 const modalFormRowData = ref(null)
 const modalFormType    = ref(null)
 const modalFormColumns = ref([])
+// Форма, присланная сервером в ответе действия: вкладки, заголовок, подписи кнопок, ширина
+const modalFormTabs     = ref([])
+const modalFormTitle    = ref('')
+const modalFormButtons  = ref({})
+const modalFormWidth    = ref('')
+const modalFormTab      = ref(null)
 const saveVersionRow   = ref(false)
 const versionsDialog   = ref(false)
 
@@ -1358,6 +1370,7 @@ onMounted(async () => {
       refresh, notify, emit, dataFields, selectedlineItems, table_tree,
       filters: () => filters,
       modalFormDialog, modalFormData, modalFormAction, modalFormRowData, modalFormType, modalFormColumns,
+      modalFormTabs, modalFormTitle, modalFormButtons, modalFormWidth,
     })
     hideModalForm   = actionsComposable.hideModalForm
     submitModalForm = actionsComposable.submitModalForm
@@ -1834,15 +1847,33 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       </template>
     </Dialog>
 
+    <!-- Модальная форма действия. Поля берутся либо из конфига (modal_form),
+         либо из ответа сервера — тогда приходят ещё заголовок, вкладки и кнопки. -->
     <Dialog v-if="modalFormDialog" v-model:visible="modalFormDialog"
-      :header="modalFormAction?.action || 'Действие'" modal>
-      <PVForm v-model="modalFormData" :columns="modalFormColumns"
+      :header="modalFormTitle || modalFormAction?.modal_form?.title || modalFormAction?.action || 'Действие'"
+      :style="modalFormWidth ? { width: modalFormWidth } : undefined"
+      modal>
+      <Tabs v-if="modalFormTabs.length" :value="modalFormTab ?? modalFormTabs[0].key">
+        <TabList>
+          <Tab v-for="tab in modalFormTabs" :key="tab.key" :value="tab.key">{{ tab.title }}</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel v-for="tab in modalFormTabs" :key="tab.key" :value="tab.key">
+            <PVForm v-model="modalFormData" :columns="tab.columns"
+              :autocompleteSettings="autocompleteSettings" :selectSettings="selectSettings" />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+      <PVForm v-else v-model="modalFormData" :columns="modalFormColumns"
         :autocompleteSettings="autocompleteSettings" :selectSettings="selectSettings" />
       <template #footer>
-        <Button label="Отмена" icon="pi pi-times" class="p-button-text" @click="hideModalForm" />
         <Button
-          :label="modalFormAction?.modal_form?.buttons?.submit?.label || 'Выполнить'"
-          :icon="modalFormAction?.modal_form?.buttons?.submit?.icon || 'pi pi-check'"
+          :label="modalFormButtons?.cancel?.label || 'Отмена'"
+          icon="pi pi-times" class="p-button-text" @click="hideModalForm"
+        />
+        <Button
+          :label="modalFormButtons?.submit?.label || modalFormAction?.modal_form?.buttons?.submit?.label || 'Выполнить'"
+          :icon="modalFormButtons?.submit?.icon || modalFormAction?.modal_form?.buttons?.submit?.icon || 'pi pi-check'"
           class="p-button-text" @click="submitModalForm"
         />
       </template>
