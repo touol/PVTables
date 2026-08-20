@@ -1805,10 +1805,17 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
           />
         </div>
       </template>
+      <!-- customFields приходят с сервера ПО id строки (customFields[143811]), так их
+           читает и вся остальная таблица: customFields.value[data.id]. Здесь стоял
+           _rowKey — клиентский ключ вида row_17, не связанный с id, — и в модалку
+           всегда приезжал undefined. Поэтому в окне редактирования не работали
+           пометки строки: показывались все параметры, включая неактивные для продукта
+           (b1, b2, c2..c4 с нулями). В ячейках таблицы всё было верно — там читают по id.
+           В старой PVTableModel.vue связка правильная; разъехалось при переходе на TanTable. -->
       <PVForm
         v-model="lineItem" :columns="columns"
         :autocompleteSettings="autocompleteSettings" :selectSettings="selectSettings"
-        :customFields="customFields[lineItem._rowKey]" :mywatch="mywatch" :form="form"
+        :customFields="customFields[lineItem.id]" :mywatch="mywatch" :form="form"
       />
       <template #footer>
         <Button label="Отмена" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
