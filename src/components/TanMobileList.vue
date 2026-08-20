@@ -349,7 +349,7 @@ import Accordion       from 'primevue/accordion'
 import AccordionPanel  from 'primevue/accordionpanel'
 import AccordionHeader from 'primevue/accordionheader'
 import AccordionContent from 'primevue/accordioncontent'
-import Toast   from 'primevue/toast'
+import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
 
 import TanMobileCard     from './TanMobileCard.vue'
 import TanFilterPopoverUI from './TanFilterPopoverUI.vue'

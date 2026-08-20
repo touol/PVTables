@@ -12,7 +12,7 @@
 
 <script setup>
   import PVTabs from './PVTabs.vue'
-  import Toast from 'primevue/toast';
+  import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
   import { ref } from 'vue';
 
   // console.log('PVTabsConfigs',PVTabsConfigs)

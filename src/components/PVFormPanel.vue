@@ -35,7 +35,7 @@
 
 <script setup>
     import PVForm from './PVForm.vue'
-    import Toast from 'primevue/toast';
+    import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
     import Button from "primevue/button";
     import apiCtor from './api'
     import RowVersionsDialog from './RowVersionsDialog.vue'

@@ -33,24 +33,36 @@ export default (tableName, timeout = 60000) => {
     }
   )
 
+  // Ответ сервера может задавать время показа уведомления полем life (мс):
+  // 0 — висит, пока не закроют. Нужно для ошибок-списков (например, перечень
+  // строк расчёта, из-за которых заблокировано оформление) — их за три
+  // секунды не прочитать. Ответ теряется при throw, поэтому кладём его в
+  // error.payload и достаём в обработчике ниже.
+  const errorFromResponse = (data) => {
+    const err = new Error(data.message || 'Ошибка сервера');
+    err.payload = data;
+    return err;
+  }
+
   instance.interceptors.response.use(
     ({data}) => {
       // Если success === 0 или false, выбрасываем ошибку
       if (data && data.success === 0) {
-        throw new Error(data.message || 'Ошибка сервера');
+        throw errorFromResponse(data);
       }
-      
+
       // Если нет success поля и data.data пустой
       if (data && !data.success && data.data && Object.keys(data.data).length === 0) {
-        throw new Error(data.message || 'Ошибка сервера');
+        throw errorFromResponse(data);
       }
 
       return data
     },
     (error) => {
       const message = error.message || 'Произошла ошибка при запросе';
+      const life = error.payload?.life;
       console.log('notify2', message);
-      notify('error', { detail: message });
+      notify('error', life === undefined ? { detail: message } : { detail: message, life });
       return Promise.reject(error);
     }
   )

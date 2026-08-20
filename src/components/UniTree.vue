@@ -104,7 +104,7 @@
     <Toast/>
 </template>
 <script setup>
-    import Toast from 'primevue/toast';
+    import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
     import Dialog from "primevue/dialog";
     import Button from "primevue/button";
     import InputGroup from "primevue/inputgroup";

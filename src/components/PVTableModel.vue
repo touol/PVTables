@@ -261,7 +261,7 @@
 </template>
 
 <script setup>
-import Toast from 'primevue/toast';
+import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
 import { ref, onMounted, defineComponent } from "vue";
 
 import DataTable from "primevue/datatable";

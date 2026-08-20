@@ -133,7 +133,7 @@
     <Toast/>
 </template>
 <script setup>
-    import Toast from 'primevue/toast';
+    import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
     import Button from "primevue/button";
     import ToggleButton from "primevue/togglebutton";
     import Dialog from "primevue/dialog";

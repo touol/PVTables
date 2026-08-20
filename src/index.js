@@ -92,7 +92,12 @@ import TabList from 'primevue/tablist';
 import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
-import Toast from 'primevue/toast'
+// Наружу отдаём синглтон-обёртку, а не голый primevue/toast: <Toast/> подписан
+// на общую шину и каждая копия рисует каждое сообщение. Приложения монтируют
+// свой <Toast/> в App.vue, библиотека — свои внутри таблиц и вкладок; на странице
+// расчёта их набиралось четыре, и пользователь видел четыре одинаковых тоста.
+// Обёртка оставляет право рисовать одному экземпляру. Приложения не правим.
+import Toast from './components/PVToast.vue'
 import MultiSelect from 'primevue/multiselect';
 
 import Column from "primevue/column";

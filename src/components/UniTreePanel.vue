@@ -35,7 +35,7 @@
     <Toast/>
 </template>
 <script setup>
-    import Toast from 'primevue/toast';
+    import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
     import Splitter from 'primevue/splitter';
     import SplitterPanel from 'primevue/splitterpanel';
     import { ref, onMounted, onUnmounted } from 'vue';

@@ -165,7 +165,7 @@
 <script setup>
 import { computed, provide, ref, watch, onMounted } from 'vue';
 import Button from 'primevue/button';
-import Toast from 'primevue/toast';
+import Toast from '../PVToast.vue'  // синглтон: один тостер на страницу
 import Dialog from 'primevue/dialog';
 import DirectoryTree from './DirectoryTree.vue';
 import FileView from './FileView.vue';

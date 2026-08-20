@@ -1,6 +1,6 @@
 <script setup>
 import PVTables from '../PVTables.vue'
-import Toast from 'primevue/toast';
+import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
 import { ref } from 'vue';
 
 // console.log('PVTableConfigTable',PVTableConfigTable)

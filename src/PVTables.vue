@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-  import Toast from 'primevue/toast';
+  import Toast from './components/PVToast.vue'  // синглтон: один тостер на страницу
   import Tooltip from 'primevue/tooltip';
   import { ref, defineComponent, computed, inject } from "vue";
   import TanTable from './components/TanTable.vue'

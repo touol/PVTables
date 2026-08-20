@@ -98,7 +98,7 @@
 </template>
 <script setup>
   import PVTables from '../PVTables.vue'
-  import Toast from 'primevue/toast';
+  import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
   import { ref, watch, resolveComponent, onErrorCaptured, nextTick, onMounted, onBeforeUnmount } from 'vue';
 
   import Tabs from 'primevue/tabs';

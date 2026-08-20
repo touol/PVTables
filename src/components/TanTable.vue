@@ -28,7 +28,7 @@ import TabList   from 'primevue/tablist'
 import Tab       from 'primevue/tab'
 import TabPanels from 'primevue/tabpanels'
 import TabPanel  from 'primevue/tabpanel'
-import Toast    from 'primevue/toast'
+import Toast from './PVToast.vue'  // синглтон: один тостер на страницу
 import Checkbox from 'primevue/checkbox'
 import Popover  from 'primevue/popover'
 
