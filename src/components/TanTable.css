@@ -6,23 +6,28 @@
 .tan-loading {
   position: absolute; inset: 0;
   background: rgba(255,255,255,0.65);
+  background: color-mix(in srgb, var(--gts-surface, #fff) 65%, transparent);
   display: flex; align-items: center; justify-content: center; z-index: 30;
 }
 
 /* ── Scroll container ── */
 .tan-scroll {
   overflow: auto; position: relative; width: 100%; min-width: 0;
-  border: 1px solid #94a3b8;
-  border-radius: 4px 4px 0 0;
+  border: 1px solid var(--gts-table-border, #94a3b8);
+  border-radius: var(--gts-table-radius, 4px) var(--gts-table-radius, 4px) 0 0;
 }
 .tan-table { border-collapse: collapse; table-layout: fixed; }
 
 /* ── Head ── */
-.tan-thead { position: sticky; top: 0; z-index: 1; background: var(--p-surface-100, #f8f9fa); }
+.tan-thead {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--gts-table-head-bg, #f8f9fa);
+  color: var(--gts-table-head-ink, inherit);
+}
 .tan-th {
   padding: 0;
-  border-right: 1px solid #94a3b8;
-  border-bottom: 1px solid #94a3b8;
+  border-right: 1px solid var(--gts-table-cell-border, #94a3b8);
+  border-bottom: 1px solid var(--gts-table-head-border, #94a3b8);
   position: relative; vertical-align: top; user-select: none;
 }
 .tan-th-label {
@@ -75,28 +80,45 @@
 
 /* ── Body ── */
 .tan-tbody { position: relative; display: block; }
-.tan-row { display: flex; }
-.tan-row:hover { background: var(--p-surface-50, #f8fafc); }
-.tan-row-selected { background: var(--p-primary-50, #eff6ff) !important; }
+/* Своего фона у строки не было — она оставалась прозрачной и показывала то,
+   что лежит под таблицей. В тёмной схеме это была светлая карточка, а текст
+   уже брал тёмный токен: светлые буквы по светлому фону.
+   Фон и цвет задаём явно, ячейки их наследуют (.tan-td { background: inherit }). */
+.tan-row {
+  display: flex;
+  background: var(--gts-surface, transparent);
+  color: var(--gts-ink, inherit);
+}
+.tan-row:nth-child(even) { background: var(--gts-surface-2, transparent); }
+
+/* Наведение — на ступень дальше зебры, иначе на чётных строках его не видно:
+   и то и другое брало --p-surface-50, то есть один и тот же цвет. */
+.tan-row:hover { background: var(--gts-table-row-hover, #f8fafc); }
+.tan-row-selected { background: var(--gts-table-row-selected, #eff6ff) !important; }
+.tan-row-selected:hover { background: var(--gts-table-row-selected-hover, #dbeafe) !important; }
 
 /* ── Empty rows ── */
 .tan-row-empty { background: var(--p-surface-50, #fafafa); }
-.tan-row-empty:hover { background: var(--p-primary-50, #eff6ff); }
+.tan-row-empty:hover { background: var(--gts-table-row-empty-hover, #eff6ff); }
 .tan-row-empty .tan-td { color: var(--p-surface-400, #adb5bd); font-style: italic; }
 .tan-row-empty-locked { background: var(--p-surface-50, #fafafa); opacity: 0.45; cursor: default; }
 .tan-row-empty-locked .tan-td { pointer-events: none; }
 
+/* Последняя колонка без правой границы: внешнюю рамку рисует .tan-scroll,
+   вторая линия рядом с ней выглядит как двойная. */
+.tan-th:last-child, .tan-td:last-child { border-right: none; }
+
 /* ── Row highlight classes (row_setting / row_class_trigger) ── */
-.tan-row.hit      { background-color: #e1f5d8; }
-.tan-row.attention{ background-color: rgba(252, 3, 3, 0.8); }
-.tan-row.work     { background-color: #89d7f1; }
-.tan-row.outwork  { background-color: #eff189; }
-.tan-row.onsklad  { background-color: #f19989; }
-.tan-row.canceled { background-color: #ff684c; }
+.tan-row.hit      { background-color: var(--gts-row-hit, #e1f5d8);              color: var(--gts-row-hit-ink, inherit); }
+.tan-row.attention{ background-color: var(--gts-row-attention, rgba(252,3,3,.8)); color: var(--gts-row-attention-ink, inherit); }
+.tan-row.work     { background-color: var(--gts-row-work, #89d7f1);             color: var(--gts-row-work-ink, inherit); }
+.tan-row.outwork  { background-color: var(--gts-row-outwork, #eff189);          color: var(--gts-row-outwork-ink, inherit); }
+.tan-row.onsklad  { background-color: var(--gts-row-onsklad, #f19989);          color: var(--gts-row-onsklad-ink, inherit); }
+.tan-row.canceled { background-color: var(--gts-row-canceled, #ff684c);         color: var(--gts-row-canceled-ink, inherit); }
 .tan-td {
   padding: 4px 8px;
-  border-right: 1px solid #94a3b8;
-  border-bottom: 1px solid #94a3b8;
+  border-right: 1px solid var(--gts-table-cell-border, #94a3b8);
+  border-bottom: 1px solid var(--gts-table-cell-border, #94a3b8);
   display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis;
   min-height: 34px; box-sizing: border-box; flex-shrink: 0; font-size: 13px;
   background: inherit;
@@ -196,7 +218,7 @@
 .tan-paginator {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   padding: 4px 8px; font-size: 12px; color: var(--p-surface-600, #4b5563);
-  border: 1px solid #94a3b8; border-top: none;
+  border: 1px solid var(--gts-line-strong, #94a3b8); border-top: none;
   border-radius: 0 0 4px 4px; background: var(--p-surface-50, #fafafa); min-height: 34px;
 }
 .tan-pag-rpp { display: flex; align-items: center; gap: 4px; }
@@ -240,7 +262,7 @@
   background: var(--p-surface-0, #fff); color: var(--p-text-color, #374151);
   outline: none; white-space: pre-wrap; word-break: break-word;
 }
-.tan-edit-div.tan-edit-invalid { border-color: var(--p-red-500, #ef4444); background: #fff5f5; }
+.tan-edit-div.tan-edit-invalid { border-color: var(--p-red-500, #ef4444); background: var(--gts-danger-soft, #fff5f5); }
 .tan-edit-checkbox { width: 16px; height: 16px; margin: auto; cursor: pointer; }
 
 /* ── Dropdown overlay (select / autocomplete) — Teleport to body ── */
@@ -328,9 +350,9 @@
 }
 .tan-filter-quick-btn:hover { border-color: var(--p-primary-color, #3b82f6); color: var(--p-primary-color, #3b82f6); }
 .tan-filter-quick-btn--active {
-  background: var(--p-primary-color, #3b82f6); border-color: var(--p-primary-color, #3b82f6); color: #fff;
+  background: var(--p-primary-color, #3b82f6); border-color: var(--p-primary-color, #3b82f6); color: var(--gts-accent-contrast, #fff);
 }
-.tan-filter-quick-btn--active:hover { color: #fff; }
+.tan-filter-quick-btn--active:hover { color: var(--gts-accent-contrast, #fff); }
 .tan-filter-valueless-hint {
   flex: 1 1 0; font-size: 12px; font-style: italic; color: var(--p-text-muted-color, #9ca3af);
   display: inline-flex; align-items: center; padding: 0 4px;
@@ -384,7 +406,7 @@
 }
 .tan-filter-action-btn:hover { background: var(--p-surface-100, #f3f4f6); }
 .tan-filter-action-apply {
-  background: var(--p-primary-color, #3b82f6); color: #fff;
+  background: var(--p-primary-color, #3b82f6); color: var(--gts-accent-contrast, #fff);
   border-color: var(--p-primary-color, #3b82f6);
 }
 .tan-filter-action-apply:hover { background: var(--p-primary-600, #2563eb); }
@@ -428,21 +450,23 @@
   background: var(--p-surface-100, #f8f9fa);
 }
 .tan-row:hover > .tan-frozen-right,
-.tan-row:hover > .tan-frozen-left { background: var(--p-surface-50, #f8fafc); }
+.tan-row:hover > .tan-frozen-left { background: var(--gts-table-row-hover, #f8fafc); }
 .tan-row-selected > .tan-frozen-right,
-.tan-row-selected > .tan-frozen-left { background: var(--p-primary-50, #eff6ff); }
+.tan-row-selected > .tan-frozen-left { background: var(--gts-table-row-selected, #eff6ff); }
+.tan-row-selected:hover > .tan-frozen-right,
+.tan-row-selected:hover > .tan-frozen-left { background: var(--gts-table-row-selected-hover, #dbeafe); }
 .tan-row.hit > .tan-frozen-right,
-.tan-row.hit > .tan-frozen-left { background-color: #e1f5d8; }
+.tan-row.hit > .tan-frozen-left { background-color: var(--gts-row-hit, #e1f5d8); }
 .tan-row.attention > .tan-frozen-right,
-.tan-row.attention > .tan-frozen-left { background-color: rgba(252, 3, 3, 0.8); }
+.tan-row.attention > .tan-frozen-left { background-color: var(--gts-row-attention, rgba(252, 3, 3, 0.8)); }
 .tan-row.work > .tan-frozen-right,
-.tan-row.work > .tan-frozen-left { background-color: #89d7f1; }
+.tan-row.work > .tan-frozen-left { background-color: var(--gts-row-work, #89d7f1); }
 .tan-row.outwork > .tan-frozen-right,
-.tan-row.outwork > .tan-frozen-left { background-color: #eff189; }
+.tan-row.outwork > .tan-frozen-left { background-color: var(--gts-row-outwork, #eff189); }
 .tan-row.onsklad > .tan-frozen-right,
-.tan-row.onsklad > .tan-frozen-left { background-color: #f19989; }
+.tan-row.onsklad > .tan-frozen-left { background-color: var(--gts-row-onsklad, #f19989); }
 .tan-row.canceled > .tan-frozen-right,
-.tan-row.canceled > .tan-frozen-left { background-color: #ff684c; }
+.tan-row.canceled > .tan-frozen-left { background-color: var(--gts-row-canceled, #ff684c); }
 
 /* ── Подсветка строки при наведении ──
    Тонирует любой фон ячейки (hit/work/любой класс/без класса), сохраняя базовый
@@ -480,11 +504,11 @@
   font-weight: 700; line-height: 1; cursor: crosshair;
 }
 .tan-fill-handle {
-  background: var(--p-primary-color, #3b82f6); color: #fff; font-size: 11px;
+  background: var(--p-primary-color, #3b82f6); color: var(--gts-accent-contrast, #fff); font-size: 11px;
 }
 .tan-fill-handle::after { content: '⬇'; font-size: 10px; }
 .tan-fill-inc {
-  background: var(--p-green-500, #22c55e); color: #fff; font-size: 14px;
+  background: var(--p-green-500, #22c55e); color: var(--gts-accent-contrast, #fff); font-size: 14px;
 }
 .tan-fill-handle:hover { background: var(--p-primary-600, #2563eb); }
 .tan-fill-inc:hover { background: var(--p-green-600, #16a34a); }
@@ -493,7 +517,7 @@
 /* Row with selected cell must be above other rows so fill handles aren't covered */
 .tan-row:has(.tan-td-selected) { z-index: 3 !important; }
 /* Selection outline should be clearly visible on colored rows */
-.tan-td-selected { background: rgba(255,255,255,.85) !important; }
+.tan-td-selected { background: var(--gts-cell-selected-bg, rgba(255,255,255,.85)) !important; }
 
 /* ── Status bar (cell selection mode) ── */
 .tan-status-bar {
@@ -558,8 +582,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: #f8fafc;
-  border-top: 1px solid #e5e7eb;
+  background: var(--gts-surface-2, #f8fafc);
+  border-top: 1px solid var(--gts-line, #e5e7eb);
   flex-wrap: wrap;
 }
 .image-preview-ctrl .ctrl {
@@ -568,12 +592,12 @@
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: 1px solid #94a3b8;
-  background: #fff;
+  border: 1px solid var(--gts-line-strong, #94a3b8);
+  background: var(--gts-surface, #fff);
   border-radius: 6px;
   cursor: pointer;
 }
-.image-preview-ctrl .ctrl:hover { background: #e2e8f0; }
+.image-preview-ctrl .ctrl:hover { background: var(--gts-surface-3, #e2e8f0); }
 .image-preview-ctrl .zoom-range {
   flex: 1;
   min-width: 140px;

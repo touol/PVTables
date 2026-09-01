@@ -39,43 +39,226 @@ if (!window.PVTablesAPI) {
 
 
 import 'primeicons/primeicons.css'
+// L0 — корпоративные токены. Импортируется ПЕРВЫМ из наших стилей: всё
+// остальное на них ссылается. Попадает в собранный pvtables.css, который
+// сниппеты gtsAPI уже регистрируют, — отдельного файла на деплой не нужно.
+import './theme/gts-tokens.css'
 import './style.css'
 import Lara from '@primevue/themes/lara/'
 import { definePreset } from '@primevue/themes'
 import PrimeVue from "primevue/config";
 
-// Кастомный пресет кнопок: цвета severity-классов под дизайн gtsERP.
-// Меняет p-button-success / p-button-danger / p-button-secondary и др. везде в приложении.
+// --- L0 → PrimeVue ----------------------------------------------------------
+// Пресет не задаёт ни одного цвета сам: он только протягивает токены из
+// theme/gts-tokens.css в семантику PrimeVue. После этого все --p-* вытекают
+// из --gts-*, и перекрасить систему целиком можно правкой одного файла.
+//
+// Цвета в light и dark одни и те же: --gts-* переключаются сами по
+// [data-gts-scheme], и второй набор значений заставил бы править тему
+// в двух местах. Исключение одно — лестница поверхностей, см. ниже.
+// Лестница поверхностей PrimeVue. Она НЕ одинакова для схем, и это не
+// симметрия ради симметрии.
+//
+// В светлой палитре surface.800..950 — тёмные, и Lara берёт их под ТЕКСТ.
+// В тёмной палитре те же номера тёмные по-прежнему, и Lara берёт их уже под
+// ФОН: 35 её компонентов в блоке dark ссылаются на surface.600..950 именно
+// как на подложки и границы. Наши токены переворачиваются сами, поэтому
+// прямая лестница в тёмной схеме отдавала под фон цвет текста — почти белый.
+// Так и получалась белая полоса тулбара на тёмной странице.
+//
+// Решение: в тёмной схеме верх лестницы заворачивается обратно на поверхности.
+const gtsSurfaceLight = {
+    0:   'var(--gts-surface)',
+    50:  'var(--gts-surface-2)',
+    100: 'var(--gts-surface-3)',
+    200: 'var(--gts-line)',
+    300: 'var(--gts-line-strong)',
+    400: 'var(--gts-ink-3)',
+    500: 'var(--gts-ink-3)',
+    600: 'var(--gts-ink-2)',
+    700: 'var(--gts-ink-2)',
+    800: 'var(--gts-ink)',
+    900: 'var(--gts-ink)',
+    950: 'var(--gts-ink)'
+};
+
+const gtsSurfaceDark = {
+    0:   'var(--gts-surface)',
+    50:  'var(--gts-surface-2)',
+    100: 'var(--gts-surface-3)',
+    200: 'var(--gts-line)',
+    300: 'var(--gts-line-strong)',
+    400: 'var(--gts-ink-3)',
+    500: 'var(--gts-ink-3)',
+    // дальше — не текст, а подложки и границы: см. комментарий выше
+    600: 'var(--gts-line-strong)',
+    700: 'var(--gts-line)',
+    800: 'var(--gts-surface-3)',
+    900: 'var(--gts-surface-2)',
+    950: 'var(--gts-surface)'
+};
+
+const gtsColors = {
+    primary: {
+        color:         'var(--gts-accent)',
+        contrastColor: 'var(--gts-accent-contrast)',
+        hoverColor:    'var(--gts-accent-hover)',
+        activeColor:   'var(--gts-accent-active)'
+    },
+    highlight: {
+        background:      'var(--gts-accent-soft)',
+        focusBackground: 'var(--gts-accent-soft)',
+        color:           'var(--gts-accent)',
+        focusColor:      'var(--gts-accent)'
+    },
+    content: {
+        background:      'var(--gts-surface)',
+        hoverBackground: 'var(--gts-surface-2)',
+        borderColor:     'var(--gts-line)',
+        color:           'var(--gts-ink)',
+        hoverColor:      'var(--gts-ink)'
+    },
+    text: {
+        color:           'var(--gts-ink)',
+        hoverColor:      'var(--gts-ink)',
+        mutedColor:      'var(--gts-ink-2)',
+        hoverMutedColor: 'var(--gts-ink)'
+    },
+    formField: {
+        background:              'var(--gts-surface)',
+        disabledBackground:      'var(--gts-disabled-bg)',
+        filledBackground:        'var(--gts-surface-2)',
+        filledHoverBackground:   'var(--gts-surface-2)',
+        filledFocusBackground:   'var(--gts-surface)',
+        borderColor:             'var(--gts-line-strong)',
+        hoverBorderColor:        'var(--gts-accent)',
+        focusBorderColor:        'var(--gts-accent)',
+        invalidBorderColor:      'var(--gts-danger)',
+        color:                   'var(--gts-ink)',
+        disabledColor:           'var(--gts-disabled-ink)',
+        placeholderColor:        'var(--gts-ink-3)',
+        invalidPlaceholderColor: 'var(--gts-danger)',
+        floatLabelColor:         'var(--gts-ink-2)',
+        iconColor:               'var(--gts-ink-3)',
+        shadow:                  'none'
+    },
+    overlay: {
+        select:  { background: 'var(--gts-surface)', borderColor: 'var(--gts-line)', color: 'var(--gts-ink)' },
+        popover: { background: 'var(--gts-surface)', borderColor: 'var(--gts-line)', color: 'var(--gts-ink)' },
+        modal:   { background: 'var(--gts-surface)', borderColor: 'var(--gts-line)', color: 'var(--gts-ink)' }
+    },
+    list: {
+        option: {
+            focusBackground:         'var(--gts-surface-3)',
+            selectedBackground:      'var(--gts-accent-soft)',
+            selectedFocusBackground: 'var(--gts-accent-soft)',
+            color:                   'var(--gts-ink)',
+            focusColor:              'var(--gts-ink)',
+            selectedColor:           'var(--gts-accent)',
+            selectedFocusColor:      'var(--gts-accent)'
+        }
+    },
+    navigation: {
+        item: {
+            focusBackground:  'var(--gts-surface-3)',
+            activeBackground: 'var(--gts-accent-soft)',
+            color:            'var(--gts-ink)',
+            focusColor:       'var(--gts-ink)',
+            activeColor:      'var(--gts-accent)'
+        }
+    }
+};
+
+// Цвета severity-классов: p-button-success / -danger / -secondary.
+// Смысл сохранён прежний, но взят из семантической оси токенов, а не из хексов:
+// «удалить» остаётся красным при любой теме.
+const gtsButtons = {
+    root: {
+        // Вставить / Создать — сплошной зелёный
+        success: {
+            background: 'var(--gts-ok)', hoverBackground: 'var(--gts-ok-hover)', activeBackground: 'var(--gts-ok-hover)',
+            borderColor: 'var(--gts-ok)', hoverBorderColor: 'var(--gts-ok-hover)', activeBorderColor: 'var(--gts-ok-hover)',
+            color: 'var(--gts-accent-contrast)', hoverColor: 'var(--gts-accent-contrast)', activeColor: 'var(--gts-accent-contrast)',
+            focusRing: { color: 'var(--gts-ok)', shadow: 'none' }
+        },
+        // Удалить — мягкий красный: светлый фон, красный текст и бордюр
+        danger: {
+            background: 'var(--gts-danger-soft)', hoverBackground: 'var(--gts-danger-soft-hover)', activeBackground: 'var(--gts-danger-soft-hover)',
+            borderColor: 'var(--gts-danger)', hoverBorderColor: 'var(--gts-danger-hover)', activeBorderColor: 'var(--gts-danger-hover)',
+            color: 'var(--gts-danger)', hoverColor: 'var(--gts-danger-hover)', activeColor: 'var(--gts-danger-hover)',
+            focusRing: { color: 'var(--gts-danger)', shadow: 'none' }
+        },
+        // Кнопки-иконки тулбара таблицы (отменить / повторить / обновить /
+        // фильтры / настройки). Их не было в пресете, поэтому они брали
+        // синий из Lara и оставались синими при любой теме.
+        info: {
+            background: 'var(--gts-info)', hoverBackground: 'var(--gts-info-hover)', activeBackground: 'var(--gts-info-hover)',
+            borderColor: 'var(--gts-info)', hoverBorderColor: 'var(--gts-info-hover)', activeBorderColor: 'var(--gts-info-hover)',
+            color: 'var(--gts-accent-contrast)', hoverColor: 'var(--gts-accent-contrast)', activeColor: 'var(--gts-accent-contrast)',
+            focusRing: { color: 'var(--gts-info)', shadow: 'none' }
+        },
+        warn: {
+            background: 'var(--gts-warn)', hoverBackground: 'var(--gts-warn-hover)', activeBackground: 'var(--gts-warn-hover)',
+            borderColor: 'var(--gts-warn)', hoverBorderColor: 'var(--gts-warn-hover)', activeBorderColor: 'var(--gts-warn-hover)',
+            color: 'var(--gts-accent-contrast)', hoverColor: 'var(--gts-accent-contrast)', activeColor: 'var(--gts-accent-contrast)',
+            focusRing: { color: 'var(--gts-warn)', shadow: 'none' }
+        },
+        // Excel / Выбрать принтер — нейтральный: фон карточки, серый бордюр
+        secondary: {
+            background: 'var(--gts-surface)', hoverBackground: 'var(--gts-surface-2)', activeBackground: 'var(--gts-surface-3)',
+            borderColor: 'var(--gts-line-strong)', hoverBorderColor: 'var(--gts-line-strong)', activeBorderColor: 'var(--gts-line-strong)',
+            color: 'var(--gts-ink-2)', hoverColor: 'var(--gts-ink)', activeColor: 'var(--gts-ink)',
+            focusRing: { color: 'var(--gts-line-strong)', shadow: 'none' }
+        }
+    }
+};
+
 const gtsPreset = definePreset(Lara, {
+    primitive: {
+        borderRadius: {
+            none: '0',
+            xs:   'var(--gts-radius-s)',
+            sm:   'var(--gts-radius-s)',
+            md:   'var(--gts-radius)',
+            lg:   'var(--gts-radius)',
+            xl:   'var(--gts-radius-l)'
+        }
+    },
+    semantic: {
+        transitionDuration: 'var(--gts-duration)',
+        // Шкала primary: PrimeVue обращается к ней по номерам, поэтому
+        // три наших оттенка размазаны по одиннадцати ступеням.
+        primary: {
+            50:  'var(--gts-accent-soft)',   100: 'var(--gts-accent-soft)',   200: 'var(--gts-accent-soft)',
+            300: 'var(--gts-accent)',        400: 'var(--gts-accent)',        500: 'var(--gts-accent)',
+            600: 'var(--gts-accent-hover)',  700: 'var(--gts-accent-hover)',
+            800: 'var(--gts-accent-active)', 900: 'var(--gts-accent-active)', 950: 'var(--gts-accent-active)'
+        },
+        focusRing: { width: '3px', style: 'solid', color: 'var(--gts-accent)', offset: '0', shadow: 'none' },
+        content:   { borderRadius: 'var(--gts-radius)' },
+        overlay: {
+            select:  { borderRadius: 'var(--gts-radius)' },
+            popover: { borderRadius: 'var(--gts-radius-l)' },
+            modal:   { borderRadius: 'var(--gts-radius-l)' }
+        },
+        formField: {
+            paddingX:     'var(--gts-control-pad-x)',
+            borderRadius: 'var(--gts-radius)',
+            focusRing:    { width: '3px', style: 'solid', color: 'var(--gts-accent)', offset: '0', shadow: 'none' }
+        },
+        colorScheme: {
+            light: { ...gtsColors, surface: gtsSurfaceLight },
+            dark:  { ...gtsColors, surface: gtsSurfaceDark }
+        }
+    },
     components: {
         button: {
-            colorScheme: {
-                light: {
-                    root: {
-                        // Вставить / Создать / Excel — сплошной зелёный
-                        success: {
-                            background: '#57a773', hoverBackground: '#4c9466', activeBackground: '#428457',
-                            borderColor: '#57a773', hoverBorderColor: '#4c9466', activeBorderColor: '#428457',
-                            color: '#ffffff', hoverColor: '#ffffff', activeColor: '#ffffff',
-                            focusRing: { color: '#57a773', shadow: '0 0 0 0.2rem rgba(87,167,115,.35)' }
-                        },
-                        // Удалить — мягкий красный: светлый фон, красный текст и бордюр
-                        danger: {
-                            background: '#fdecea', hoverBackground: '#fadedb', activeBackground: '#f6cfca',
-                            borderColor: '#f1b6b0', hoverBorderColor: '#e89c95', activeBorderColor: '#e08980',
-                            color: '#d65a4f', hoverColor: '#c4493e', activeColor: '#b53d33',
-                            focusRing: { color: '#e08980', shadow: '0 0 0 0.2rem rgba(214,90,79,.25)' }
-                        },
-                        // Excel / Выбрать принтер — нейтральный: белый фон, серый бордюр, тёмный текст
-                        secondary: {
-                            background: '#ffffff', hoverBackground: '#f3f5f7', activeBackground: '#e9edf1',
-                            borderColor: '#ced4da', hoverBorderColor: '#b9c1ca', activeBorderColor: '#aab3bd',
-                            color: '#3f4b5b', hoverColor: '#2c3645', activeColor: '#222b38',
-                            focusRing: { color: '#aab3bd', shadow: '0 0 0 0.2rem rgba(63,75,91,.18)' }
-                        }
-                    }
-                }
-            }
+            root: {
+                borderRadius: 'var(--gts-radius)',
+                paddingX:     'var(--gts-control-pad-x)',
+                label:        { fontWeight: 'var(--gts-weight-med)' }
+            },
+            colorScheme: { light: gtsButtons, dark: gtsButtons }
         }
     }
 });
@@ -138,7 +321,12 @@ export default {
                 preset: gtsPreset,
                 pt: Lara,
                 options: {
-                    darkModeSelector: '.my-app-dark',
+                    // Тот же признак, что и у наших токенов, — иначе PrimeVue
+                    // считал бы схему по-своему и расходился с --gts-*.
+                    // Сниппет gtsTheme всегда проставляет явное значение
+                    // (системную настройку он разрешает сам), поэтому
+                    // селектор срабатывает и когда пользователь не выбирал.
+                    darkModeSelector: '[data-gts-scheme="dark"]',
                     cssLayer: {
                         name: 'primevue',
                         order: 'tailwind-base, primevue, tailwind-utilities'

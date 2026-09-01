@@ -971,23 +971,31 @@ const getClassBody = (col, data) => {
     width:136px;
   }
 
+  /* Третья копия статусов строк — те же классы объявлены ещё в style.css и
+     TanTable.css. Все три переведены на токены, чтобы не разъезжались. */
   .p-datatable tr.hit{
-    background-color: #e1f5d8;
+    background-color: var(--gts-row-hit, #e1f5d8);
+    color: var(--gts-row-hit-ink, inherit);
   }
   .p-datatable tr.attention{
-    background-color: rgba(252, 3, 3, 0.8);
+    background-color: var(--gts-row-attention, rgba(252,3,3,.8));
+    color: var(--gts-row-attention-ink, inherit);
   }
   .p-datatable tr.work{
-    background-color: #89d7f1;
+    background-color: var(--gts-row-work, #89d7f1);
+    color: var(--gts-row-work-ink, inherit);
   }
   .p-datatable tr.outwork{
-    background-color: #eff189;
+    background-color: var(--gts-row-outwork, #eff189);
+    color: var(--gts-row-outwork-ink, inherit);
   }
   .p-datatable tr.onsklad{
-    background-color: #f19989;
+    background-color: var(--gts-row-onsklad, #f19989);
+    color: var(--gts-row-onsklad-ink, inherit);
   }
   .p-datatable tr.canceled{
-    background-color: #ff684c;
+    background-color: var(--gts-row-canceled, #ff684c);
+    color: var(--gts-row-canceled-ink, inherit);
   }
   .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
     padding: 0.375rem 0.5rem;

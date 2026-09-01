@@ -14,8 +14,8 @@
 
 /* Выделенная ячейка */
 .cell-selected {
-  border: 2px solid #4A90E2 !important;
-  background-color: rgba(74, 144, 226, 0.1) !important;
+  border: 2px solid var(--gts-cell-selected-border, #4A90E2) !important;
+  background-color: var(--gts-cell-selected-bg, rgba(74,144,226,.1)) !important;
   position: relative;
   z-index: 1;
 }
@@ -27,15 +27,15 @@
   right: -1px;
   width: 8px;
   height: 8px;
-  background-color: #4A90E2;
-  border: 1px solid #fff;
+  background-color: var(--gts-cell-selected-border, #4A90E2);
+  border: 1px solid var(--gts-surface, #fff);
   cursor: crosshair;
   z-index: 10;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 .cell-fill-handle:hover {
-  background-color: #357ABD;
+  background-color: var(--gts-cell-selected-border, #357ABD);
   width: 10px;
   height: 10px;
   bottom: -2px;
@@ -44,8 +44,8 @@
 
 /* Ячейки в диапазоне fill handle */
 .cell-fill-handle-range {
-  border: 1px dashed #4A90E2 !important;
-  background-color: rgba(74, 144, 226, 0.05) !important;
+  border: 1px dashed var(--gts-cell-selected-border, #4A90E2) !important;
+  background-color: var(--gts-accent-soft, rgba(74,144,226,.05)) !important;
 }
 
 /* Курсор в режиме выделения */
@@ -70,7 +70,7 @@
   }
   .td-body.readonly {
       background-blend-mode: multiply;
-      background: rgba(190, 164, 164, 0.1);
+      background: var(--gts-disabled-bg, rgba(190,164,164,.1));
   }
   td.number,td.decimal,td.textarea,td.text{
     max-width: 100px;
@@ -95,9 +95,29 @@
   }
   
   
+  /* --- привязка к L0 (theme/gts-tokens.css) ----------------------------- */
   html {
-    font-size: 13px;
+    font-size: var(--gts-size-base);
   }
+  body {
+    font-family: var(--gts-font);
+    line-height: var(--gts-leading);
+    color: var(--gts-ink);
+    background: var(--gts-bg);
+  }
+  ::selection {
+    background: var(--gts-selection-bg);
+    color: var(--gts-selection-ink);
+  }
+
+  /* Иконки узлов дерева (.node-icon) ИНВЕРТИРОВАТЬ НЕ НАДО.
+     Все 7 записей modx_gtsapi_unitree_classes.svg уже написаны через
+     stroke="currentColor" / fill="currentColor" — они сами берут цвет
+     текста узла и следуют за схемой без единого правила.
+     Инверсия здесь делала ровно обратное: белые иконки
+     превращались в чёрные. Инвертировать нужно только SVG
+     с зашитыми чёрными цветами — такие лежат в
+     modx_gtsshop_products.svg и разбираются в gsRaschet (.product-icon). */
   .p-datatable-resizable-table > .p-datatable-thead > tr > th,
   .p-datatable-resizable-table > .p-datatable-tbody > tr > td.text,
   .p-datatable-resizable-table > .p-datatable-tbody > tr > td.textarea,
@@ -110,17 +130,17 @@
     width:136px;
   } */
 
-  .p-datatable tr.hit      { background-color: #e1f5d8; }
-  .p-datatable tr.attention{ background-color: rgba(252, 3, 3, 0.8); }
-  .p-datatable tr.work     { background-color: #89d7f1; }
-  .p-datatable tr.outwork  { background-color: #eff189; }
-  .p-datatable tr.onsklad  { background-color: #f19989; }
-  .p-datatable tr.canceled { background-color: #ff684c; }
+  .p-datatable tr.hit      { background-color: var(--gts-row-hit, #e1f5d8);              color: var(--gts-row-hit-ink, inherit); }
+  .p-datatable tr.attention{ background-color: var(--gts-row-attention, rgba(252,3,3,.8)); color: var(--gts-row-attention-ink, inherit); }
+  .p-datatable tr.work     { background-color: var(--gts-row-work, #89d7f1);             color: var(--gts-row-work-ink, inherit); }
+  .p-datatable tr.outwork  { background-color: var(--gts-row-outwork, #eff189);          color: var(--gts-row-outwork-ink, inherit); }
+  .p-datatable tr.onsklad  { background-color: var(--gts-row-onsklad, #f19989);          color: var(--gts-row-onsklad-ink, inherit); }
+  .p-datatable tr.canceled { background-color: var(--gts-row-canceled, #ff684c);         color: var(--gts-row-canceled-ink, inherit); }
   .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
     padding: 0.2rem 0.5rem;
   }
   .p-autocomplete-option:not(.p-autocomplete-option-selected):not(.p-disabled).p-focus {
-    background: #9cabbb;
+    background: var(--gts-surface-3, #9cabbb);
     color: var(--p-autocomplete-option-focus-color);
   }
   .td-actions .p-speeddial {
@@ -136,16 +156,16 @@
   }
 
   .p-datatable .p-inputtext{
-    color:black;
+    color: var(--gts-ink, #000);
   }
   .navbar-collapse.collapse {
      visibility: inherit !important;
   }
   .p-datatable-table td, .p-datatable-table th {
     padding: 4px;
-    border: 1px solid #555;
+    border: 1px solid var(--gts-line-strong, #555);
     vertical-align: top;
-    color: #000;
+    color: var(--gts-ink, #000);
   }
   
   /* Стили для виртуального скроллинга */
@@ -157,9 +177,9 @@
   .p-datatable table .p-virtualscroller-content th {
     max-height: inherit;
     padding: 4px;
-    border: 1px solid #555;
+    border: 1px solid var(--gts-line-strong, #555);
     vertical-align: top;
-    color: #000;
+    color: var(--gts-ink, #000);
   }
   
   .p-datatable table .p-virtualscroller-content td .td-body {
@@ -177,12 +197,12 @@
   
   .p-checkbox-box {
       border-width: 2px !important;
-      border-color: #333 !important;
+      border-color: var(--gts-line-strong, #333) !important;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
   }
   
   .p-checkbox-icon {
-      color: #ffffff !important;
+      color: var(--gts-accent-contrast, #fff) !important;
       font-weight: bold;
       stroke-width: 2px;
       filter: drop-shadow(0 0 1px currentColor);
@@ -190,11 +210,11 @@
   
   /* Для disabled состояния - делаем более контрастным */
   .p-checkbox.p-disabled .p-checkbox-box {
-      background: #e0e0e0 !important;
-      border-color: #666 !important;
+      background: var(--gts-disabled-bg, #e0e0e0) !important;
+      border-color: var(--gts-disabled-line, #666) !important;
       opacity: 0.8;
   }
   
   .p-checkbox-checked.p-disabled .p-checkbox-icon {
-      color: #1191fa !important;
+      color: var(--gts-accent, #1191fa) !important;
   }
