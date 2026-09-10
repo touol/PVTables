@@ -654,9 +654,15 @@ const columnFilters = ref([])
 const tanSorting    = ref([])
 const expanded      = ref({})
 
-watch(rowSelection, () => {
-  selectedlineItems.value = tableInstance.getSelectedRowModel().rows.map(r => r.original)
-}, { deep: true })
+// Скрытые фильтром строки считаем невыделенными: действие работает только по тому,
+// что человек видит перед собой. Галочка не теряется — строка вернётся в выборку,
+// когда фильтр снимут.
+const syncSelectedItems = () => {
+  selectedlineItems.value = tableInstance.getFilteredSelectedRowModel().rows.map(r => r.original)
+}
+watch(rowSelection, syncSelectedItems, { deep: true })
+watch(columnFilters, syncSelectedItems, { deep: true })
+watch(lineItems, syncSelectedItems)
 
 const tableInstance = useVueTable({
   get data()    { return lineItems.value },
@@ -1369,6 +1375,7 @@ onMounted(async () => {
       prepFilters: () => prepFilters(),
       refresh, notify, emit, dataFields, selectedlineItems, table_tree,
       filters: () => filters,
+      clearSelection: () => tableInstance.resetRowSelection(),
       modalFormDialog, modalFormData, modalFormAction, modalFormRowData, modalFormType, modalFormColumns,
       modalFormTabs, modalFormTitle, modalFormButtons, modalFormWidth,
     })

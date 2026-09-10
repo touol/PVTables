@@ -784,6 +784,7 @@ onMounted(async () => {
       selectedlineItems,
       table_tree,
       filters: () => filters,
+      clearSelection,
       modalFormDialog, modalFormData,
       modalFormAction, modalFormRowData,
       modalFormType, modalFormColumns,

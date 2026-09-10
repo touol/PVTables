@@ -67,8 +67,23 @@ export function usePVTableActions({
   modalFormTitle,
   modalFormButtons,
   modalFormWidth,
+  clearSelection,
 }) {
-  
+
+  /**
+   * Снять выделение после head-действия — только если действие само об этом просит
+   * (clear_selection: true в конфиге). По умолчанию выбор сохраняется: на пачку строк
+   * часто вешают несколько действий подряд.
+   * Ставится там, где строки после действия уходят из-под выбора — например перемещение
+   * наряда в другую смену: без сброса галочки оставались на уже перенесённых строках,
+   * и следующее перемещение утаскивало их повторно.
+   * @param {Object} action - Объект действия
+   */
+  const clearSelectionAfterAction = (action) => {
+    if (!action || !action.clear_selection) return;
+    clearSelection?.();
+  };
+
   /**
    * Валидация шаблона на предмет безопасности
    * @param {String} template - Шаблон для валидации
@@ -523,7 +538,8 @@ export function usePVTableActions({
       }
     }
     try {
-      const actionName = modalFormAction.value.action;
+      const action = modalFormAction.value;
+      const actionName = action.action;
       const rowData = modalFormRowData.value;
       const type = modalFormType.value;
       const resp = await api.action(actionName, requestData);
@@ -536,6 +552,9 @@ export function usePVTableActions({
         // а перерисовываем его новой формой
         if (!openModalFromResponse(resp, { action: actionName, rowData, type })) {
           hideModalForm();
+          // выделение снимаем, только когда действие завершилось —
+          // на промежуточном шаге формы строки ещё нужны
+          if (type === 'head') clearSelectionAfterAction(action);
         }
         if (resp.message) notify('success', { detail: resp.message });
         refresh(false);
@@ -576,7 +595,9 @@ export function usePVTableActions({
         notify('error', { detail: resp.message })
       } else {
         // Действие может ответить формой — покажем её вместо простого «готово»
-        openModalFromResponse(resp, { action: tmp.action, rowData: null, type: 'head' })
+        if (!openModalFromResponse(resp, { action: tmp.action, rowData: null, type: 'head' })) {
+          clearSelectionAfterAction(tmp)
+        }
       }
       refresh(false)
     } catch (error) {
