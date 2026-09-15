@@ -305,11 +305,22 @@ const truncateText = (text, max) => {
 
 // ─── Scroll height (localStorage per table) ──────────────────────────────
 const HEIGHT_KEY = `tan-scroll-height-${props.table}`
-const localScrollHeight = ref(localStorage.getItem(HEIGHT_KEY) || props.scrollHeight || '85vh')
+// '100%' = высоту таблицы задаёт flex-цепочка родителя (так делает UniTreePanel2).
+// Такое значение не кэшируем и не даём перебить сохранённым в localStorage:
+// иначе у пользователя, который когда-то двигал ползунок высоты, раскладка
+// родителя молча игнорируется, и высота «то попадает в окно, то нет».
+const PARENT_MANAGED_HEIGHT = '100%'
+const isParentManagedHeight = () => props.scrollHeight === PARENT_MANAGED_HEIGHT
+const localScrollHeight = ref(
+  isParentManagedHeight()
+    ? PARENT_MANAGED_HEIGHT
+    : (localStorage.getItem(HEIGHT_KEY) || props.scrollHeight || '85vh')
+)
 const autoFitHeight = ref(props.autoFitHeight || false)
 
-watch(localScrollHeight, v => { try { if (!autoFitHeight.value) localStorage.setItem(HEIGHT_KEY, v || '85vh') } catch {} })
+watch(localScrollHeight, v => { try { if (!autoFitHeight.value && v !== PARENT_MANAGED_HEIGHT) localStorage.setItem(HEIGHT_KEY, v || '85vh') } catch {} })
 watch(() => props.scrollHeight, v => {
+  if (v === PARENT_MANAGED_HEIGHT) { localScrollHeight.value = v; return }
   if (v && !localStorage.getItem(HEIGHT_KEY)) localScrollHeight.value = v
 })
 watch(() => props.autoFitHeight, v => { autoFitHeight.value = v })

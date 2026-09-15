@@ -69,7 +69,7 @@
             @refresh-table="refresh(false)"
             :child="child"
             :embeddedInRow="embeddedInRow"
-            :scrollHeight="autoUpdateHeights ? (tableScrollHeights[table.key] || '400px') : undefined"
+            :scrollHeight="autoUpdateHeights ? (tableScrollHeights[table.key] || '400px') : scrollHeight"
             :ref="el => { if (el) childComponentRefs[table.key] = el }"
             @get-response="get_response($event)"
             @rows-loaded="emit('rows-loaded', $event)"
@@ -86,7 +86,7 @@
           @refresh-table="refresh(false)"
           :child="child"
           :embeddedInRow="embeddedInRow"
-          :scrollHeight="autoUpdateHeights ? (tableScrollHeights[tab.key] || '400px') : undefined"
+          :scrollHeight="autoUpdateHeights ? (tableScrollHeights[tab.key] || '400px') : scrollHeight"
           :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           @get-response="get_response($event)"
           @rows-loaded="emit('rows-loaded', $event)"
@@ -152,6 +152,13 @@
     autoUpdateHeights:{
       type: Boolean,
       default: false
+    },
+    // Высота области прокрутки таблиц, когда её задаёт родитель, а не расчёт
+    // в пикселях (autoUpdateHeights). Значение '100%' означает «высоту даёт
+    // flex-цепочка родителя» — так делает UniTreePanel2.
+    scrollHeight:{
+      type: String,
+      default: undefined
     }
   });
   const key0 = ref()

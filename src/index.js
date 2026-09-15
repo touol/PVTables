@@ -17,6 +17,9 @@ import { useNotifications } from './components/useNotifications.js'
 import UniTree from './components/UniTree.vue'
 import UniTreePanel from './components/UniTreePanel.vue'
 import UniTreeSplitButton from './components/UniTreeSplitButton.vue'
+import UniTree2 from './components/UniTree2.vue'
+import UniTreePanel2 from './components/UniTreePanel2.vue'
+import UniTree2NodeMenu from './components/UniTree2NodeMenu.vue'
 import PVMenu from './components/PVMenu.vue'
 import FileSelector from './components/filebrowser/FileSelector.vue';
 import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGalleryAPI, fileUtils } from './components/gtsAPIFileGallery/index.js'
@@ -378,6 +381,9 @@ export {
     UniTree as UniTree,
     UniTreePanel as UniTreePanel,
     UniTreeSplitButton as UniTreeSplitButton,
+    UniTree2 as UniTree2,
+    UniTreePanel2 as UniTreePanel2,
+    UniTree2NodeMenu as UniTree2NodeMenu,
     PVMenu as PVMenu,
     FileSelector as FileSelector,
     DataTable as DataTable,
@@ -438,6 +444,7 @@ if (typeof window !== 'undefined' && !window.PVTables) {
         gtsAutoComplete, PVAutoComplete, PVMultiAutoComplete, gtsDate, PVDateTime,
         PVTable, PVForm, PVTableModel, EditField, useNotifications,
         UniTree, UniTreePanel, UniTreeSplitButton, PVMenu,
+        UniTree2, UniTreePanel2, UniTree2NodeMenu,
         FileSelector, DataTable, ComponentLoader,
         FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog,
         FileGalleryAPI, fileUtils,
