@@ -45,7 +45,7 @@
 <script setup>
   import AutoComplete from "./AutoComplete/AutoComplete.vue";
   import InputGroup from "primevue/inputgroup";
-  import { ref, watchEffect, onMounted, computed } from "vue";
+  import { ref, watch, watchEffect, onMounted, computed } from "vue";
   import { compile } from "vue";
   import InputText from "primevue/inputtext";
   import { useNotifications } from "./useNotifications.js";
@@ -73,10 +73,42 @@
     styleShow: {
       type: Boolean,
       default: false
+    },
+    // Строка целиком — нужна, когда таблица автокомплита зависит от другого поля (table_by)
+    data: {
+      type: Object,
+      default: null,
     }
   });
 
-  const api = apiCtor(props.field.table)
+  // Таблица, в которой ищем. Обычно это field.table, но её можно переключать
+  // по значению соседнего поля строки:
+  //   mat_id: { type: "autocomplete", table: "raschetsMaterial",
+  //             table_by: { field: "type_id", map: { 6: "TmcCatalog" } } }
+  // Нет совпадения в map — остаётся field.table.
+  const tableName = computed(() => {
+    const by = props.field.table_by
+    if (by && by.field && props.data) {
+      const key = props.data[by.field]
+      const hit = (by.map || {})[key] ?? (by.map || {})[String(key)]
+      if (hit) return typeof hit === "string" ? hit : hit.table
+    }
+    return props.field.table
+  })
+
+  // Клиент пересоздаётся при смене таблицы — иначе запросы уходили бы в старую
+  const api = computed(() => apiCtor(tableName.value))
+
+  // Сменили тип закупа — прежний id указывает на строку чужой таблицы, чистим.
+  // На первом проходе (prev undefined) не трогаем: там просто инициализация.
+  watch(tableName, (next, prev) => {
+    if (!prev || next === prev) return
+    items.value = []
+    selectedItem.value = {}
+    apiTemplate.value = ""
+    show_id.value = ""
+    if (model.value) model.value = ""
+  })
   const emit = defineEmits(['update:id', 'set-value', 'tab']);
 
   const { notify } = useNotifications()
@@ -182,7 +214,7 @@
       }else{
         try {
           
-          const response = await api.autocomplete({query:'',ids:''})
+          const response = await api.value.autocomplete({query:'',ids:''})
           items.value = withPlain(response.data.rows);
           if(response.data.default) model.value = response.data.default
         } catch (error) {
@@ -208,7 +240,7 @@
           if(!props.field.ids){
             props.field.ids = ''
           }
-          const response = await api.autocomplete({query:props.field.defaultname,parent:props.field.parent,ids:props.field.ids})
+          const response = await api.value.autocomplete({query:props.field.defaultname,parent:props.field.parent,ids:props.field.ids})
           model.value = response.data.rows[0]?.id || "";
         } catch (error) {
           notify('error', { detail: error.message });
@@ -237,7 +269,7 @@
         const option = await getOptionById(model.value);
 
         if (!option) {
-          notify('error', { detail: 'Отсутствует такой ID! id=' + model.value + ' table=' +props.field.table })
+          notify('error', { detail: 'Отсутствует такой ID! id=' + model.value + ' table=' + tableName.value })
           return
         }
 
@@ -283,7 +315,7 @@
         params.where = props.field.where;
       }
       
-      const response = await api.autocomplete(params);
+      const response = await api.value.autocomplete(params);
       items.value = withPlain(response.data.rows);
       pagination.value.total = response.data.total || 0;
       pagination.value.hasMore = items.value.length < pagination.value.total;
@@ -312,7 +344,7 @@
       params.where = props.field.where;
     }
     
-    const response = await api.autocomplete(params);
+    const response = await api.value.autocomplete(params);
     return withPlain(response.data.rows)[0] || null;
   }
   async function getOptionByShowId(show_id) {
@@ -325,7 +357,7 @@
       params.where = props.field.where;
     }
     
-    const response = await api.autocomplete(params);
+    const response = await api.value.autocomplete(params);
     return withPlain(response.data.rows)[0] || null;
   }
   const onUserInputEnd = async ($evt) => {
@@ -453,7 +485,7 @@
         params.where = props.field.where;
       }
       
-      const response = await api.autocomplete(params);
+      const response = await api.value.autocomplete(params);
       items.value = [...items.value, ...withPlain(response.data.rows)];
       pagination.value.total = response.data.total || 0;
       pagination.value.hasMore = items.value.length < pagination.value.total;

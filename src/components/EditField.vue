@@ -17,6 +17,7 @@
         v-else-if="col.type == 'autocomplete'"
         :field="col"
         v-model="model"
+        :data="data"
         :options="autocompleteSettings"
         @set-value="setValue()"
         :disabled="use_readonly && col.readonly"
