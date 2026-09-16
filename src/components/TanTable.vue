@@ -19,6 +19,7 @@ import {
   FlexRender,
 } from '@tanstack/vue-table'
 import { useVirtualizer } from '@tanstack/vue-virtual'
+import { resolveFieldTable } from '../utils/table-by.js'
 
 import Button   from 'primevue/button'
 import Dialog   from 'primevue/dialog'
@@ -577,7 +578,15 @@ const dataColDefs = computed(() =>
         }
         case 'autocomplete': {
           if (!value || value == 0) return ''
-          const lbl = getACContent(col.field, value)
+          // Подписи автокомплита (acMaps) загружены для ОДНОЙ таблицы — col.table.
+          // Если у поля есть table_by и в этой строке таблица другая, общая карта
+          // врёт: тот же id в чужом справочнике — совсем другая запись.
+          // Тогда берём готовый текст из поля строки (col.display_field), а если его
+          // нет — показываем только id, но не чужое название.
+          const acSwitched = col.table_by && resolveFieldTable(col, data) !== col.table
+          const lbl = acSwitched
+            ? (col.display_field && data ? (data[col.display_field] ?? '') : '')
+            : getACContent(col.field, value)
           // Заголовок ячейки из поля СТРОКИ (напр. имя детали нестандарта `name`), по условию
           // col.cell_name_if (напр. {product_type_id:3}). content автокомплита — общий на продукт,
           // поэтому имя детали берём из строки. Только в ячейке таблицы (выпадашка/редактор не задеты).

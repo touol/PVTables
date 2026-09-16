@@ -244,7 +244,10 @@
       show_id_enable.value = true
     }
 
-    if (props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
+    // Готовый список опций собран для field.table. Когда table_by переключил
+    // таблицу, искать в нём нельзя: совпадение по id будет ложным.
+    const preloadedUsable = tableName.value === props.field.table
+    if (preloadedUsable && props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
       const [ option ] = props.options.rows.filter((option) => model.value == option.id)
       if (option) {
         if (option.content_plain === undefined) option.content_plain = stripToName(option.content)
