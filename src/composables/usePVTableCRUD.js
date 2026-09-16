@@ -57,6 +57,30 @@ export function usePVTableCRUD(
    * Открытие диалога создания новой записи
    * @param {Object} action - Объект действия
    */
+  /**
+   * Значения, которые новая запись наследует от активных фильтров.
+   *
+   * Дочерняя таблица почти всегда отфильтрована по родителю: позиции выбранной
+   * категории, сотрудники отдела. Создавать в ней запись без родителя бессмысленно —
+   * она сразу пропадёт из списка, и человек не поймёт, куда делась.
+   *
+   * Берём только точные совпадения (equals): «содержит» или «больше» в конкретное
+   * значение поля не превратить.
+   */
+  const inheritFromFilters = () => {
+    const values = {};
+    const active = prepFilters() || {};
+    for (const field in active) {
+      const f = active[field];
+      const c = f && f.constraints ? f.constraints[0] : f;
+      if (!c) continue;
+      if (c.matchMode && c.matchMode !== 'equals') continue;
+      if (c.value === null || c.value === undefined || c.value === '') continue;
+      values[field] = c.value;
+    }
+    return values;
+  };
+
   const openNew = (action) => {
     if (action.watch) {
       mywatch.value = {
@@ -67,7 +91,7 @@ export function usePVTableCRUD(
         filters: prepFilters()
       };
     }
-    lineItem.value = {};
+    lineItem.value = inheritFromFilters();
     submitted.value = false;
     lineItemDialog.value = true;
   };
