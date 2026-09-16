@@ -1694,6 +1694,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                 <TanEditCell
                   v-if="activeInline?.cellId === cell.id"
                   :col="activeInline.col"
+                  :row="cell.row.original"
                   :initial-value="getFieldValue(cell.row.original, cell.column.id)"
                   :selectSettings="selectSettings"
                   :autocompleteSettings="autocompleteSettings"

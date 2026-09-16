@@ -50,6 +50,7 @@
   import InputText from "primevue/inputtext";
   import { useNotifications } from "./useNotifications.js";
   import apiCtor from './api.js'
+  import { resolveFieldTable } from '../utils/table-by.js'
 
   const model = defineModel({
     type: [String,Number],
@@ -86,15 +87,7 @@
   //   mat_id: { type: "autocomplete", table: "raschetsMaterial",
   //             table_by: { field: "type_id", map: { 6: "TmcCatalog" } } }
   // Нет совпадения в map — остаётся field.table.
-  const tableName = computed(() => {
-    const by = props.field.table_by
-    if (by && by.field && props.data) {
-      const key = props.data[by.field]
-      const hit = (by.map || {})[key] ?? (by.map || {})[String(key)]
-      if (hit) return typeof hit === "string" ? hit : hit.table
-    }
-    return props.field.table
-  })
+  const tableName = computed(() => resolveFieldTable(props.field, props.data))
 
   // Клиент пересоздаётся при смене таблицы — иначе запросы уходили бы в старую
   const api = computed(() => apiCtor(tableName.value))

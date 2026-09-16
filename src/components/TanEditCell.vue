@@ -87,11 +87,16 @@
 import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import apiCtor from './api'
+import { resolveFieldTable } from '../utils/table-by.js'
 import { toDisplayText } from '../utils/value-format.js'
 
 const props = defineProps({
   col:              { type: Object, required: true },
   initialValue:     { default: '' },
+  // Строка целиком: нужна, когда таблица автокомплита зависит от соседнего
+  // поля (col.table_by) — например «Материал» ищет в материалах или в ТМЦ
+  // в зависимости от типа закупа.
+  row:              { type: Object, default: null },
   selectSettings:   { type: Object, default: () => ({}) },
   autocompleteSettings: { type: Object, default: () => ({}) },
   // per-row select_data из customFields[rowId][field].select_data — приоритетнее колоночного
@@ -231,8 +236,10 @@ const dropdownStyle    = ref({})
 let   selectedId       = null   // ID выбранной опции
 let   acDebounce       = null
 
+const acTable = computed(() => resolveFieldTable(props.col, props.row))
+
 const acApi = computed(() => {
-  if (props.col.type === 'autocomplete' && props.col.table) return apiCtor(props.col.table)
+  if (props.col.type === 'autocomplete' && acTable.value) return apiCtor(acTable.value)
   return null
 })
 
