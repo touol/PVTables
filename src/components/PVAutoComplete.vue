@@ -244,11 +244,14 @@
       show_id_enable.value = true
     }
 
-    // Готовый список опций собран для field.table. Когда table_by переключил
-    // таблицу, искать в нём нельзя: совпадение по id будет ложным.
-    const preloadedUsable = tableName.value === props.field.table
-    if (preloadedUsable && props.options && Array.isArray(props.options.rows) && props.options.rows.length) {
-      const [ option ] = props.options.rows.filter((option) => model.value == option.id)
+    // Опции для основной таблицы лежат в options.rows, для переключённых —
+    // в options.by_table[таблица]. Искать значение не в своём наборе нельзя:
+    // совпадение по id будет ложным.
+    const preloadedRows = tableName.value === props.field.table
+      ? props.options?.rows
+      : props.options?.by_table?.[tableName.value]?.rows
+    if (Array.isArray(preloadedRows) && preloadedRows.length) {
+      const [ option ] = preloadedRows.filter((option) => model.value == option.id)
       if (option) {
         if (option.content_plain === undefined) option.content_plain = stripToName(option.content)
         selectedItem.value = option
