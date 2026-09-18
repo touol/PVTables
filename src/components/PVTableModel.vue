@@ -517,7 +517,7 @@ onMounted(() => {
             if (!tmp.hasOwnProperty("row")) tmp.row = true;
             if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-pencil";
             if (!tmp.hasOwnProperty("class"))
-              tmp.class = " p-button-success";
+              tmp.class = "";
             if (!tmp.hasOwnProperty("click"))
               tmp.click = (data) => editLineItem(data);
             break;
@@ -538,7 +538,7 @@ onMounted(() => {
             if (!tmp.hasOwnProperty("head")) tmp.head = true;
             if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
             if (!tmp.hasOwnProperty("class"))
-              tmp.class = " p-button-success";
+              tmp.class = "";
             if (!tmp.hasOwnProperty("head_click"))
               tmp.head_click = () => openNew();
             // if(!tmp.hasOwnProperty('head_disabled')) tmp.head_disabled = false
@@ -552,7 +552,7 @@ onMounted(() => {
               if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
               if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
               if (!tmpt.hasOwnProperty("class"))
-                tmpt.class = " p-button-success";
+                tmpt.class = " p-button-secondary";
               if (!tmpt.hasOwnProperty("click"))
                 tmpt.click = (event) => setExpandedRow(event, tmpt);
               actions_row.value = true;
@@ -567,7 +567,7 @@ onMounted(() => {
               if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
               if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
               if (!tmpt.hasOwnProperty("class"))
-                tmpt.class = " p-button-success";
+                tmpt.class = " p-button-secondary";
               if (!tmpt.hasOwnProperty("click"))
                 tmpt.click = (event) => setExpandedRow(event, tmpt);
               actions_row.value = true;

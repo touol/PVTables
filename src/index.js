@@ -257,7 +257,10 @@ const gtsPreset = definePreset(Lara, {
     components: {
         button: {
             root: {
-                borderRadius: 'var(--gts-radius)',
+                // Кнопки скруглены отдельным токеном: в макете расчёта у них
+                // было 10 px против 8 у полей ввода, и на глаз это заметно.
+                // По умолчанию токен падает на общий --gts-radius.
+                borderRadius: 'var(--gts-radius-btn, var(--gts-radius))',
                 paddingX:     'var(--gts-control-pad-x)',
                 label:        { fontWeight: 'var(--gts-weight-med)' }
             },

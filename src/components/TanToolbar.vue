@@ -76,27 +76,39 @@ const emit = defineEmits([
       </template>
     </template>
 
+    <!-- Правый край тулбара — инструменты вида, а не действия над данными,
+         поэтому весь ряд нейтральный (severity="secondary"), и только
+         «Обновить» — акцентная: она единственная здесь идёт в базу.
+         Тумблеры (выделение ячеек, движок) показывают включённое состояние
+         акцентом — тем же, что и у всей темы. Сами инструменты —
+         пастельные (акцент на мягкой заливке), как было в макете расчёта.
+
+         Было: undo/redo/фильтры/настройки — акцентные, «Обновить» — success,
+         выделение и движок — info. Пять цветов в одном ряду из шести кнопок,
+         причём цвет не значил ничего: он достался от того, кто добавлял
+         кнопку последним. -->
     <template #end>
-      <Button icon="pi pi-undo" :disabled="!canUndo"
+      <Button icon="pi pi-undo" :disabled="!canUndo" class="tan-tool-btn"
         v-tooltip.bottom="'Отменить (Ctrl+Z)'" @click="emit('undo')" />
-      <Button icon="pi pi-undo" style="transform:scaleX(-1)" :disabled="!canRedo"
+      <Button icon="pi pi-undo" style="transform:scaleX(-1)" :disabled="!canRedo" class="tan-tool-btn"
         v-tooltip.bottom="'Повторить (Ctrl+Y)'" @click="emit('redo')" />
       <Button icon="pi pi-check-square"
-        :class="cellSelectionMode ? 'p-button-info' : 'p-button-secondary'"
+        :severity="cellSelectionMode ? undefined : 'secondary'"
         v-tooltip.bottom="'Выделение ячеек (Ctrl+Shift+S)'"
         @click="emit('toggle-cell-selection')" />
-      <Button icon="pi pi-refresh" class="p-button-success"
+      <Button icon="pi pi-refresh"
         v-tooltip.bottom="'Обновить'" @click="emit('refresh')" />
-      <Button icon="pi pi-filter-slash"
+      <Button icon="pi pi-filter-slash" class="tan-tool-btn"
         v-tooltip.bottom="'Сбросить фильтры'" @click="emit('clear')" />
-      <Button icon="pi pi-cog"
+      <Button icon="pi pi-cog" class="tan-tool-btn"
         v-tooltip.bottom="'Настройки'" @click="emit('settings', $event)" />
-      <Button v-if="showMobileSwitch" icon="pi pi-mobile"
+      <Button v-if="showMobileSwitch" icon="pi pi-mobile" class="tan-tool-btn"
         v-tooltip.bottom="'Мобильный вид'"
         @click="emit('switch-mobile')" />
-      <Button icon="pi pi-th-large" class="p-button-info"
-        v-tooltip.bottom="'Движок: TanStack Table — нажать для PrimeVue'"
-        @click="emit('switch-engine')" />
+      <!-- Кнопка переключения движка убрана: движок один (TanStack), и выбор,
+           которого нет, кнопкой показывать незачем. Событие switch-engine
+           и старый путь PVTableModel оставлены на месте — если движок
+           когда-нибудь понадобится вернуть, вернётся и кнопка. -->
     </template>
   </Toolbar>
 </template>

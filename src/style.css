@@ -197,7 +197,7 @@
   
   .p-checkbox-box {
       border-width: 2px !important;
-      border-color: var(--gts-line-strong, #333) !important;
+      border-color: var(--gts-checkbox-border, #333) !important;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
   }
   

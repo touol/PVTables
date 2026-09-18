@@ -212,7 +212,7 @@ export function usePVTableActions({
           tmp.action = action;
           if (!tmp.hasOwnProperty("row")) tmp.row = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-pencil";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!tmp.hasOwnProperty("click")) tmp.click = (data) => editLineItem(data, tmp);
           break;
           
@@ -230,7 +230,7 @@ export function usePVTableActions({
           tmp.action = action;
           if (!tmp.hasOwnProperty("head")) tmp.head = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => openNew(tmp);
           if (!tmp.hasOwnProperty("label")) tmp.label = "Создать";
           break;
@@ -238,7 +238,7 @@ export function usePVTableActions({
         case "insert":
           if (!tmp.hasOwnProperty("head")) tmp.head = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => _Insert();
           if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
           // Добавляем обработчик клавиатуры
@@ -251,7 +251,7 @@ export function usePVTableActions({
         case "insert_child":
           if (!tmp.hasOwnProperty("row")) tmp.row = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-plus";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!tmp.hasOwnProperty("click")) tmp.click = (data) => _Insert_child(data);
           if (!tmp.hasOwnProperty("label")) tmp.label = "Вставить";
           break;
@@ -260,7 +260,7 @@ export function usePVTableActions({
           if (!tmp.hasOwnProperty("row")) tmp.row = true;
           if (!tmp.hasOwnProperty("head")) tmp.head = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-copy";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-info";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!tmp.hasOwnProperty("click")) tmp.click = (data) => Copy(data, tmp);
           if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => CopySelected(tmp);
           if (!tmp.hasOwnProperty("label")) tmp.label = "Копировать";
@@ -273,7 +273,7 @@ export function usePVTableActions({
             tmpt.table = tmptable;
             if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
             if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
-            if (!tmpt.hasOwnProperty("class")) tmpt.class = " p-button-success";
+            if (!tmpt.hasOwnProperty("class")) tmpt.class = "";
             if (!tmpt.hasOwnProperty("click")) tmpt.click = (event) => setExpandedRow(event, tmpt);
             actions_row = true;
             cur_actions.push(tmpt);
@@ -287,7 +287,7 @@ export function usePVTableActions({
             tmpt.table = tmptable;
             if (!tmpt.hasOwnProperty("row")) tmpt.row = true;
             if (!tmpt.hasOwnProperty("icon")) tmpt.icon = "pi pi-angle-right";
-            if (!tmpt.hasOwnProperty("class")) tmpt.class = " p-button-success";
+            if (!tmpt.hasOwnProperty("class")) tmpt.class = "";
             if (!tmpt.hasOwnProperty("click")) tmpt.click = (event) => setExpandedRow(event, tmpt);
             actions_row = true;
             cur_actions.push(tmpt);
@@ -300,7 +300,7 @@ export function usePVTableActions({
         case "excel_export":
           if (!tmp.hasOwnProperty("head")) tmp.head = true;
           if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-file-excel";
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-secondary";
           if (!tmp.hasOwnProperty("head_click")) tmp.head_click = () => excelExport(tmp);
           if (!tmp.hasOwnProperty("label")) tmp.label = "Excel";
           break;
@@ -320,7 +320,7 @@ export function usePVTableActions({
           break;
           
         default:
-          if (!tmp.hasOwnProperty("class")) tmp.class = " p-button-success";
+          if (!tmp.hasOwnProperty("class")) tmp.class = "";
           if (!(tmp.head_click || tmp.click)) {
             if (tmp.head) tmp.head_click = () => defHeadAction(tmp);
             if (tmp.row) tmp.click = (event) => defRowAction(event, tmp);

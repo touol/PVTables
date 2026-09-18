@@ -141,16 +141,48 @@
 .tan-expansion-fallback { font-size: 11px; max-height: 200px; overflow: auto; margin: 0; }
 
 /* ── Action / Expand buttons ── */
+/* Инструменты в правой части тулбара (отменить / повторить / сбросить
+   фильтры / настройки / мобильный вид). Пастельные: акцент темы на мягкой
+   заливке — так они видны как группа, но не спорят с «Вставить» и
+   «Обновить», которые меняют данные. Ровно этот вид был в макете расчёта,
+   только прибит там был зелёный из семантики «успех», а не акцент темы. */
+.tan-tool-btn.p-button {
+  background: var(--gts-accent-soft);
+  border-color: var(--gts-accent);
+  color: var(--gts-accent);
+}
+.tan-tool-btn.p-button:not(:disabled):hover {
+  background: var(--gts-accent-soft);
+  border-color: var(--gts-accent-hover);
+  color: var(--gts-accent-hover);
+}
+.tan-tool-btn.p-button:disabled {
+  opacity: .45;
+}
+
+/* Кнопки действий в строке — обычный <button>, а не <Button> PrimeVue, чтобы
+   не платить компонентом за каждую ячейку на 300 строк. Поэтому вид PrimeVue
+   им приходится повторять здесь.
+
+   Базовый вид — акцентная кнопка, как у <Button> без severity. Раньше база
+   была прозрачной, а цвет давал ТОЛЬКО класс вида (.p-button-success и
+   прочие): действие без такого класса рисовалось невидимкой — иконка без
+   фона и рамки. Класс в конфиге таблицы не обязателен, значит невидимка
+   получалась на ровном месте. */
 .tan-action-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--p-button-icon-only-width, 2rem); height: var(--p-button-icon-only-width, 2rem);
   padding: 0; box-sizing: border-box;
-  border: 1px solid transparent; border-radius: var(--p-button-border-radius, 6px); cursor: pointer;
-  background: transparent; color: var(--p-text-color, #374151);
+  border-radius: var(--p-button-border-radius, 6px); cursor: pointer;
+  background: var(--gts-accent); color: var(--gts-accent-contrast);
+  border: 1px solid var(--gts-accent);
   font-size: var(--p-button-icon-font-size, 1rem);
-  transition: background .15s, color .15s, border-color .15s;
+  transition: background var(--gts-transition), color var(--gts-transition), border-color var(--gts-transition);
 }
-.tan-action-btn:hover { background: var(--p-surface-200, #e9ecef); }
+.tan-action-btn:hover {
+  background: var(--gts-accent-hover);
+  border-color: var(--gts-accent-hover);
+}
 
 .tan-action-btn.p-button-success {
   background: var(--p-button-success-background, #22c55e);
@@ -188,14 +220,17 @@
   background: var(--p-button-info-hover-background, #2563eb);
   border-color: var(--p-button-info-hover-border-color, #2563eb);
 }
+/* Нейтральная кнопка повторяет пресет (gtsButtons.secondary): поверхность
+   карточки и серая рамка, а не серая заливка из стока PrimeVue. */
 .tan-action-btn.p-button-secondary {
-  background: var(--p-button-secondary-background, #64748b);
-  color: var(--p-button-secondary-color, #fff);
-  border: 1px solid var(--p-button-secondary-border-color, #64748b);
+  background: var(--gts-surface);
+  color: var(--gts-ink-2);
+  border: 1px solid var(--gts-line-strong);
 }
 .tan-action-btn.p-button-secondary:hover {
-  background: var(--p-button-secondary-hover-background, #475569);
-  border-color: var(--p-button-secondary-hover-border-color, #475569);
+  background: var(--gts-surface-2);
+  color: var(--gts-ink);
+  border-color: var(--gts-line-strong);
 }
 .tan-action-btn.p-button-contrast {
   background: var(--p-button-contrast-background, #020617);
