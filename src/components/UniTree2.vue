@@ -196,6 +196,8 @@
     const actions = ref({});
     const nodeclick = ref({});
     const gtsAPIUniTreeClass = ref({});
+    // Порядок детей узла из конфига таблицы (properties.nodeSort в gtsAPI).
+    const nodeSort = ref({});
     const showInactive = ref(false);
     const searchTitle = ref('')
     const dragable1 = ref(true);
@@ -295,6 +297,7 @@
 
             fields = response.data.fields;
             gtsAPIUniTreeClass.value = response.data.gtsAPIUniTreeClass || {};
+            nodeSort.value = response.data.nodeSort || {};
 
             // Узел из адресной строки: раскрываем путь к нему и выделяем.
             if (selectedId.value > 0) expandPathTo(selectedId.value)
@@ -327,6 +330,7 @@
             const response = await api.options()
             sourceTree.value = response.data.out.slTree || []
             if (response.data.actions) actions.value = response.data.actions
+            if (response.data.nodeSort) nodeSort.value = response.data.nodeSort
             await rebuild()
         } catch (error) {
             notify('error', { detail: error.message }, true);
@@ -364,16 +368,49 @@
 
     // ─── Точечные операции над sourceTree ─────────────────────────────────────
 
-    /** Порядок детей, как его строит сервер: папки выше листьев, затем menuindex, затем id. */
+    /** Сравнение двух узлов по одному полю: числа — числами, текст — по-русски без регистра. */
+    const compareNodeField = (a, b, field) => {
+        const av = a.data ? a.data[field] : undefined
+        const bv = b.data ? b.data[field] : undefined
+        const aNum = av !== null && av !== undefined && av !== '' && !isNaN(Number(av))
+        const bNum = bv !== null && bv !== undefined && bv !== '' && !isNaN(Number(bv))
+        if (aNum && bNum) return Number(av) === Number(bv) ? 0 : (Number(av) < Number(bv) ? -1 : 1)
+        return String(av ?? '').localeCompare(String(bv ?? ''), 'ru', { numeric: true, sensitivity: 'base' })
+    }
+
+    /**
+     * Порядок детей, как его строит сервер (tree.class.php::sortTreeChildren).
+     * Без nodeSort — папки выше листьев, затем menuindex, затем id.
+     * С nodeSort — { foldersFirst, default: ['menuindex','id'], classes: { osEmployee: ['title'] } },
+     * префикс '-' у поля означает обратный порядок.
+     */
     const sortChildren = (list) => {
+        const cfg = nodeSort.value || {}
+        const foldersFirst = cfg.foldersFirst === undefined ? true : !!cfg.foldersFirst
+        const defFields = (cfg.default && cfg.default.length) ? cfg.default : ['menuindex', 'id']
+        const classes = cfg.classes || {}
         list.sort((a, b) => {
-            const aLeaf = a.isLeaf ? 1 : 0
-            const bLeaf = b.isLeaf ? 1 : 0
-            if (aLeaf !== bLeaf) return aLeaf - bLeaf
-            const am = Number(a.data.menuindex || 0)
-            const bm = Number(b.data.menuindex || 0)
-            if (am !== bm) return am - bm
-            return Number(a.data.id || 0) - Number(b.data.id || 0)
+            if (foldersFirst) {
+                const aLeaf = a.isLeaf ? 1 : 0
+                const bLeaf = b.isLeaf ? 1 : 0
+                if (aLeaf !== bLeaf) return aLeaf - bLeaf
+            }
+            const aClass = a.data ? a.data.class : ''
+            const bClass = b.data ? b.data.class : ''
+            // Правило класса работает, только когда оба узла одного класса — иначе default.
+            const fields = (aClass && aClass === bClass && classes[aClass] && classes[aClass].length)
+                ? classes[aClass]
+                : defFields
+            for (let field of fields) {
+                let dir = 1
+                if (String(field).charAt(0) === '-') {
+                    dir = -1
+                    field = String(field).slice(1)
+                }
+                const cmp = compareNodeField(a, b, field)
+                if (cmp !== 0) return dir * cmp
+            }
+            return Number((a.data && a.data.id) || 0) - Number((b.data && b.data.id) || 0)
         })
     }
 
