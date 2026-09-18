@@ -126,11 +126,15 @@ export default {
     gap: 1rem;
     margin-bottom: 1rem;
   }
-  .pvform-label { width: 6rem; padding-top: 0.5rem; }
+  /* 6rem обрезало «Пользователь» — длинному слову нужно место или перенос */
+  .pvform-label { width: 7rem; padding-top: 0.5rem; overflow-wrap: anywhere; }
   .pvform-control { flex: 1 1 0%; min-width: 0; }
   /* Поля подписью сверху — когда колонка узкая и подпись слева съедает ввод */
-  .pvform-field-top { flex-direction: column; gap: 0.25rem; }
+  /* Колонка флекса не растягивает детей по ширине: без stretch каждое поле
+     получало ширину своего содержимого и колонка шла вразнобой */
+  .pvform-field-top { flex-direction: column; align-items: stretch; gap: 0.25rem; }
   .pvform-field-top .pvform-label { width: auto; padding-top: 0; }
+  .pvform-field-top .pvform-control { width: 100%; }
 
   /* inline-режим (флекс в строку) оставлен как был до блоков */
   .pvform-inline { display: flex; flex-wrap: wrap; gap: 1rem; }
@@ -162,8 +166,8 @@ export default {
     .pvform-grid[data-cols="4"]   { grid-template-columns: minmax(0, 1fr); }
   }
   @container (max-width: 520px) {
-    .pvform-field { flex-direction: column; gap: 0.25rem; }
+    .pvform-field { flex-direction: column; align-items: stretch; gap: 0.25rem; }
     .pvform-field .pvform-label { width: auto; padding-top: 0; }
-    .pvform-control { max-width: 100% !important; }
+    .pvform-control { width: 100%; max-width: 100% !important; }
   }
 </style>

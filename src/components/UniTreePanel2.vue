@@ -481,6 +481,12 @@
         flex-direction: column;
         min-width: 0;
         min-height: 0;
+        /* Язычок сидит на кромке панели и заходит в контент на свою ширину —
+           без этого отступа он перекрывает подписи полей карточки */
+        padding-left: 24px;
+    }
+    .utp2--touch .utp2__right {
+        padding-left: 32px;
     }
     .utp2__head {
         flex-shrink: 0;
@@ -626,11 +632,6 @@
     }
     .utp2--narrow.utp2--open .utp2__left {
         transform: translateX(0);
-    }
-    /* Язычок перекрывает содержимое карточки — сдвигаем её на его ширину. */
-    .utp2--collapsed .utp2__right,
-    .utp2--narrow .utp2__right {
-        padding-left: 24px;
     }
 
     .utp2--narrow.utp2--open .utp2__backdrop {

@@ -469,8 +469,6 @@ export default {
 </script>
 
 <style>
-  /* Панель вкладки вплотную к язычкам: заголовок первого блока подлезал под них */
-  .pvform { padding-top: 0.75rem; }
   .p-inputnumber-input {
     width: 100% !important;
   }
