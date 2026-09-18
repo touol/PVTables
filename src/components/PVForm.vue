@@ -12,91 +12,48 @@
       </TabList>
       <TabPanels>
         <TabPanel v-for="(tab, key) in form.tabs" :key="key" :value="key">
-          <div :class="{'flex flex-wrap gap-4':inline}">
-            <template v-for="col of getTabFields(tab.fields)">
-              <div class="flex flex-wrap items-start gap-4 mb-4">
-                <label :for="col.field" class="font-semibold w-24 pt-2">
-                  {{ col.label }}
-                  <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-                </label>
-                <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-                  <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-                    <EditField
-                      :field="col"
-                      v-model="model[col.field]"
-                      :data="model"
-                      :use_data="true"
-                      :autocompleteSettings="autocompleteSettings[col.field]"
-                      :selectSettings="selectSettings2[col.field]"
-                      @set-value="setValue()"
-                    />
-                  </div>
-                  <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-                  <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
-                </div>
-              </div>
-            </template>
-          </div>
+          <PVFormBlocks
+            :blocks="blocksOf(tab)"
+            :model="model"
+            :autocompleteSettings="autocompleteSettings"
+            :selectSettings="selectSettings2"
+            :fieldWidth="computedFieldWidth"
+            :labelPosition="labelPosition"
+            :inline="inline"
+            @set-value="setValue()"
+          />
         </TabPanel>
         <TabPanel v-if="additionalFields.length > 0" value="additional">
-          <div :class="{'flex flex-wrap gap-4':inline}">
-            <template v-for="col of additionalFields">
-              <div class="flex flex-wrap items-start gap-4 mb-4">
-                <label :for="col.field" class="font-semibold w-24 pt-2">
-                  {{ col.label }}
-                  <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-                </label>
-                <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-                  <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-                    <EditField
-                      :field="col"
-                      v-model="model[col.field]"
-                      :data="model"
-                      :use_data="true"
-                      :autocompleteSettings="autocompleteSettings[col.field]"
-                      :selectSettings="selectSettings2[col.field]"
-                      @set-value="setValue()"
-                    />
-                  </div>
-                  <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-                  <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
-                </div>
-              </div>
-            </template>
-          </div>
+          <PVFormBlocks
+            :blocks="[{ key: 'additional', cols: formCols, fields: additionalFields }]"
+            :model="model"
+            :autocompleteSettings="autocompleteSettings"
+            :selectSettings="selectSettings2"
+            :fieldWidth="computedFieldWidth"
+            :labelPosition="labelPosition"
+            :inline="inline"
+            @set-value="setValue()"
+          />
         </TabPanel>
       </TabPanels>
     </Tabs>
-    <div v-else :class="{'flex flex-wrap gap-4':inline}">
-      <template v-for="col of columns2.filter((x) => x.table_only != true && x.mobile_only != true && x.type != 'hidden')">
-        <div class="flex flex-wrap items-start gap-4 mb-4">
-          <label :for="col.field" class="font-semibold w-24 pt-2">
-            {{ col.label }}
-            <span v-if="isFieldRequired(col)" class="text-red-500 ml-1">*</span>
-          </label>
-          <div class="flex-1" :style="{ maxWidth: computedFieldWidth }">
-            <div :class="{ 'p-invalid': isFieldInvalid(col) }">
-              <EditField
-                :field="col"
-                v-model="model[col.field]"
-                :data="model"
-                :use_data="true"
-                :autocompleteSettings="autocompleteSettings[col.field]"
-                :selectSettings="selectSettings2[col.field]"
-                @set-value="setValue()"
-              />
-            </div>
-            <small v-if="col.desc" class="block mt-1 text-gray-600">{{ col.desc }}</small>
-            <small v-if="isFieldInvalid(col)" class="block mt-1 text-red-500">Поле обязательно для заполнения</small>
-          </div>
-        </div>
-      </template>
-    </div>
+    <PVFormBlocks
+      v-else
+      :blocks="rootBlocks"
+      :model="model"
+      :autocompleteSettings="autocompleteSettings"
+      :selectSettings="selectSettings2"
+      :fieldWidth="computedFieldWidth"
+      :labelPosition="labelPosition"
+      :inline="inline"
+      @set-value="setValue()"
+    />
   </div>
 </template>
 
 <script>
 import EditField from "./EditField.vue";
+import PVFormBlocks from "./PVFormBlocks.vue";
 import apiCtor from './api.js'
 import { useNotifications } from "./useNotifications";
 import VRuntimeTemplate from "vue3-runtime-template-next";
@@ -110,6 +67,7 @@ export default {
   name: 'PVForm',
   components: {
     EditField,
+    PVFormBlocks,
     VRuntimeTemplate,
     Tabs,
     TabList,
@@ -202,6 +160,17 @@ export default {
       if (!this.form || !this.form.tabs) return []
       
       return this.availableFields.filter(col => !this.usedFieldsInTabs.has(col.field))
+    },
+    // Сколько колонок по умолчанию во всей форме. Без cols — одна, то есть
+    // ровно то, как форма выглядела до появления блоков
+    formCols() {
+      return Number(this.form && this.form.cols) || 1
+    },
+    labelPosition() {
+      return (this.form && this.form.label_position) || 'left'
+    },
+    rootBlocks() {
+      return this.blocksOf(this.form || {})
     },
     computedFieldWidth() {
       // Приоритет: form.fieldWidth > fieldWidth prop > default
@@ -313,8 +282,39 @@ export default {
       
       return false
     },
+    /**
+     * Конфиг блоков → массив {key, label, cols, fields} для PVFormBlocks.
+     * Нет blocks — один безымянный блок со всеми полями: старое поведение.
+     */
+    blocksOf(cfg) {
+      cfg = cfg || {}
+      const cols = Number(cfg.cols) || this.formCols
+      if (cfg.blocks) {
+        const out = []
+        for (const key in cfg.blocks) {
+          const b = cfg.blocks[key] || {}
+          out.push({
+            key,
+            label: b.label,
+            cols: Number(b.cols) || cols,
+            fields: this.resolveFields(b.fields),
+          })
+        }
+        return out
+      }
+      return [{
+        key: 'all',
+        cols,
+        fields: cfg.fields ? this.resolveFields(cfg.fields) : this.availableFields,
+      }]
+    },
+    /** Перечисление полей: 'name,active', '0-3,6' или массив имён. */
+    resolveFields(fieldsConfig) {
+      if (Array.isArray(fieldsConfig)) return this.getTabFields(fieldsConfig.join(','))
+      return this.getTabFields(fieldsConfig)
+    },
     getTabFields(fieldsConfig) {
-      if (!fieldsConfig) return []
+      if (!fieldsConfig) return this.availableFields
       
       const fields = []
       const fieldParts = fieldsConfig.split(',').map(f => f.trim())
