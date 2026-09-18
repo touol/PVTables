@@ -2063,8 +2063,10 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
         :use_readonly="false"
       />
       <div class="tan-full-popup-actions" style="margin-top:1rem;">
-        <button class="tan-action-btn" @click="() => { fileEditOpen = false }">Отмена</button>
-        <button class="tan-action-btn p-button-success" @click="() => { onFullEditSave(); fileEditOpen = false }">Сохранить</button>
+        <!-- Обычные кнопки, а не .tan-action-btn: тот класс описывает
+             квадратную кнопку-иконку 2rem, и подпись в неё не помещалась. -->
+        <Button label="Отмена" severity="secondary" @click="() => { fileEditOpen = false }" />
+        <Button label="Сохранить" @click="() => { onFullEditSave(); fileEditOpen = false }" />
       </div>
     </div>
   </Dialog>
@@ -2083,8 +2085,8 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
         :use_readonly="false"
       />
       <div class="tan-full-popup-actions">
-        <button class="tan-action-btn" @click="closeFull">Отмена</button>
-        <button class="tan-action-btn p-button-success" @click="onFullEditSave">Сохранить</button>
+        <Button label="Отмена" severity="secondary" @click="closeFull" />
+        <Button label="Сохранить" @click="onFullEditSave" />
       </div>
     </div>
   </Popover>
