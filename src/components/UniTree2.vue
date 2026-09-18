@@ -531,16 +531,23 @@
             }
             return tmpfilters
         }
-        for(let key in tabs){
-            if (tabs[key].hasOwnProperty("where")) {
-                subfilters[key] = makeFilters(tabs[key].where);
-            }
-            if (tabs[key].hasOwnProperty("tables")) {
-                for(let table_key in tabs[key].tables){
-                    subfilters[table_key] = makeFilters(tabs[key].tables[table_key].where);
+        // Вкладка может быть разделом со своими вкладками — обходим вглубь,
+        // иначе таблицы вложенной вкладки останутся без фильтра по записи
+        const collectFilters = (obj) => {
+            for(let key in obj){
+                if (!obj[key] || typeof obj[key] !== 'object') continue
+                if (obj[key].hasOwnProperty("where")) {
+                    subfilters[key] = makeFilters(obj[key].where);
                 }
+                if (obj[key].hasOwnProperty("tables")) {
+                    for(let table_key in obj[key].tables){
+                        subfilters[table_key] = makeFilters(obj[key].tables[table_key].where);
+                    }
+                }
+                if (obj[key].hasOwnProperty("tabs")) collectFilters(obj[key].tabs)
             }
         }
+        collectFilters(tabs)
 
         if (tabs) {
             const processTabsRecursively = (obj) => {

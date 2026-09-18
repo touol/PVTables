@@ -57,6 +57,25 @@
             :ref="el => { if (el) childComponentRefs[tab.key] = el }"
           ></component>
         </div>
+        <!-- Вкладка-раздел: внутри свои вкладки (Документы → Договор,
+             Доп. соглашения, Квалификация). Тот же компонент рекурсивно. -->
+        <PVTabs
+          v-else-if="tab.type=='tabs'"
+          :tabs="tab.tabs"
+          :actions="actions"
+          :filters="filters"
+          :sorting="sorting"
+          :parent_row="parent_row"
+          :current_id="current_id"
+          :class_key="class_key"
+          :child="child"
+          :embeddedInRow="embeddedInRow"
+          :autoUpdateHeights="autoUpdateHeights"
+          :scrollHeight="scrollHeight"
+          :ref="el => { if (el) childComponentRefs[tab.key] = el }"
+          @update-treenode-title="emit('update-treenode-title', $event)"
+          @rows-loaded="emit('rows-loaded', $event)"
+        />
         <template v-else-if="tab.type=='tables'">
           <PVTables
             v-for="table in tab.tables"
