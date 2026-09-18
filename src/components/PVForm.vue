@@ -19,6 +19,7 @@
             :selectSettings="selectSettings2"
             :fieldWidth="computedFieldWidth"
             :labelPosition="labelPosition"
+            :blockCols="blockCols"
             :inline="inline"
             @set-value="setValue()"
           />
@@ -31,6 +32,7 @@
             :selectSettings="selectSettings2"
             :fieldWidth="computedFieldWidth"
             :labelPosition="labelPosition"
+            :blockCols="blockCols"
             :inline="inline"
             @set-value="setValue()"
           />
@@ -45,6 +47,7 @@
       :selectSettings="selectSettings2"
       :fieldWidth="computedFieldWidth"
       :labelPosition="labelPosition"
+      :blockCols="blockCols"
       :inline="inline"
       @set-value="setValue()"
     />
@@ -163,8 +166,14 @@ export default {
     },
     // Сколько колонок по умолчанию во всей форме. Без cols — одна, то есть
     // ровно то, как форма выглядела до появления блоков
+    // Колонки ПОЛЕЙ внутри блока по умолчанию
     formCols() {
       return Number(this.form && this.form.cols) || 1
+    },
+    // Сколько БЛОКОВ ставить в ряд: в мокапе в колонки разложены группы,
+    // а не отдельные поля
+    blockCols() {
+      return Number(this.form && this.form.block_cols) || 1
     },
     labelPosition() {
       return (this.form && this.form.label_position) || 'left'
@@ -460,6 +469,8 @@ export default {
 </script>
 
 <style>
+  /* Панель вкладки вплотную к язычкам: заголовок первого блока подлезал под них */
+  .pvform { padding-top: 0.75rem; }
   .p-inputnumber-input {
     width: 100% !important;
   }
