@@ -592,6 +592,10 @@
   cursor: grab; font-size: 14px; color: var(--gts-ink-3);
   display: block; text-align: center; user-select: none; line-height: 1;
 }
+/* В режиме выделения ячеек перетаскивание строк выключено — ручка
+   показывает это: гаснет и не притворяется кликабельной. */
+.tan-drag-handle--off { opacity: .3; cursor: default; }
+
 .tan-drag-handle:active { cursor: grabbing; }
 .tan-row-dragging { opacity: 0.4; }
 .tan-row-drag-over td { border-top: 2px solid var(--gts-accent) !important; }

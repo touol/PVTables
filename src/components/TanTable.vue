@@ -437,7 +437,12 @@ const dragColDef = {
   id: '__drag__', size: 28, minSize: 28, maxSize: 28,
   enableResizing: false, enableSorting: false, enableColumnFilter: false,
   header: () => '',
-  cell: () => h('span', { class: 'tan-drag-handle', title: 'Перетащить' }, '⠿'),
+  // В режиме выделения ячеек ручка гаснет: перетаскивание там выключено,
+  // и активная на вид ручка обещала бы то, чего нет.
+  cell: () => h('span', {
+    class: ['tan-drag-handle', { 'tan-drag-handle--off': cellSelectionMode.value }],
+    title: cellSelectionMode.value ? 'Перетаскивание выключено в режиме выделения ячеек' : 'Перетащить',
+  }, '⠿'),
 }
 
 // Эвристика: строка считается «синтетической» (служебный header/итог) если
@@ -798,6 +803,12 @@ const {
 
 // Пересчёт высоты при появлении/скрытии статусбара выделения
 watch(cellSelectionMode, () => { if (autoFitHeight.value) nextTick(calculateTableHeight) })
+
+// Перетаскивание строк и выделение ячеек — два разных ответа на одно и то же
+// движение мышью с зажатой кнопкой. Пока включён режим выделения (он же
+// «суммирование»), перетаскивание выключено целиком: иначе попытка выделить
+// диапазон утаскивает строку.
+const rowDragOn = computed(() => rowDrag.value && !cellSelectionMode.value)
 
 // Helper: get lineItems index from TanStack row
 const getRowLineIndex = (row) => {
@@ -1685,15 +1696,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                 isEmptyRow(flatItems[vItem.index]?.row.original?.id)
                   ? (isEditableEmptyRow(flatItems[vItem.index]?.row.original?._rowKey) ? 'tan-row-empty' : 'tan-row-empty-locked')
                   : '',
-                { 'tan-row-dragging':  rowDrag && draggingRowKey === flatItems[vItem.index]?.row.original?._rowKey },
-                { 'tan-row-drag-over': rowDrag && dragOverRowKey === flatItems[vItem.index]?.row.original?._rowKey },
+                { 'tan-row-dragging':  rowDragOn && draggingRowKey === flatItems[vItem.index]?.row.original?._rowKey },
+                { 'tan-row-drag-over': rowDragOn && dragOverRowKey === flatItems[vItem.index]?.row.original?._rowKey },
               ]"
-              :draggable="rowDrag && !isEmptyRow(flatItems[vItem.index]?.row.original?.id) ? 'true' : 'false'"
-              @dragstart="rowDrag && onDragStart($event, flatItems[vItem.index]?.row.original?._rowKey)"
-              @dragover="rowDrag && onDragOver($event, flatItems[vItem.index]?.row.original?._rowKey)"
-              @dragleave="rowDrag && onDragLeave()"
-              @drop="rowDrag && onDrop($event, flatItems[vItem.index]?.row.original?._rowKey)"
-              @dragend="rowDrag && onDragEnd()"
+              :draggable="rowDragOn && !isEmptyRow(flatItems[vItem.index]?.row.original?.id) ? 'true' : 'false'"
+              @dragstart="rowDragOn && onDragStart($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragover="rowDragOn && onDragOver($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragleave="rowDragOn && onDragLeave()"
+              @drop="rowDragOn && onDrop($event, flatItems[vItem.index]?.row.original?._rowKey)"
+              @dragend="rowDragOn && onDragEnd()"
             >
               <td
                 v-for="cell in flatItems[vItem.index]?.row.getVisibleCells()"
