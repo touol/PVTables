@@ -299,6 +299,17 @@ export function useTanFilterPopover({
     const initFilters  = initFiltersGetter()
     if (!filters || !loadLazyData) return
     initFilters?.()
+    // initFilters возвращает дефолт из конфига (fields.<name>.filter) — иначе
+    // преднастроенный фильтр («Работает = да») нельзя снять руками: крестик
+    // сбрасывал его к тому же значению. Для очищаемой колонки гасим и дефолт.
+    const cleared = filters.value?.[colId]
+    if (cleared) {
+      if (Array.isArray(cleared.constraints)) {
+        cleared.constraints = cleared.constraints.map(c => ({ ...c, value: null }))
+      } else {
+        cleared.value = null
+      }
+    }
     for (const [cId, sf] of Object.entries(colServerFilters.value)) {
       const hasValue = sf.constraints.some(constraintActive)
       if (hasValue) {

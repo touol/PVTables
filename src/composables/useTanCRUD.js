@@ -40,6 +40,22 @@ export function useTanCRUD(
   // ── Map rowKey → Promise<realId> (concurrent-safe insert) ────────────────
   const _insertPromises = new Map();
 
+  /**
+   * Сервер перечитывает строку после записи С УЧЁТОМ активных фильтров: если правка
+   * вывела её из отбора (сняли «Работает» при фильтре «работает = да»), object
+   * приходит пустым. Пустой массив в JS истинный, поэтому раньше такая строка
+   * затиралась пустышкой и висела в таблице пустой.
+   */
+  const rowDroppedByFilter = (obj) =>
+    obj !== undefined && obj !== null && (Array.isArray(obj) ? obj.length === 0 : !obj.id);
+
+  const dropRow = (idx) => {
+    const rest = [...lineItems.value];
+    rest.splice(idx, 1);
+    skipScroll();
+    lineItems.value = rest;
+  };
+
   // Счётчик _rowKey для новых строк из rows_delta (свой префикс, чтобы не
   // конфликтовать с row_N из usePVTableData). _rowKey — главный ключ строки,
   // на нём держится раскрытие (expand/subtabs) и реюз DOM виртуализатора.
@@ -130,13 +146,16 @@ export function useTanCRUD(
         if (response.data.customFields) {
           customFields.value[lineItem.value.id] = response.data.customFields[lineItem.value.id];
         }
-        if (response.data.refresh_row == 1) lineItem.value = response.data.object;
+        const droppedByFilter = rowDroppedByFilter(response.data?.object);
+        if (response.data.refresh_row == 1 && !droppedByFilter) lineItem.value = response.data.object;
         if (response.data.refresh_table == 1) {
           skipScroll();
           refresh(false);
         } else {
           const idx = findIndexById(Number(lineItem.value.id));
-          if (idx >= 0) {
+          if (idx >= 0 && droppedByFilter) {
+            dropRow(idx);
+          } else if (idx >= 0) {
             const updated = [...lineItems.value];
             updated[idx] = lineItem.value;
             skipScroll();
@@ -446,7 +465,10 @@ export function useTanCRUD(
       if (!response.success) { notify('error', { detail: response.message }, true); return; }
 
       const idx = findIndexById(Number(data.id));
-      if (idx >= 0) {
+      if (idx >= 0 && rowDroppedByFilter(response.data?.object)) {
+        // Строка больше не проходит фильтр таблицы — убираем её, а не рисуем пустой
+        dropRow(idx);
+      } else if (idx >= 0) {
         const updated = [...lineItems.value];
         if (response.data?.object) {
           updated[idx] = response.data.object;
