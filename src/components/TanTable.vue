@@ -401,6 +401,7 @@ const {
   columnSizing,
   autoFitCols,
   getColDefaultSize,
+  headerMinWidth,
   saveWidthsToLocal,
   saveHiddenToLocal,
   initColumnWidths,
@@ -552,7 +553,10 @@ const dataColDefs = computed(() =>
     accessorFn: row => getFieldValue(row, col.field),
     header: col.label || col.field,
     size: getColDefaultSize(col),
-    minSize: 40,
+    // Не 40 на всех: длинный заголовок в 40px рассыпается по буквам (см.
+    // headerMinWidth). Тот же пол и при ручном ресайзе — иначе ползунком
+    // можно вернуть ту же шапку в пол-экрана.
+    minSize: headerMinWidth(col),
     maxSize: 1200,
     enableSorting: col.type !== 'html',
     enableColumnFilter: col.type !== 'html',
@@ -1857,7 +1861,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     </div>
 
     <!-- ── CRUD Dialogs ── -->
-    <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" modal>
+    <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" modal class="tan-edit-dialog">
       <template #header>
         <div class="flex items-center justify-between gap-3 w-full">
           <span class="font-semibold">Редактировать</span>

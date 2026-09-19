@@ -160,6 +160,39 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     return ctx.measureText(String(text ?? '')).width
   }
 
+  const HEADER_FONT   = '600 12px system-ui,sans-serif'  // .tan-th-label font
+  const CELL_FONT     = '13px system-ui,sans-serif'       // .tan-td font
+  const HEADER_PAD    = 34  // 8px left + 24px right (sort icon + filter btn)
+  const CELL_PAD      = 16  // 8px × 2
+  const MIN_COL_WIDTH = 40
+
+  /**
+   * Минимальная ширина колонки по её заголовку.
+   *
+   * Жёсткие 40px на всех подряд ломали длинные заголовки: на текст оставалось
+   * ~6px, «Отключить для этого продукта» рассыпалось в столбик по одной букве,
+   * и шапка вырастала на пол-экрана. Держим ширину так, чтобы в строку влезало
+   * не меньше четырёх символов. Меряем самый широкий четырёхсимвольный кусок
+   * заголовка, а не первые четыре: перенос рвёт слово в любом месте, и узкое
+   * начало («Сумм») не спасёт от широкой середины. Заголовки короче четырёх
+   * символов меряем целиком — их и так не режет.
+   */
+  const HEADER_MIN_CHARS = 4
+  const headerMinWidth = (col) => {
+    const label = String(col?.label || col?.field || '')
+    if (!label) return MIN_COL_WIDTH
+    let widest = 0
+    if (label.length <= HEADER_MIN_CHARS) {
+      widest = measureText(label, HEADER_FONT)
+    } else {
+      for (let i = 0; i + HEADER_MIN_CHARS <= label.length; i++) {
+        const w = measureText(label.slice(i, i + HEADER_MIN_CHARS), HEADER_FONT)
+        if (w > widest) widest = w
+      }
+    }
+    return Math.max(MIN_COL_WIDTH, Math.ceil(widest) + HEADER_PAD)
+  }
+
   /**
    * Подогнать ширины колонок под контейнер с учётом реального содержимого.
    * Алгоритм:
@@ -192,19 +225,20 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     const dataCols = visibleColumns.value
     if (!dataCols.length) return
 
-    const available = Math.max(containerWidth - fixedWidth, dataCols.length * 40)
+    // Ниже этих ширин не ужимаем ни при каком масштабе: иначе заголовок
+    // рассыпается по буквам и шапка занимает пол-таблицы. Не влезло в
+    // контейнер — пусть будет горизонтальный скролл, это честнее.
+    const minSizes = dataCols.map(col => headerMinWidth(col))
+    const minTotal = minSizes.reduce((s, w) => s + w, 0)
 
-    const HEADER_FONT   = '600 12px system-ui,sans-serif'  // .tan-th-label font
-    const CELL_FONT     = '13px system-ui,sans-serif'       // .tan-td font
-    const HEADER_PAD    = 34  // 8px left + 24px right (sort icon + filter btn)
-    const CELL_PAD      = 16  // 8px × 2
+    const available = Math.max(containerWidth - fixedWidth, minTotal)
 
     // Типы, для которых не измеряем содержимое (значение нечитаемо как текст)
     const SKIP_CONTENT  = new Set(['boolean', 'html', 'autocomplete', 'multiautocomplete', 'select'])
 
     const rows = rowsGetter?.() ?? []
 
-    const measuredSizes = dataCols.map(col => {
+    const measuredSizes = dataCols.map((col, i) => {
       // Ширина заголовка
       const headerW = Math.ceil(measureText(col.label || col.field, HEADER_FONT)) + HEADER_PAD
 
@@ -222,24 +256,41 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
       }
 
       const minByType = getColDefaultSize(col)
-      return Math.max(headerW, contentW || 0, minByType, 40)
+      return Math.max(headerW, contentW || 0, minByType, minSizes[i])
     })
 
-    const totalMeasured = measuredSizes.reduce((s, w) => s + w, 0)
-    const newSizing = {}
-
-    // Всегда масштабируем пропорционально — и растягиваем и сжимаем
-    const scale = available / totalMeasured
-    let distributed = 0
-    dataCols.forEach((col, i) => {
-      if (i === dataCols.length - 1) {
-        newSizing[col.field] = Math.max(40, available - distributed)
-      } else {
-        const w = Math.max(40, Math.floor(measuredSizes[i] * scale))
-        newSizing[col.field] = w
-        distributed += w
+    // Пропорциональное сжатие с полом. Колонка, упёршаяся в свой минимум,
+    // из дележа выходит, а её недостачу разносим по остальным. Простое
+    // Math.max(min, w*scale) так не умеет: прибавка упёршихся идёт сверх
+    // available, и таблица вылезает за контейнер даже когда места хватало.
+    const finalSizes = measuredSizes.slice()
+    const clamped = new Array(dataCols.length).fill(false)
+    for (let pass = 0; pass < dataCols.length; pass++) {
+      let freeSpace = available
+      let freeMeasured = 0
+      for (let i = 0; i < dataCols.length; i++) {
+        if (clamped[i]) freeSpace -= finalSizes[i]
+        else freeMeasured += measuredSizes[i]
       }
-    })
+      if (freeMeasured <= 0) break
+      const scale = freeSpace / freeMeasured
+      let changed = false
+      for (let i = 0; i < dataCols.length; i++) {
+        if (clamped[i]) continue
+        const w = Math.floor(measuredSizes[i] * scale)
+        if (w < minSizes[i]) { finalSizes[i] = minSizes[i]; clamped[i] = true; changed = true }
+        else finalSizes[i] = w
+      }
+      if (!changed) break
+    }
+
+    // Остаток от округления — последней колонке, которая ещё может расти.
+    const lastFree = clamped.lastIndexOf(false)
+    const total = finalSizes.reduce((s, w) => s + w, 0)
+    if (lastFree >= 0 && total < available) finalSizes[lastFree] += available - total
+
+    const newSizing = {}
+    dataCols.forEach((col, i) => { newSizing[col.field] = finalSizes[i] })
 
     columnSizing.value = { ...columnSizing.value, ...newSizing }
   }
@@ -360,6 +411,7 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
     parseSavedWidths,
     getColumnStyle,
     getColDefaultSize,
+    headerMinWidth,
     saveWidthsToLocal,
     saveHiddenToLocal,
     initHiddenCols,

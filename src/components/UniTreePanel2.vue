@@ -542,9 +542,44 @@
         min-height: 0;
         overflow: auto;
         padding: .5rem;
+        display: flex;
+        flex-direction: column;
     }
     .utp2__content .p-tabpanel {
         min-height: 0;
+    }
+
+    /* Здесь цепочка и рвалась. У .p-tabpanel высота по содержимому, поэтому
+       max-height:100% у таблицы (scrollHeight="100%") превращался в none:
+       таблица росла на всю длину списка, а прокручивалась вся панель — вместе
+       с тулбаром и шапкой. Вкладку с таблицей ужимаем по панели, прокрутку
+       отдаём телу таблицы. Панели с формой, галереей или своим компонентом
+       под правило не попадают (там нужен прежний рост и скролл панели). */
+    .utp2__content .p-tabpanels > .p-tabpanel:has(> .tan-root),
+    .utp2__content .p-tabpanels > .p-tabpanel:has(> .p-tabs) {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    /* Вкладка-раздел со своими вкладками (пара «по умолчанию / продукта») */
+    .utp2__content .p-tabpanel > .p-tabs {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .utp2__content .p-tabpanel > .tan-root {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    /* max-height таблице приходит инлайном, перебить можно только !important */
+    .utp2__content .p-tabpanel > .tan-root > .tan-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none !important;
     }
     .utp2 .p-tablist-tab-list {
         display: inherit !important;
