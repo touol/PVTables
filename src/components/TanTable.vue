@@ -726,6 +726,11 @@ const tableInstance = useVueTable({
   // Серверная сортировка: TanStack только хранит state в tanSorting, реальная
   // сортировка — на бэке через loadLazyData (см. watch(tanSorting) ниже).
   manualSorting: true,
+  // Мультисортировка: клик — сортировка по одной колонке (остальные сбрасываются),
+  // Ctrl+клик (Cmd на Mac) — добавляет колонку к уже заданным, первую не сбрасывая.
+  // Shift оставлен — это дефолт TanStack, им уже могли пользоваться.
+  enableMultiSort: true,
+  isMultiSortEvent: e => e.ctrlKey || e.metaKey || e.shiftKey,
   getCoreRowModel:     getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   getExpandedRowModel: getExpandedRowModel(),
@@ -1639,12 +1644,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
               <div class="tan-th-label">
                 <div class="tan-th-text"
                   :class="{ 'tan-sortable': header.column.getCanSort() }"
+                  :title="header.column.getCanSort() ? 'Клик — сортировка по колонке, Ctrl+клик — добавить вторую' : null"
                   @click="header.column.getToggleSortingHandler()?.($event)"
                 >
                   <FlexRender v-if="!header.isPlaceholder"
                     :render="header.column.columnDef.header" :props="header.getContext()" />
                   <i v-if="header.column.getIsSorted() === 'asc'"  class="pi pi-sort-amount-up-alt tan-sort-icon" />
                   <i v-else-if="header.column.getIsSorted() === 'desc'" class="pi pi-sort-amount-down tan-sort-icon" />
+                  <!-- При мультисортировке показываем очерёдность колонок. -->
+                  <span v-if="tanSorting.length > 1 && header.column.getSortIndex() >= 0" class="tan-sort-order">{{ header.column.getSortIndex() + 1 }}</span>
                 </div>
               </div>
               <button
