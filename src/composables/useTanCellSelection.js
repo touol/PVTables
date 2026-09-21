@@ -22,6 +22,7 @@ export function useTanCellSelection({
   isEditableEmptyRowFn,
   hideIdGetter,
   rootElGetter,
+  onPasteFn,
 }) {
   const cellSelectionMode = ref(false)
   const selectedCells     = ref([])   // [{ rowId, field, rowIndex, colIndex, value, displayValue, summable }]
@@ -43,6 +44,12 @@ export function useTanCellSelection({
   }
 
   const isSummable = (col) => col.type === 'decimal' || col.type === 'number'
+
+  // Колонка принимает вставку? Тот же смысл, что у isCellEditable в TanTable:
+  // id не трогаем, readonly и нередактируемые типы - тоже.
+  const NON_WRITABLE_TYPES = new Set(['view', 'html', 'hidden'])
+  const isPasteTarget = (c) =>
+    !!c && (c.field ?? c.id) !== 'id' && !c.readonly && !NON_WRITABLE_TYPES.has(c.type)
 
   const isFieldReadonly = (rowData, field) => {
     const col = columnsGetter().find(c => c.field === field)
@@ -355,6 +362,154 @@ export function useTanCellSelection({
     selectedCells.value.length === 1 ? selectedCells.value[0] : null
   )
 
+  // ─── Вставка из буфера ────────────────────────────────────────────────
+
+  /**
+   * Разбор TSV из Excel.
+   *
+   * Наивный split('\n') здесь не годится: Excel оборачивает в кавычки ячейку,
+   * внутри которой есть перенос строки, табуляция или сама кавычка, — а в
+   * наименованиях товаров переносы бывают. Такая строка разъехалась бы пополам,
+   * и вместо одной позиции получилось бы две, вторая без цены.
+   *
+   * Внутри кавычек двойная кавычка означает одну настоящую («"" → "»).
+   */
+  const parseTSV = (text) => {
+    const rows = []
+    let row = []
+    let cell = ''
+    let inQuotes = false
+
+    // \r\n и \r приводим к \n, иначе в конце ячейки остаётся невидимый символ
+    const src = String(text).replace(/\r\n?/g, '\n')
+
+    for (let i = 0; i < src.length; i++) {
+      const ch = src[i]
+      if (inQuotes) {
+        if (ch === '"') {
+          if (src[i + 1] === '"') { cell += '"'; i++ }
+          else inQuotes = false
+        } else cell += ch
+        continue
+      }
+      if (ch === '"' && cell === '') { inQuotes = true; continue }
+      if (ch === '\t') { row.push(cell); cell = ''; continue }
+      if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; continue }
+      cell += ch
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row) }
+
+    // Excel почти всегда добавляет перевод строки в конце выделения.
+    while (rows.length && rows[rows.length - 1].every(c => String(c).trim() === '')) rows.pop()
+    return rows
+  }
+
+  /**
+   * Ctrl+V по таблице. Сама вставка — дело потребителя: он знает, что делать
+   * с матрицей (создать строки расчёта, обновить существующие), а таблица
+   * только разбирает буфер и говорит, с какой колонки вставляли.
+   */
+  // Последний клик был по этой таблице? Нужно, потому что браузер шлёт paste
+  // активному элементу, а `td` фокус не принимает: закрыл редактор ячейки —
+  // активным стал body, и событие приходит мимо таблицы. По одному
+  // `contains(e.target)` вставка в таком состоянии молча игнорировалась.
+  const clickedInside = ref(false)
+  // Ячейка, по которой кликали последней: от неё считаем колонку вставки,
+  // когда события paste приходят уже с body.
+  const lastCellEl = ref(null)
+
+  const onDocMouseDown = (e) => {
+    const root = rootElGetter?.()
+    clickedInside.value = !!(root && root.contains(e.target))
+    if (clickedInside.value) {
+      const td = e.target.closest?.('td[data-field]')
+      if (td) lastCellEl.value = td
+      // Клик по ячейке фокус никуда не ставит: td его не принимает, и
+      // активным остаётся body - браузер отправит туда и paste. Поэтому
+      // после клика забираем фокус на корень таблицы, но только если
+      // никто не забрал его сам (редактор ячейки, фильтр, кнопка).
+      setTimeout(() => {
+        const a = document.activeElement
+        if (!a || a === document.body) root.focus?.({ preventScroll: true })
+      }, 0)
+    }
+  }
+
+  const handlePaste = (e) => {
+    const root = rootElGetter?.()
+    if (!root) return
+    if (!root.contains(e.target) && !clickedInside.value) return
+
+    const text = e.clipboardData?.getData('text/plain')
+    if (!text || !text.trim()) return
+
+    // Блок из Excel или одно значение? Табуляция и перенос строки есть только
+    // у блока. Это и решает спор с редактором ячейки: кликнув в ячейку,
+    // менеджер остаётся в поле ввода, и обычная вставка одного значения туда
+    // и идёт, а вставку таблицы мы перехватываем. Иначе вставить блок было бы
+    // некуда: клик по ячейке сразу открывает редактор.
+    const isBlock = /[\t\n]/.test(text.trim())
+
+    const tag = (e.target.tagName || '').toLowerCase()
+    const inEditor = tag === 'input' || tag === 'textarea' || e.target.isContentEditable
+    if (inEditor && !isBlock) return
+
+    const rows = parseTSV(text)
+    if (!rows.length) return
+    if (!isBlock && rows.length === 1 && rows[0].length === 1) return
+
+    e.preventDefault()
+
+    // Откуда вставляем. По порядку: выделенная ячейка → ячейка, в которой
+    // открыт редактор (её имя поля берём с самого td) → первая колонка.
+    const cols = getVisibleCols()
+    const start = selectedCells.value.length ? selectedCells.value[0] : null
+    let startColIndex = start ? start.colIndex : -1
+    if (startColIndex < 0) {
+      const td = (e.target.closest?.('td[data-field]')) || lastCellEl.value
+      if (td) {
+        const field = td.getAttribute('data-field')
+        const idx = cols.findIndex(c => (c.field ?? c.id) === field)
+        if (idx >= 0) startColIndex = idx
+      }
+    }
+    if (startColIndex < 0) startColIndex = 0
+    // В раскладку берём только колонки, куда вообще можно писать: вычисляемые
+    // (цена, стоимость), id и readonly пропускаем, а не подставляем им значения.
+    // Пропускаем, а не обрываем: менеджер копирует свои колонки подряд и ждёт,
+    // что они перешагнут расчётные, а не лягут в них.
+    const fields = cols.slice(startColIndex).filter(isPasteTarget).map(c => c.field ?? c.id)
+    // Кликнули в расчётную колонку, и правее писать тоже некуда - вставлять
+    // нечего. Молчать нельзя: со стороны это выглядит как «Ctrl+V не сработал».
+    if (!fields.length) {
+      notify?.('warn', { detail: 'В эти колонки вставить нельзя: они считаются автоматически' })
+      return
+    }
+
+    // С какой строки накладывать. Вставка колонки цен на готовый список —
+    // обычное дело: сперва вставили наименования, потом цены. Поэтому отдаём
+    // id строк начиная со стартовой; чего не хватит — потребитель создаст.
+    const items = lineItemsGetter() || []
+    let startRowIndex = start ? start.rowIndex : -1
+    if (startRowIndex < 0) {
+      const tr = (e.target.closest?.('tr[data-index]')) || lastCellEl.value?.closest?.('tr[data-index]')
+      const rowId = e.target.closest?.('td[data-field]') && tr ? tr.getAttribute('data-index') : null
+      if (rowId !== null) {
+        // data-index — позиция в виртуальном списке; ищем строку по её id,
+        // чтобы не зависеть от того, есть ли над ней группы и подзаголовки.
+        const td = (e.target.closest?.('td[data-field]')) || lastCellEl.value
+        const cellRow = td?.closest('tr')
+        const idAttr = cellRow?.getAttribute('data-row-id')
+        if (idAttr) startRowIndex = items.findIndex(r => String(r.id) === String(idAttr))
+      }
+    }
+    if (startRowIndex < 0) startRowIndex = 0
+    const rowIds = items.slice(startRowIndex).map(r => r.id).filter(Boolean)
+
+    if (typeof onPasteFn !== 'function') return
+    onPasteFn({ rows, fields, startColIndex, rowIds, startRowId: start ? start.rowId : null })
+  }
+
   // ─── Keyboard shortcut ─────────────────────────────────────────────────
 
   const handleKeyDown = (e) => {
@@ -376,10 +531,16 @@ export function useTanCellSelection({
   onMounted(() => {
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('mouseup', onCellMouseUp)
+    // Вставку слушаем всегда, а не только в режиме выделения ячеек: копируют
+    // из Excel и вставляют в пустую таблицу, где выделять ещё нечего.
+    document.addEventListener('paste', handlePaste)
+    document.addEventListener('mousedown', onDocMouseDown, true)
   })
   onBeforeUnmount(() => {
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('mouseup', onCellMouseUp)
+    document.removeEventListener('paste', handlePaste)
+    document.removeEventListener('mousedown', onDocMouseDown, true)
   })
 
   return {
@@ -401,5 +562,6 @@ export function useTanCellSelection({
     isCellSelected,
     isCellInFillRange,
     copyToClipboard,
+    parseTSV,
   }
 }

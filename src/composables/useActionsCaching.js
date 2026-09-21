@@ -9,6 +9,11 @@ const MAX_HISTORY = 100
  *   { type: 'update', id, field, dataBefore, dataAfter, filters }
  *   { type: 'insert', insertedId, insertedData, filters }
  *   { type: 'delete', deletedIds: [], deletedRows: [], filters }
+ *   { type: 'bulk',   created: [{ id, data }], updated: [{ id, before, after }], filters }
+ *
+ * `bulk` — одна операция, которая создала и/или изменила пачку строк разом
+ * (вставка из Excel, разнос счёта). Без неё такая операция откатывалась бы
+ * по строке и только своей кнопкой, а стрелка в тулбаре её не видела.
  *
  * Инициализация через init() после создания всех composables.
  * cacheAction() вызывается из useTanCRUD после каждого успешного CRUD.
@@ -48,6 +53,18 @@ export function useActionsCaching() {
     redoStack.value = []
   }
 
+  /**
+   * Заменить последнюю запись. Нужно операциям, которые переигрывают сами себя:
+   * вставка из Excel со сменой параметров разбора сама откатывает предыдущий
+   * результат и вставляет заново — в истории должен остаться один шаг, а не
+   * столько, сколько раз подвигали галочку.
+   */
+  const replaceLastAction = (entry) => {
+    if (!undoStack.value.length) return cacheAction(entry)
+    undoStack.value[undoStack.value.length - 1] = entry
+    redoStack.value = []
+  }
+
   // ── Применение состояния к lineItems ──────────────────────────────────────
 
   const _applyRowUpdate = (id, rowData) => {
@@ -79,6 +96,20 @@ export function useActionsCaching() {
       } else if (entry.type === 'insert') {
         const deleteParams = entry.filters ? { ids: entry.insertedId, filters: entry.filters } : { ids: entry.insertedId }
         await _api.delete(deleteParams)
+        _skipScroll?.(3)
+        _refresh?.(false)
+
+      } else if (entry.type === 'bulk') {
+        const f = entry.filters ? { filters: entry.filters } : {}
+        // Порядок важен: сперва вернуть изменённым прежние значения, потом
+        // снести созданные. Наоборот — и правка могла бы прилететь в строку,
+        // которой уже нет.
+        for (const u of (entry.updated || [])) {
+          await _api.update({ id: u.id, ...u.before }, f)
+        }
+        if (entry.created && entry.created.length) {
+          await _api.delete({ ...f, ids: entry.created.map(c => c.id).join(',') })
+        }
         _skipScroll?.(3)
         _refresh?.(false)
 
@@ -137,6 +168,23 @@ export function useActionsCaching() {
         await _api.delete({ ids: entry.deletedIds.join(',') })
         _skipScroll?.(3)
         _refresh?.(false)
+
+      } else if (entry.type === 'bulk') {
+        const f = entry.filters ? { filters: entry.filters } : {}
+        for (const u of (entry.updated || [])) {
+          await _api.update({ id: u.id, ...u.after }, f)
+        }
+        // Созданные заводим заново — id будут другими, поэтому запоминаем их:
+        // следующий откат должен удалять новые строки, а не прежние.
+        const recreated = []
+        for (const c of (entry.created || [])) {
+          const resp = await _api.create(c.data, f)
+          const newId = resp.data?.object?.id ?? null
+          if (newId) recreated.push({ id: newId, data: c.data })
+        }
+        if (recreated.length) entry.created = recreated
+        _skipScroll?.(3)
+        _refresh?.(false)
       }
 
       undoStack.value.push(entry)
@@ -158,5 +206,5 @@ export function useActionsCaching() {
   onMounted(()        => document.addEventListener('keydown', _onKeydown))
   onBeforeUnmount(()  => document.removeEventListener('keydown', _onKeydown))
 
-  return { cacheAction, undo, redo, canUndo, canRedo, init }
+  return { cacheAction, replaceLastAction, undo, redo, canUndo, canRedo, init }
 }

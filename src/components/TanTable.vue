@@ -77,12 +77,12 @@ const props = defineProps({
   emptyRowsCount: { type: Number,  default: 0 },
 })
 
-const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine', 'rows-loaded'])
+const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine', 'rows-loaded', 'paste-rows'])
 
 // ─── API + Notifications ──────────────────────────────────────────────────
 const api = apiCtor(props.table)
 const { notify } = useNotifications()
-const { cacheAction, undo, redo, canUndo, canRedo, init: initUndoRedo } = useActionsCaching()
+const { cacheAction, replaceLastAction, undo, redo, canUndo, canRedo, init: initUndoRedo } = useActionsCaching()
 
 // ─── State (инициализируется в onMounted из api.options()) ────────────────
 const columns     = ref([{ field: 'id', label: 'ID' }])
@@ -808,6 +808,10 @@ const {
   isEditableEmptyRowFn:isEditableEmptyRow,
   hideIdGetter:        () => hideId.value,
   rootElGetter:        () => rootElRef.value,
+  // Что делать со вставленным, решает потребитель: таблица разбирает буфер
+  // и говорит, с какой колонки вставляли, а создавать строки или обновлять
+  // существующие — не её дело.
+  onPasteFn:           (payload) => emit('paste-rows', payload),
 })
 
 // Пересчёт высоты при появлении/скрытии статусбара выделения
@@ -1592,11 +1596,17 @@ function refreshAndScrollToLast() {
   refresh()
 }
 
-defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, refreshAndScrollToLast })
+// cacheAction и replaceLastAction наружу: массовые операции (вставка из Excel,
+// разнос счёта) делаются одним запросом мимо CRUD таблицы, и без этого стрелка
+// «отменить» в тулбаре их не видит.
+defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, refreshAndScrollToLast,
+  cacheAction, replaceLastAction, undo, canUndo })
 </script>
 
 <template>
-  <div ref="rootElRef" class="card pvtables tan-root">
+  <!-- tabindex=-1: таблица должна ДЕРЖАТЬ фокус, иначе браузер шлёт paste
+       на body и Ctrl+V по ячейке до неё не доходит. В Tab-обход не берём. -->
+  <div ref="rootElRef" class="card pvtables tan-root" tabindex="-1">
 
     <!-- ── Toolbar ── -->
     <TanToolbar
@@ -1702,6 +1712,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
               :data-index="vItem.index"
               :style="[{ position:'absolute', top:0, left:0, width:'100%', transform:`translateY(${vItem.start}px)` }, rowStyle(flatItems[vItem.index]?.row.original)]"
               class="tan-row"
+              :data-row-id="flatItems[vItem.index]?.row.original?.id"
               :class="[
                 { 'tan-row-selected': flatItems[vItem.index]?.row.getIsSelected() },
                 rowClass(flatItems[vItem.index]?.row.original),
@@ -1723,6 +1734,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                 :key="cell.id"
                 :style="[{ width: cell.column.getSize() + 'px' }, cellStyle(flatItems[vItem.index]?.row.original, cell.column.id)]"
                 class="tan-td"
+                :data-field="cell.column.id"
                 :class="[
                   cellClass(flatItems[vItem.index]?.row.original, cell.column.id),
                   {

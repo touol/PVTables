@@ -31,6 +31,7 @@
     @get-response="emit('get-response', $event)"
     @refresh-table="emit('refresh-table', $event)"
     @rows-loaded="emit('rows-loaded', $event)"
+    @paste-rows="emit('paste-rows', $event)"
   />
 
   <Toast/>
@@ -95,7 +96,7 @@
       default: 0
     }
   });
-  const emit = defineEmits(['get-response','refresh-table','rows-loaded'])
+  const emit = defineEmits(['get-response','refresh-table','rows-loaded','paste-rows'])
 
   // Внешние row-экшены, прокинутые предком через provide('externalRowActions', fn).
   // fn(tableName) → объект экшенов (или null). Мёржим под именем СВОЕЙ таблицы, чтобы
@@ -162,5 +163,10 @@
     refreshAndScrollToLast: () => useMobileView.value
       ? mobileListRef.value?.refreshAndScrollToLast?.()
       : tanTableRef.value?.refreshAndScrollToLast?.(),
+    // Журнал отмены. Массовую операцию (вставка из Excel, разнос счёта)
+    // потребитель кладёт сюда сам — она идёт одним запросом мимо CRUD таблицы.
+    cacheAction: (entry) => tanTableRef.value?.cacheAction?.(entry),
+    replaceLastAction: (entry) => tanTableRef.value?.replaceLastAction?.(entry),
+    undo: () => tanTableRef.value?.undo?.(),
   });
 </script>

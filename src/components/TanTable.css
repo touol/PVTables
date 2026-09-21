@@ -677,3 +677,8 @@
     max-width: calc(100vw - 1.5rem);
   }
 }
+
+/* Корень таблицы фокусируемый (tabindex=-1) — только чтобы до него доходил
+   Ctrl+V. Рамку фокуса не показываем: пользователь не «входил» в элемент. */
+.tan-root:focus,
+.tan-root:focus-visible { outline: none; }

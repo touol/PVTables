@@ -219,9 +219,13 @@ const validate = (text) => {
 
 // ── block invalid keystrokes for numeric types ─────────────────────────────
 const numericAllowed = (e, allowDot) => {
-  const allowed = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Escape','Enter','a','c','v','x'])
+  // Комбинации с модификатором - не наше дело: Ctrl+V, Ctrl+C, Ctrl+X, Ctrl+A,
+  // Ctrl+Z и прочее должен обрабатывать браузер, а не фильтр цифр.
+  // По e.key их не опознать: в русской раскладке Ctrl+V приходит как 'м', и
+  // проверка по набору букв молча гасила вставку в числовые колонки.
+  if (e.ctrlKey || e.metaKey || e.altKey) return true
+  const allowed = new Set(['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Escape','Enter'])
   if (allowed.has(e.key)) return true
-  if ((e.ctrlKey || e.metaKey) && allowed.has(e.key.toLowerCase())) return true
   if (e.key === '-' && allowDot) return true
   if (allowDot && (e.key === '.' || e.key === ',')) return true
   return /^\d$/.test(e.key)
