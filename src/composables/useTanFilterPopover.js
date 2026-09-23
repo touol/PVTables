@@ -85,6 +85,23 @@ export function useTanFilterPopover({
   // ─── Чеклист: colId → Set<string> выбранных значений ───────────────────
   const colChecklistState = ref({})  // colId → { all: [{value,label}], checked: Set }
 
+  /**
+   * Порядок значений в чеклисте фильтра.
+   *
+   * Размеры и количества удобнее видеть от большего к меньшему (так их и
+   * читают в наряде), а названия — по алфавиту. Даты — от свежих к старым:
+   * сортируем по исходному значению, а не по подписи «12.05.2026».
+   */
+  const sortChecklistValues = (values, col) => {
+    const numeric = values.every(v => v.value !== '' && !isNaN(Number(v.value)))
+    const byDate  = col?.type === 'date' || col?.type === 'datetime'
+    return [...values].sort((a, b) => {
+      if (numeric) return Number(b.value) - Number(a.value)
+      if (byDate)  return String(b.value).localeCompare(String(a.value))
+      return String(a.label).localeCompare(String(b.label), 'ru', { numeric: true, sensitivity: 'base' })
+    })
+  }
+
   const buildUniqueValues = (colId) => {
     const items = lineItemsGetter?.() ?? []
     const cols  = columnsGetter?.() ?? []
@@ -136,7 +153,10 @@ export function useTanFilterPopover({
       seen.set(key, label)
     }
 
-    const result = Array.from(seen.entries()).map(([value, label]) => ({ value, label }))
+    const result = sortChecklistValues(
+      Array.from(seen.entries()).map(([value, label]) => ({ value, label })),
+      col,
+    )
     // Если в выборке есть пустые — добавляем пункт «(Пусто)» (value=''). Клиентский
     // фильтр (stringIncludesFilter) матчит пустые как String(val ?? '') === '',
     // поэтому такой чекбокс фильтрует пустые наравне с обычными значениями.
