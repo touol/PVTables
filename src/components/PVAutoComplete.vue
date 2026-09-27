@@ -250,17 +250,21 @@
     const preloadedRows = tableName.value === props.field.table
       ? props.options?.rows
       : props.options?.by_table?.[tableName.value]?.rows
-    if (Array.isArray(preloadedRows) && preloadedRows.length) {
-      const [ option ] = preloadedRows.filter((option) => model.value == option.id)
-      if (option) {
-        if (option.content_plain === undefined) option.content_plain = stripToName(option.content)
-        selectedItem.value = option
-        if(props.field.show_id){
-          if(option[props.field.show_id] > 0){
-            show_id.value = option[props.field.show_id]
-          }else{
-            show_id.value = model.value
-          }
+    // В предзагрузке только значения, что встречаются в загруженных строках. Значение,
+    // пришедшее извне (новая запись унаследовала фильтр: позиция в категории без своих
+    // позиций), там не найдётся — тогда подпись берём запросом по id, как без предзагрузки.
+    const preloadedOption = Array.isArray(preloadedRows)
+      ? preloadedRows.find((option) => model.value == option.id)
+      : undefined
+    if (preloadedOption) {
+      const option = preloadedOption
+      if (option.content_plain === undefined) option.content_plain = stripToName(option.content)
+      selectedItem.value = option
+      if(props.field.show_id){
+        if(option[props.field.show_id] > 0){
+          show_id.value = option[props.field.show_id]
+        }else{
+          show_id.value = model.value
         }
       }
     }else if(Number(model.value) > 0){
