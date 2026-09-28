@@ -99,6 +99,17 @@ export function useActionsCaching() {
         _skipScroll?.(3)
         _refresh?.(false)
 
+      } else if (entry.type === 'bulk' && entry.serverBulk) {
+        // Общая вставка из Excel: откат одним запросом (paste_bulk), а не
+        // запросом на строку — на больших вставках это минуты.
+        await _api.action('paste_bulk', {
+          update: (entry.updated || []).map(u => ({ id: u.id, values: u.before })),
+          delete: (entry.created || []).map(c => c.id),
+          filters: entry.filters || {},
+        })
+        _skipScroll?.(3)
+        _refresh?.(false)
+
       } else if (entry.type === 'bulk') {
         const f = entry.filters ? { filters: entry.filters } : {}
         // Порядок важен: сперва вернуть изменённым прежние значения, потом
@@ -166,6 +177,22 @@ export function useActionsCaching() {
 
       } else if (entry.type === 'delete') {
         await _api.delete({ ids: entry.deletedIds.join(',') })
+        _skipScroll?.(3)
+        _refresh?.(false)
+
+      } else if (entry.type === 'bulk' && entry.serverBulk) {
+        const resp = await _api.action('paste_bulk', {
+          update: (entry.updated || []).map(u => ({ id: u.id, values: u.after })),
+          create: (entry.created || []).map(c => c.data),
+          filters: entry.filters || {},
+        })
+        // Созданные заново — с новыми id: следующий откат удаляет их.
+        const ids = resp?.data?.created_ids || []
+        if (ids.length === (entry.created || []).length) {
+          entry.created = entry.created.map((c, i) => ({ id: ids[i], data: c.data }))
+        } else {
+          entry.created = ids.map(id => ({ id, data: {} }))
+        }
         _skipScroll?.(3)
         _refresh?.(false)
 

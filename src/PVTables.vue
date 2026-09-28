@@ -28,6 +28,7 @@
     :child="child"
     :embeddedInRow="embeddedInRow"
     :emptyRowsCount="emptyRowsCount"
+    :externalPaste="hasPasteListener"
     @get-response="emit('get-response', $event)"
     @refresh-table="emit('refresh-table', $event)"
     @rows-loaded="emit('rows-loaded', $event)"
@@ -40,7 +41,7 @@
 <script setup>
   import Toast from './components/PVToast.vue'  // синглтон: один тостер на страницу
   import Tooltip from 'primevue/tooltip';
-  import { ref, defineComponent, computed, inject } from "vue";
+  import { ref, defineComponent, computed, inject, getCurrentInstance } from "vue";
   import TanTable from './components/TanTable.vue'
   import TanMobileList from './components/TanMobileList.vue'
   import { useMobileLayout } from './composables/useMobileLayout'
@@ -97,6 +98,10 @@
     }
   });
   const emit = defineEmits(['get-response','refresh-table','rows-loaded','paste-rows'])
+
+  // Страница слушает @paste-rows — значит, вставку из Excel делает сама (расчёт
+  // со своей логикой). Нет слушателя — таблица вставляет через общий 'paste'.
+  const hasPasteListener = !!getCurrentInstance()?.vnode?.props?.onPasteRows
 
   // Внешние row-экшены, прокинутые предком через provide('externalRowActions', fn).
   // fn(tableName) → объект экшенов (или null). Мёржим под именем СВОЕЙ таблицы, чтобы

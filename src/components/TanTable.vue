@@ -63,6 +63,8 @@ import TanEditCell        from './TanEditCell.vue'
 import EditField          from './EditField.vue'
 import PVPrintAction      from './PVPrintAction.vue'
 import { toDisplayText } from '../utils/value-format.js'
+import { useTablePaste } from '../composables/useTablePaste.js'
+import PVPasteHint        from './PVPasteHint.vue'
 
 // ─── Props (идентичны PVTables.vue) ───────────────────────────────────────
 const props = defineProps({
@@ -75,6 +77,9 @@ const props = defineProps({
   scrollHeight:   { type: String,  default: '85vh' },
   autoFitHeight:  { type: Boolean, default: false },
   emptyRowsCount: { type: Number,  default: 0 },
+  // Страница сама обрабатывает вставку из Excel (слушает @paste-rows, как
+  // расчёт) — тогда отдаём ей матрицу. Иначе вставку делает таблица сама.
+  externalPaste:  { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['get-response', 'refresh-table', 'switch-engine', 'rows-loaded', 'paste-rows'])
@@ -166,6 +171,18 @@ const refresh = (from_parent, tbl) => {
     }
   }
 }
+
+// Вставка из Excel силами самой таблицы (если страница не взяла её на себя).
+// Геттеры, а не значения: prepFilters и колонки появляются после options().
+const tablePaste = useTablePaste({
+  api,
+  prepFilters:    () => prepFilters?.(),
+  notify,
+  refresh:        (fromParent) => refresh(fromParent),
+  cacheAction, replaceLastAction, undo,
+  actionsGetter:  () => actions1.value,
+  columnsGetter:  () => visibleColumns.value,
+})
 
 // После отката версии — перезагрузить таблицу и закрыть модалку редактирования
 const onVersionRestored = () => {
@@ -808,10 +825,11 @@ const {
   isEditableEmptyRowFn:isEditableEmptyRow,
   hideIdGetter:        () => hideId.value,
   rootElGetter:        () => rootElRef.value,
-  // Что делать со вставленным, решает потребитель: таблица разбирает буфер
-  // и говорит, с какой колонки вставляли, а создавать строки или обновлять
-  // существующие — не её дело.
-  onPasteFn:           (payload) => emit('paste-rows', payload),
+  // Страница со своей вставкой (расчёт) получает матрицу событием и решает
+  // сама. Остальные таблицы вставляют через общий 'paste' на сервере.
+  onPasteFn:           (payload) => props.externalPaste
+                                      ? emit('paste-rows', payload)
+                                      : tablePaste.onPaste(payload),
 })
 
 // Пересчёт высоты при появлении/скрытии статусбара выделения
@@ -1633,6 +1651,9 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       @print-success="notify('success', { detail: 'Печать выполнена успешно' })"
       @print-error="(err) => notify('error', { detail: `Ошибка печати: ${err.message}` })"
     />
+
+    <!-- ── Итог вставки из Excel (своя вставка таблицы) ── -->
+    <PVPasteHint v-if="!props.externalPaste" :paste="tablePaste" />
 
     <!-- ── Loading overlay ── -->
     <div v-if="loading" class="tan-loading">
