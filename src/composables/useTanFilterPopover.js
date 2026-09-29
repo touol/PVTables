@@ -28,9 +28,11 @@ export function useTanFilterPopover({
 
   // ─── matchMode опции по типу колонки ────────────────────────────────────
   const MATCH_MODES = {
-    text:     ['startsWith', 'contains', 'equals', 'notEquals'],
-    textarea: ['startsWith', 'contains', 'equals', 'notEquals'],
-    view:     ['startsWith', 'contains', 'equals', 'notEquals'],
+    // «Содержит» первым — он же по умолчанию: номер счёта, артикул, кусок
+    // названия ищут в середине строки, «Начинается с» не находило (Ксения, 29.09).
+    text:     ['contains', 'startsWith', 'equals', 'notEquals'],
+    textarea: ['contains', 'startsWith', 'equals', 'notEquals'],
+    view:     ['contains', 'startsWith', 'equals', 'notEquals'],
     number:   ['equals', 'notEquals', 'gt', 'gte', 'lt', 'lte'],
     decimal:  ['equals', 'notEquals', 'gt', 'gte', 'lt', 'lte'],
     autocomplete: ['equals', 'notEquals'],

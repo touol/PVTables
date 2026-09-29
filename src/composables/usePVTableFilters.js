@@ -59,10 +59,11 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
             };
             break;
           default:
+            // Текст — «Содержит» по умолчанию (как в окне фильтра колонки)
             filters0[field] = {
               operator: FilterOperator.AND,
               constraints: [
-                { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+                { value: null, matchMode: FilterMatchMode.CONTAINS },
               ],
             };
         }
