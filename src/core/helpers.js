@@ -8,11 +8,10 @@ export const rowsHandler = (rowsData, fields) => {
         switch (fields[field].type) {
           case "boolean":
             if (item.hasOwnProperty(field)) {
-              if (item[field] == null || item[field] === "0") {
-                item[field] = false;
-              } else {
-                item[field] = true;
-              }
+              // Ложь — и строка "0", и число 0: на PHP 8.1+ PDO MySQL отдаёт целые числами,
+              // и 0 раньше становился true (08.10.2026, галочки «включён» у выключенных тарифов)
+              const v = item[field];
+              item[field] = !(v == null || v === "" || v === false || v == 0);
             }
             break;
           // case "number":
