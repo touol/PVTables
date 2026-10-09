@@ -7,6 +7,7 @@ import Tooltip  from 'primevue/tooltip'
 const vTooltip = Tooltip
 import PVAutoComplete      from './PVAutoComplete.vue'
 import PVMultiAutoComplete from './PVMultiAutoComplete.vue'
+import gtsSelect           from './gtsSelect.vue'
 import PVPrintAction       from './PVPrintAction.vue'
 
 const props = defineProps({
@@ -71,6 +72,12 @@ const emit = defineEmits([
         <PVMultiAutoComplete
           v-else-if="filter.type === 'multiautocomplete'"
           :field="filter" v-model="filter.default" :options="filter.rows"
+          @set-value="emit('set-top-filter', filter)"
+        />
+        <!-- Выбор из фиксированного списка (select_data), напр. «последние / все» -->
+        <gtsSelect
+          v-else-if="filter.type === 'select'"
+          v-model:id="filter.default" :options="filter.select_data || []"
           @set-value="emit('set-top-filter', filter)"
         />
       </template>

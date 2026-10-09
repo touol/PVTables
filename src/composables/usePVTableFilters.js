@@ -25,7 +25,9 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
     // Инициализация фильтров для полей таблицы
     for (let field in fields) {
       if (props.filters.hasOwnProperty(field)) {
-        filters0[field] = props.filters[field];
+        // Копия, а не ссылка: правка фильтра в подтаблице иначе меняет объект родителя,
+        // срабатывает watch(props.filters) → initFilters() и верхний фильтр сбрасывается
+        filters0[field] = JSON.parse(JSON.stringify(props.filters[field]));
       } else if (fields[field].filter) {
         filters0[field] = fields[field].filter;
       } else {
@@ -73,12 +75,15 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
     // Добавление фильтров из props, которых нет в fields
     for (let field in props.filters) {
       if (!filters0.hasOwnProperty(field)) {
-        filters0[field] = props.filters[field];
+        filters0[field] = JSON.parse(JSON.stringify(props.filters[field]));
       }
     }
 
     // Инициализация верхних фильтров
     for (let field in topFilters0) {
+      // Фильтр, пришедший от родителя (подтаблица/вкладка), важнее значения по умолчанию:
+      // иначе вкладка «все расчёты семьи» получала бы «только последние» из шапки
+      if (props.filters.hasOwnProperty(field)) continue;
       const value = topFilters0[field].default ? topFilters0[field].default : null;
       filters0[field] = {
         operator: FilterOperator.AND,
@@ -164,6 +169,13 @@ export function usePVTableFilters(props, fields, topFilters0, loadLazyData, dt, 
     } catch {}
 
     topFilters.value = JSON.parse(JSON.stringify(topFilters0));
+    // Верхний фильтр, заданный родителем, показывает фактическое значение, а не default
+    for (let field in topFilters.value) {
+      const pf = props.filters[field];
+      if (!pf) continue;
+      const v = Array.isArray(pf.constraints) ? pf.constraints[0]?.value : pf.value;
+      topFilters.value[field].default = v === null || v === undefined ? '' : v;
+    }
     filters.value = filters0;
   };
 
