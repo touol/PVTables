@@ -29,6 +29,14 @@ import { FileGallery, FileUploadDialog, FileEditDialog, FileViewDialog, FileGall
 // Сток и так в бандле (PVTableModel, filebrowser/FileView), лишнего веса нет.
 import DataTable from "primevue/datatable";
 import { ComponentLoader } from './utils/component-loader.js'
+// Чат ИИ (шлюз /gtsai, компонент gtsAI). Живёт здесь, потому что PVTables уже
+// есть на каждой странице: иначе страница вроде расчёта тянула бы второй
+// Vue-app ради одного чата. Разбор markdown внутри — динамическим import(),
+// то есть отдельным чанком, а не весом pvtables.js.
+import GtsAIChat from './components/gtsai/GtsAIChat.vue'
+// Размещение чата на странице: слева / справа / сверху / снизу / в потоке.
+// Выбор делает пользователь, помнится в localStorage.
+import GtsAIDock from './components/gtsai/GtsAIDock.vue'
 
 // Создаем глобальный PVTablesAPI для использования в динамически загружаемых компонентах
 if (!window.PVTablesAPI) {
@@ -362,6 +370,9 @@ export default {
         app.component('FileUploadDialog', FileUploadDialog)
         app.component('FileEditDialog', FileEditDialog)
         app.component('FileViewDialog', FileViewDialog)
+
+        app.component('GtsAIChat', GtsAIChat)
+        app.component('GtsAIDock', GtsAIDock)
         
     }
 }
@@ -398,6 +409,9 @@ export {
     FileViewDialog as FileViewDialog,
     FileGalleryAPI as FileGalleryAPI,
     fileUtils as fileUtils,
+
+    GtsAIChat as GtsAIChat,
+    GtsAIDock as GtsAIDock,
     
     // ComponentLoader
     ComponentLoader as ComponentLoader,
