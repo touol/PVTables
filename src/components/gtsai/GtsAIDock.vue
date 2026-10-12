@@ -464,9 +464,20 @@ defineExpose({ setOpen, setDock })
   color: var(--gts-accent);
 }
 
-.gtsai-dock-body { flex: 1; min-height: 0; }
+/* ⚠️ Тело — само флекс-контейнер, а чат внутри тянется флексом, а НЕ
+   процентом высоты. У встроенной панели высота задана `min-height`, при этом
+   `height` остаётся `auto`; проценты относительно auto-высоты не разрешаются,
+   и чат оставался по содержимому — поле ввода повисало посередине, а под ним
+   была пустота (видно было в админке gtsAI). */
+.gtsai-dock-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* Чат внутри занимает всю панель; своей рамки ему здесь не надо. */
-.gtsai-dock-body :deep(.gtsai) { height: 100%; min-height: 0; border: 0; border-radius: 0; }
+.gtsai-dock-body :deep(.gtsai) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
 
 .gtsai-dock-grip {
   position: absolute;
