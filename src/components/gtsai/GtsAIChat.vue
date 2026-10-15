@@ -17,6 +17,16 @@
         <!-- Разметку рисует готовый MdPreview: таблицы, HTML, формулы,
              диаграммы и кнопка копирования у блоков кода — всё его. -->
         <div v-else-if="m.role === 'assistant'" class="gtsai-md">
+          <!-- Чем модель пользовалась. Показываем ПЕРЕД текстом: строки
+               появляются по ходу работы, а текст дописывается под ними, и
+               порядок не скачет. Заодно это видимый признак, что ответ ещё
+               готовится - ход с инструментами идёт полминуты и дольше. -->
+          <div v-if="m.tools && m.tools.length" class="gtsai-tools">
+            <div v-for="(t, ti) in m.tools" :key="ti" class="gtsai-tool" :title="toolFull(t)">
+              <span class="gtsai-tool-name">{{ t.name }}</span>
+              <span v-if="toolArgs(t)" class="gtsai-tool-args">{{ toolArgs(t) }}</span>
+            </div>
+          </div>
           <Suspense>
             <MdPreview
               :model-value="m.content"
@@ -318,7 +328,23 @@ const openChat = async (id) => {
 
     for (const row of j.rows || []) {
       if (row.role === 'user' || row.role === 'assistant') {
-        messages.value.push({ role: row.role, content: row.content || '' })
+        // У ответа в blocks лежат шаги хода - те же вызовы, что показывались
+        // вживую. Достаём их, чтобы открытый заново чат выглядел так же.
+        const msg = { role: row.role, content: row.content || '' }
+        if (row.role === 'assistant' && row.blocks) {
+          try {
+            const b = JSON.parse(row.blocks)
+            const tools = []
+            for (const step of b.turn || []) {
+              if (step.role !== 'assistant' || !Array.isArray(step.content)) continue
+              for (const block of step.content) {
+                if (block.type === 'tool_use') tools.push({ name: block.name, input: block.input })
+              }
+            }
+            if (tools.length) msg.tools = tools
+          } catch (e) { /* старый чат без шагов - покажем как есть */ }
+        }
+        messages.value.push(msg)
       } else if (row.role === 'pending') {
         let data = {}
         try { data = JSON.parse(row.blocks || '{}') } catch { data = {} }
@@ -488,6 +514,10 @@ const handle = (frame, answer) => {
     answer.content += payload.text || ''
     healIfNeeded(answer)
     scroll()
+  } else if (event === 'tool') {
+    if (!answer.tools) answer.tools = []
+    answer.tools.push({ name: payload.name, input: payload.input })
+    scroll()
   } else if (event === 'error') {
     error.value = payload.message || 'Ошибка ИИ'
   } else if (event === 'confirm') {
@@ -504,6 +534,31 @@ const handle = (frame, answer) => {
   } else if (event === 'done' || event === 'start') {
     if (payload.chat_id) chatId.value = payload.chat_id
   }
+}
+
+/**
+ * Короткая подпись вызова: таблица, действие, число строк - то, по чему
+ * человек понимает, что происходит. Полные аргументы висят в подсказке:
+ * в ленте они занимали бы пол-экрана.
+ */
+const toolArgs = (t) => {
+  const i = t && t.input && typeof t.input === 'object' ? t.input : {}
+  const parts = []
+  if (i.table) parts.push(i.table)
+  if (i.action) parts.push(i.action)
+  if (i.name && !i.table) parts.push(i.name)
+  if (Array.isArray(i.rows)) parts.push('строк: ' + i.rows.length)
+  if (i.filters && typeof i.filters === 'object') {
+    const keys = Object.keys(i.filters)
+    if (keys.length) parts.push('фильтр: ' + keys.join(', '))
+  }
+  if (i.query) parts.push(String(i.query).replace(/\s+/g, ' ').slice(0, 60))
+  if (!parts.length && i.limit) parts.push('до ' + i.limit)
+  return parts.join(' · ')
+}
+
+const toolFull = (t) => {
+  try { return t.name + ': ' + JSON.stringify(t.input) } catch (e) { return t.name }
 }
 
 const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : String(v))
@@ -591,6 +646,32 @@ defineExpose({ openChat, loadChats })
   font: inherit;
   font-size: var(--gts-size-sm);
 }
+/* Вызовы инструментов: служебная строка, читать её не обязательно -
+   поэтому мельче и приглушённее текста ответа. */
+.gtsai-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--gts-line);
+}
+.gtsai-tool {
+  display: flex;
+  gap: 0.375rem;
+  align-items: baseline;
+  font-size: var(--gts-size-sm);
+  color: var(--gts-ink-3, var(--gts-ink-2));
+  line-height: 1.3;
+}
+.gtsai-tool-name { font-family: var(--gts-font-mono, monospace); color: var(--gts-ink-2); }
+.gtsai-tool-args {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .gtsai-feed { flex: 1; overflow-y: auto; padding: 0.75rem; }
 .gtsai-msg { margin-bottom: 0.75rem; }
 .gtsai-text { white-space: pre-wrap; word-break: break-word; }
