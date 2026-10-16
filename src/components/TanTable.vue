@@ -530,7 +530,7 @@ const actionsColDef = computed(() => ({
       action.isRowPrint
         ? h(PVPrintAction, {
             table: props.table,
-            filters,
+            filters: filters?.value,
             api,
             action: action.printAction || 'print',
             row_id: row.original.id,
