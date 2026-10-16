@@ -270,6 +270,14 @@ const remember = () => {
 }
 
 const recall = () => {
+  // ⚠️ Когда чат - содержимое страницы (fill), запомненное место НЕ
+  // применяем. Иначе страница, открытая однажды с панелью сбоку, навсегда
+  // остаётся пустой: в этом режиме нет полосы с переключателем, и вернуть
+  // панель на место нечем. Так и случилось на office.
+  if (props.fill) {
+    dock.value = 'inline'
+    return
+  }
   try {
     const saved = JSON.parse(localStorage.getItem(key.value) || 'null')
     if (!saved) return
