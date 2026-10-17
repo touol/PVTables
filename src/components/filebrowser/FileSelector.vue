@@ -55,7 +55,10 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: 'Выберите файл' },
   disabled: { type: Boolean, default: false },
-  mediaSource: { type: Number, default: 1 },
+  // ⚠️ НЕ 1: источник №1 - «Filesystem» с базой в корне сайта, и браузер
+  // файлов на нём отвечает «источник настроен небезопасно». Не задан источник -
+  // пусть это будет видно сразу, а не превращается в попытку открыть весь сайт.
+  mediaSource: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['update:modelValue', 'fileSelected']);
