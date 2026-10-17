@@ -16,6 +16,13 @@
 
         <!-- Разметку рисует готовый MdPreview: таблицы, HTML, формулы,
              диаграммы и кнопка копирования у блоков кода — всё его. -->
+        <!-- Готовый файл: ссылка на скачивание. -->
+        <a v-else-if="m.role === 'file'" class="gtsai-file-out" :href="m.data.url" target="_blank" rel="noopener">
+          <span class="gtsai-file-out-name">{{ m.data.name }}</span>
+          <span class="gtsai-file-out-size">{{ kb(m.data.size) }}</span>
+          <span class="gtsai-file-out-act">скачать</span>
+        </a>
+
         <div v-else-if="m.role === 'assistant'" class="gtsai-md">
           <!-- Чем модель пользовалась. Показываем ПЕРЕД текстом: строки
                появляются по ходу работы, а текст дописывается под ними, и
@@ -121,7 +128,7 @@
         <button class="gtsai-attach" :disabled="busy || uploading" title="Прикрепить файл или снимок" @click="pick">
           {{ uploading ? '…' : '+' }}
         </button>
-        <input ref="picker" type="file" multiple accept="image/*,application/pdf,.xlsx,.xlsm,.xls,.csv" hidden @change="onPick">
+        <input ref="picker" type="file" multiple accept="image/*,application/pdf,.xlsx,.xlsm,.xls,.csv,.txt,.md,.markdown,.json,.xml,.yml,.yaml,.log" hidden @change="onPick">
         <select
           v-if="models.length"
           v-model="model"
@@ -514,6 +521,12 @@ const handle = (frame, answer) => {
     answer.content += payload.text || ''
     healIfNeeded(answer)
     scroll()
+  } else if (event === 'file') {
+    // Файл, который собрала модель. Показываем ссылкой в ленте: результат
+    // разбора заявки забирают файлом, пересказ таблицы текстом для этого
+    // бесполезен.
+    messages.value.push({ role: 'file', data: payload })
+    scroll()
   } else if (event === 'tool') {
     if (!answer.tools) answer.tools = []
     answer.tools.push({ name: payload.name, input: payload.input })
@@ -671,6 +684,24 @@ defineExpose({ openChat, loadChats })
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Готовый файл: это действие, поэтому выглядит кнопкой, а не строкой текста. */
+.gtsai-file-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gts-line);
+  border-radius: var(--gts-radius);
+  background: var(--gts-surface-2);
+  color: var(--gts-ink);
+  text-decoration: none;
+}
+.gtsai-file-out:hover { border-color: var(--gts-accent); }
+.gtsai-file-out-name { font-weight: var(--gts-weight-bold, 600); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gtsai-file-out-size { color: var(--gts-ink-3, var(--gts-ink-2)); font-size: var(--gts-size-sm); }
+.gtsai-file-out-act { margin-left: auto; color: var(--gts-accent); font-size: var(--gts-size-sm); }
 
 .gtsai-feed { flex: 1; overflow-y: auto; padding: 0.75rem; }
 .gtsai-msg { margin-bottom: 0.75rem; }
