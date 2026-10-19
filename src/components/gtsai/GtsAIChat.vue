@@ -716,7 +716,18 @@ defineExpose({ openChat, loadChats })
 .gtsai-md { word-break: break-word; }
 .gtsai-md :deep(p) { margin: 0 0 0.5rem; }
 .gtsai-md :deep(p:last-child) { margin-bottom: 0; }
-.gtsai-md :deep(ul), .gtsai-md :deep(ol) { margin: 0 0 0.5rem; padding-left: 1.25rem; }
+/* ⚠️ Маркеры списков возвращаем руками: сброс Tailwind (preflight) гасит их
+   глобально - `ol,ul,menu{list-style:none}`. Из-за этого нумерованный список
+   в ответе выглядел набором абзацев без цифр, и человек на той стороне решил,
+   что модель не прислала список. */
+.gtsai-md :deep(ul), .gtsai-md :deep(ol) { margin: 0 0 0.5rem; padding-left: 1.5rem; }
+.gtsai-md :deep(ul) { list-style: disc outside; }
+.gtsai-md :deep(ol) { list-style: decimal outside; }
+.gtsai-md :deep(ul ul) { list-style: circle outside; }
+.gtsai-md :deep(ol ol) { list-style: lower-alpha outside; }
+.gtsai-md :deep(li) { margin: 0.125rem 0; }
+.gtsai-md :deep(li > p) { margin: 0; }
+.gtsai-md :deep(li > ul), .gtsai-md :deep(li > ol) { margin-bottom: 0; }
 .gtsai-md :deep(h1), .gtsai-md :deep(h2), .gtsai-md :deep(h3) {
   margin: 0.5rem 0 0.375rem;
   font-size: var(--gts-size-base);
