@@ -338,20 +338,30 @@ const openChat = async (id) => {
         // У ответа в blocks лежат шаги хода - те же вызовы, что показывались
         // вживую. Достаём их, чтобы открытый заново чат выглядел так же.
         const msg = { role: row.role, content: row.content || '' }
+        let files = []
         if (row.role === 'assistant' && row.blocks) {
           try {
             const b = JSON.parse(row.blocks)
-            const tools = []
-            for (const step of b.turn || []) {
-              if (step.role !== 'assistant' || !Array.isArray(step.content)) continue
-              for (const block of step.content) {
-                if (block.type === 'tool_use') tools.push({ name: block.name, input: block.input })
+            // Готовый список вызовов сервер кладёт всегда; шаги хода (turn) -
+            // только когда они нетяжёлые, поэтому они тут запасной источник,
+            // а не основной.
+            let tools = Array.isArray(b.calls) ? b.calls.slice() : []
+            if (!tools.length) {
+              for (const step of b.turn || []) {
+                if (step.role !== 'assistant' || !Array.isArray(step.content)) continue
+                for (const block of step.content) {
+                  if (block.type === 'tool_use') tools.push({ name: block.name, input: block.input })
+                }
               }
             }
             if (tools.length) msg.tools = tools
+            if (Array.isArray(b.files)) files = b.files
           } catch (e) { /* старый чат без шагов - покажем как есть */ }
         }
         messages.value.push(msg)
+        // Ссылки на выданные файлы идут отдельными сообщениями - ровно так же,
+        // как они появлялись вживую.
+        for (const f of files) messages.value.push({ role: 'file', data: f })
       } else if (row.role === 'pending') {
         let data = {}
         try { data = JSON.parse(row.blocks || '{}') } catch { data = {} }
