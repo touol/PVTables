@@ -205,6 +205,7 @@ const props = defineProps({
 })
 
 const settingTitle = ref('')
+const csrf = ref('')
 const model = ref('')
 const models = ref([])
 const canWrite = ref(false)
@@ -260,6 +261,10 @@ onMounted(async () => {
     const r = await fetch('/gtsai/settings?setting=' + encodeURIComponent(props.setting), { credentials: 'same-origin' })
     const j = await r.json()
     if (!j.success) { error.value = j.message; return }
+    // Токен этой сессии: прикладываем ко всему, что меняет состояние.
+    // Без него шлюз такие запросы не принимает - чужая страница с куками
+    // пользователя его не прочитает.
+    csrf.value = j.data.csrf || ''
     settingTitle.value = j.data.title || ''
     model.value = j.data.model || ''
     canWrite.value = !!j.data.allow_write
@@ -413,7 +418,12 @@ const upload = async (list) => {
       form.append('file', file, file.name || 'снимок.png')
       form.append('setting', props.setting)
       form.append('chat_id', chatId.value)
-      const r = await fetch('/gtsai/upload', { method: 'POST', credentials: 'same-origin', body: form })
+      const r = await fetch('/gtsai/upload', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-GTSAI-Token': csrf.value },
+        body: form,
+      })
       const j = await r.json()
       if (!j.success) { error.value = j.message; continue }
       files.value.push(j.data)
@@ -474,7 +484,7 @@ const send = async (route = '/message') => {
     const r = await fetch('/gtsai' + route, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-GTSAI-Token': csrf.value },
       signal: controller.signal,
       body: JSON.stringify({
         setting: props.setting,
@@ -598,7 +608,7 @@ const apply = async (m) => {
     const r = await fetch('/gtsai/apply', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-GTSAI-Token': csrf.value },
       body: JSON.stringify({ setting: props.setting, pending_id: m.data.pending_id }),
     })
     const j = await r.json()
@@ -619,7 +629,7 @@ const rollback = async (m) => {
     const r = await fetch('/gtsai/rollback', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-GTSAI-Token': csrf.value },
       body: JSON.stringify({ setting: props.setting, batch_id: m.data.batch_id }),
     })
     const j = await r.json()
