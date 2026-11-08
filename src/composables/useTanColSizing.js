@@ -204,9 +204,23 @@ export function useTanColSizing({ tableName, api, notify, scrollRef, actionsRow,
   const fitColumnsToContainer = () => {
     if (!scrollRef.value) return
     // clientWidth — внутренняя ширина без скроллбара и бордеров.
-    // CSS width:100%;min-width:0 гарантирует что контейнер не расширяется по таблице.
-    const containerWidth = scrollRef.value.clientWidth - 2
-    if (!containerWidth) { requestAnimationFrame(() => fitColumnsToContainer()); return }
+    // Меряем контейнер без таблицы. CSS width:100%;min-width:0 не спасает, если родитель считает
+    // ширину по содержимому (колонка grid с auto, flex, inline-block): контейнер держится шириной
+    // самой таблицы. Тогда подгонка ужимала её на 2px за такт ResizeObserver, и при сужении окна
+    // таблица несколько секунд медленно ползла к нужной ширине. Обнулить width мало: при
+    // table-layout:fixed таблица всё равно занимает сумму колонок. Таблица возвращается
+    // до отрисовки, поэтому пользователь этого не видит.
+    const scrollEl = scrollRef.value
+    const tableEl = scrollEl.querySelector(':scope > .tan-table')
+    const scrollLeft = scrollEl.scrollLeft
+    const tableDisplay = tableEl ? tableEl.style.display : ''
+    if (tableEl) tableEl.style.display = 'none'
+    const containerWidth = scrollEl.clientWidth - 2
+    if (tableEl) {
+      tableEl.style.display = tableDisplay
+      scrollEl.scrollLeft = scrollLeft
+    }
+    if (containerWidth <= 0) { requestAnimationFrame(() => fitColumnsToContainer()); return }
 
     const btnSlot = (actionBtnSize?.value ?? 32) + 2  // кнопка + gap
     // row_print (PVPrintAction в compact: иконка-print + chevron в InputGroup).
