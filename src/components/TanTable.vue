@@ -60,6 +60,7 @@ import TanFilterPopoverUI from './TanFilterPopoverUI.vue'
 import TanColSizePopoverUI from './TanColSizePopoverUI.vue'
 import TanSettingsPopover from './TanSettingsPopover.vue'
 import TanEditCell        from './TanEditCell.vue'
+import PVCalc             from './PVCalc.vue'
 import EditField          from './EditField.vue'
 import PVPrintAction      from './PVPrintAction.vue'
 import { toDisplayText } from '../utils/value-format.js'
@@ -1787,7 +1788,15 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
                   @cancel="closeInline"
                   @navigate="(dir) => onInlineNavigate(cell, dir)"
                 />
-                <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                <template v-else>
+                  <!-- калькулятор у числовой колонки с col.calc: «Вставить» сохраняет ячейку -->
+                  <span v-if="cell.column.columnDef.meta?.calc && !isEmptyRow(cell.row.original.id) && isCellEditable(cell.column.columnDef.meta, cell.row.original)"
+                        class="tan-calc-cell" @click.stop @dblclick.stop @mousedown.stop>
+                    <PVCalc :table="cell.column.columnDef.meta.calc" compact insert
+                            @insert="(v) => saveCellUpdate(cell.row.original, cell.column.id, cell.column.columnDef.meta.type === 'number' ? Math.round(v) : v)" />
+                  </span>
+                  <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                </template>
                 <!-- Fill handles: copy + increment -->
                 <div
                   v-if="fillHandleCell && fillHandleCell.rowIndex === getRowLineIndex(cell.row) && fillHandleCell.colIndex === getColVisibleIndex(cell.column.id)"

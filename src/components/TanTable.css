@@ -682,3 +682,7 @@
    Ctrl+V. Рамку фокуса не показываем: пользователь не «входил» в элемент. */
 .tan-root:focus,
 .tan-root:focus-visible { outline: none; }
+
+/* калькулятор в ячейке числовой колонки (col.calc) */
+.tan-calc-cell { float: right; margin: -0.15rem 0 -0.15rem 0.35rem; }
+.tan-calc-cell .pv-calc-mini { width: 1.6rem; min-height: 1.4rem; font-size: 0.8rem; }

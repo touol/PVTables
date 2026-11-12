@@ -50,6 +50,21 @@
         :disabled="use_readonly && col.readonly"
         class="w-full" autocomplete="off"
     />
+    <!-- число с калькулятором (col.calc — таблица книг): «Вставить» в калькуляторе подставляет результат -->
+    <div v-else-if="(col.type == 'decimal' || col.type == 'number') && col.calc" class="pv-calc-field">
+        <InputNumber
+            :id="col.field"
+            v-model="numericModel"
+            @update:modelValue="setValue()"
+            @focus="onNumericFocus"
+            @blur="isNumericFocused = false"
+            :minFractionDigits="col.type == 'decimal' && !isNumericFocused ? col.FractionDigits : 0"
+            :maxFractionDigits="col.type == 'decimal' ? col.FractionDigits : 0"
+            :disabled="use_readonly && col.readonly"
+            class="w-full" autocomplete="off"
+        />
+        <PVCalc v-if="!(use_readonly && col.readonly)" :table="col.calc" compact insert @insert="onCalcInsert" />
+    </div>
     <InputNumber
         v-else-if="col.type == 'decimal'"
         :id="col.field"
@@ -135,6 +150,7 @@
     import PVMultiple from "./PVMultiple.vue";
     import GTSSelect from "./gtsSelect.vue";
     import FileSelector from './filebrowser/FileSelector.vue';
+    import PVCalc from './PVCalc.vue';
 
     const model = defineModel({
         type: [String,Number,Boolean,Date],
@@ -264,6 +280,11 @@
     const setValue = () => {
         emit('set-value', model.value)
     }
+    // результат калькулятора — в поле
+    const onCalcInsert = (v) => {
+        model.value = col.value.type == 'number' ? Math.round(v) : v
+        emit('set-value', model.value)
+    }
     const updateValue = ($evt) => {
         model.value = $evt;
         emit('set-value', model.value)
@@ -278,3 +299,7 @@
       return field.split('.').reduce((acc, curr) => acc[curr], obj);
     }
 </script>
+
+<style>
+.pv-calc-field { display: flex; gap: 0.25rem; align-items: stretch; width: 100%; }
+</style>

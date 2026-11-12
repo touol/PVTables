@@ -13,6 +13,7 @@ import PVTable from './components/PVTable.vue'
 import PVForm from './components/PVForm.vue'
 import PVTableModel from './components/PVTableModel.vue'
 import EditField from "./components/EditField.vue";
+import PVCalc from './components/PVCalc.vue'
 import { useNotifications } from './components/useNotifications.js'
 import UniTree from './components/UniTree.vue'
 import UniTreePanel from './components/UniTreePanel.vue'
@@ -391,6 +392,7 @@ export {
     PVForm as PVForm,
     PVTableModel as PVTableModel,
     EditField as EditField,
+    PVCalc as PVCalc,
     useNotifications as useNotifications,
     UniTree as UniTree,
     UniTreePanel as UniTreePanel,
