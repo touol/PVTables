@@ -613,8 +613,11 @@
     return response.data.rows[0] || null;
   }
   
-  // Функция для автоматического заполнения полей поиска на основе выбранного значения
-  const fillSearchFieldsFromOption = async (option) => {
+  // Функция для автоматического заполнения полей поиска на основе выбранного значения.
+  // Объявление function, а не const: watchEffect выше выполняется синхронно в setup и при уже
+  // выбранном значении (options.rows содержит model) зовёт её сразу — с const было
+  // «Cannot access … before initialization» и форма не открывалась (office, 20.11.2026).
+  async function fillSearchFieldsFromOption(option) {
     for (const searchField of searchFields.value) {
       const fieldKey = searchField.key;
       
@@ -645,8 +648,8 @@
         }
       }
     }
-  };
-  
+  }
+
   const onUserInputEnd = async ($evt) => {
     const userInput = $evt.target.value
 
