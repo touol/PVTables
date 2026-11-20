@@ -245,6 +245,9 @@ export default {
       immediate: true
     }
   },
+  beforeUnmount() {
+    pvtLog(`PVForm unmount: таблица=${this.mywatch.table || '-'}`)
+  },
   created() {
     pvtLog(`PVForm created: таблица=${this.mywatch.table || '-'}, watch=${this.mywatch.enabled ? JSON.stringify(this.mywatch.fields) : 'нет'}, полей=${(this.columns || []).length}`, { ...this.modelValue })
 

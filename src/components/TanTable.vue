@@ -18,7 +18,7 @@ import {
   getExpandedRowModel,
   FlexRender,
 } from '@tanstack/vue-table'
-import { useVirtualizer } from '@tanstack/vue-virtual'
+import { useVirtualizer, defaultRangeExtractor } from '@tanstack/vue-virtual'
 import { resolveFieldTable } from '../utils/table-by.js'
 
 import Button   from 'primevue/button'
@@ -401,6 +401,7 @@ const onAutoFitHeightToggle = () => {
 watch(autoFitHeight, () => onAutoFitHeightToggle())
 
 onBeforeUnmount(() => {
+  pvtLog(`${props.table}: TanTable UNMOUNT${lineItemDialog?.value ? ' — при ОТКРЫТОМ диалоге редактирования!' : ''}${modalFormDialog.value ? ' — при ОТКРЫТОЙ модальной форме!' : ''}`)
   window.removeEventListener('resize', calculateTableHeight)
 })
 
@@ -1230,6 +1231,18 @@ const virtualizer = useVirtualizer({
   },
   overscan: 8,
   getItemKey: i => flatItems.value[i]?.key ?? String(i),
+  // Раскрытые строки (строка + её подтаблица) держим в DOM всегда, даже вне видимой
+  // области. Иначе подтаблица размонтируется вместе с открытым в ней окном: на office
+  // (20.11.2026) у позиций закупок ниже ~15-й строки окно редактирования пропадало сразу
+  // после открытия — без ошибок, просто не было в DOM. Раскрытых строк единицы, лишнего
+  // рендера почти нет; заодно подтаблица не теряет состояние при прокрутке.
+  rangeExtractor: range => {
+    const base = defaultRangeExtractor(range)
+    const keep = []
+    flatItems.value.forEach((it, i) => { if (it.type === 'expansion') keep.push(i - 1, i) })
+    if (!keep.length) return base
+    return [...new Set([...base, ...keep])].filter(i => i >= 0 && i < range.count).sort((a, b) => a - b)
+  },
 })
 
 // При смене данных (сортировка, фильтр, страница) — сбросить кеш высот
@@ -1272,6 +1285,7 @@ watch(lineItems, () => {
   const suppress = consumeSkip?.()
   nextTick(() => {
     if (!suppress && !_scrollToLastPending) {
+      if (scrollRef.value && scrollRef.value.scrollTop) pvtLog(`${props.table}: lineItems обновились — прокрутка в начало (было ${scrollRef.value.scrollTop}px)`)
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
       // После обновления lineItems cell.id может измениться (пустая строка → реальная запись).
