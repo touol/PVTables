@@ -1,5 +1,4 @@
 import { ref, nextTick } from 'vue';
-import { pvtLog, pvtError } from '../utils/pvtDebug';
 
 /**
  * Composable для CRUD операций TanStack-таблицы.
@@ -98,7 +97,6 @@ export function useTanCRUD(
 
   // ── openNew ───────────────────────────────────────────────────────────────
   const openNew = (action) => {
-    
     if (action.watch) {
       mywatch.value = {
         enabled: true,
@@ -115,7 +113,6 @@ export function useTanCRUD(
 
   // ── editLineItem ──────────────────────────────────────────────────────────
   const editLineItem = (item, action) => {
-    pvtLog(`${props.table}: editLineItem, строка id=${item?.id}, watch=${JSON.stringify(action?.watch)}`, { item, action });
     if (action.watch) {
       mywatch.value = {
         enabled: true,
@@ -127,7 +124,6 @@ export function useTanCRUD(
     }
     lineItem.value = { ...item };
     lineItemDialog.value = true;
-    pvtLog(`${props.table}: editLineItem — lineItemDialog = true`);
   };
 
   // ── hideDialog ────────────────────────────────────────────────────────────
@@ -138,7 +134,6 @@ export function useTanCRUD(
 
   // ── saveLineItem (диалог создания/редактирования) ─────────────────────────
   const saveLineItem = async () => {
-    pvtLog(`${props.table}: saveLineItem, строка id=${lineItem.value?.id}`, { ...lineItem.value });
     submitted.value = true;
     const params = { filters: prepFilters(), update_from_modal: 1 };
 
@@ -146,7 +141,6 @@ export function useTanCRUD(
       try {
         const dataBefore = { ...lineItem.value };
         const response = await api.update(lineItem.value, params);
-        pvtLog(`${props.table}: saveLineItem ← ответ update`, response);
         if (!response.success) notify('error', { detail: response.message }, true);
         emit('get-response', { table: props.table, action: 'update', response });
         if (response.data.customFields) {
@@ -172,7 +166,6 @@ export function useTanCRUD(
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (e) {
-        pvtError(`${props.table} saveLineItem`, e, e?.payload || e?.response?.data);
         notify('error', { detail: e.message });
       }
     } else {
@@ -193,7 +186,6 @@ export function useTanCRUD(
         lineItemDialog.value = false;
         lineItem.value = {};
       } catch (e) {
-        pvtError(`${props.table} saveLineItem`, e, e?.payload || e?.response?.data);
         notify('error', { detail: e.message });
       }
     }
@@ -201,7 +193,6 @@ export function useTanCRUD(
 
   // ── confirmDeleteLineItem / deleteLineItem ────────────────────────────────
   const confirmDeleteLineItem = (item) => {
-    pvtLog(`${props.table}: confirmDeleteLineItem, строка id=${item?.id}`);
     lineItem.value = item;
     deleteLineItemDialog.value = true;
   };

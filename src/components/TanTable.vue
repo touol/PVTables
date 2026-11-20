@@ -53,7 +53,6 @@ import { useTanFilterPopover } from '../composables/useTanFilterPopover'
 import { useTanCellSelection } from '../composables/useTanCellSelection'
 import { useMobileLayout }    from '../composables/useMobileLayout'
 import { useTanRowDrag }     from '../composables/useTanRowDrag'
-import { pvtLog, pvtError, pvtInstallGlobal } from '../utils/pvtDebug'
 import { guardScrollOnDialog } from '../utils/scrollGuard'
 
 import TanToolbar         from './TanToolbar.vue'
@@ -221,7 +220,6 @@ const speedDialActions = ref([])
 const modalFormDialog  = ref(false)
 // Окна (Dialog) не должны сдвигать фон — см. utils/scrollGuard.js
 const holdPageScroll = guardScrollOnDialog
-watch(modalFormDialog, v => pvtLog(`${props.table}: модальная форма действия ${v ? 'ОТКРЫТА' : 'закрыта'}`))
 const modalFormData    = ref({})
 const modalFormAction  = ref(null)
 const modalFormRowData = ref(null)
@@ -404,7 +402,6 @@ const onAutoFitHeightToggle = () => {
 watch(autoFitHeight, () => onAutoFitHeightToggle())
 
 onBeforeUnmount(() => {
-  pvtLog(`${props.table}: TanTable UNMOUNT${lineItemDialog?.value ? ' — при ОТКРЫТОМ диалоге редактирования!' : ''}${modalFormDialog.value ? ' — при ОТКРЫТОЙ модальной форме!' : ''}`)
   window.removeEventListener('resize', calculateTableHeight)
 })
 
@@ -520,24 +517,6 @@ const expandColDef = {
 
 // Ширина row_print кнопки в compact-режиме (две иконки InputGroup: print + chevron).
 const ROW_PRINT_BTN_WIDTH = 65
-// Отладка: каждый клик по действию строки — в консоль, ошибка обработчика — console.error
-const runRowAction = (action, row, via) => {
-  pvtLog(`${props.table}: клик «${action?.action || action?.label}» (${via}) по строке id=${row?.original?.id}`,
-    { hasClick: !!action?.click, action, row: row?.original })
-  if (!action?.click) { pvtLog(`${props.table}: у действия нет click — ничего не делаем`); return }
-  try {
-    const r = action.click(row.original, columns.value, props.table, filters)
-    if (r && typeof r.then === 'function') {
-      r.then(() => pvtLog(`${props.table}: «${action.action}» click завершён`))
-       .catch(e => pvtError(`${props.table} «${action.action}» click (async)`, e))
-    } else {
-      pvtLog(`${props.table}: «${action.action}» click вернул управление`)
-    }
-  } catch (e) {
-    pvtError(`${props.table} «${action.action}» click`, e)
-  }
-}
-
 const actionsColDef = computed(() => ({
   id: '__actions__',
   size:
@@ -569,18 +548,21 @@ const actionsColDef = computed(() => ({
             table: props.table,
             filters,
             action,
-            'onAction-click': () => runRowAction(action, row, 'template'),
+            'onAction-click': () => action.click?.(row.original, columns.value, props.table, filters),
           })
         : h('button', {
             class: `tan-action-btn ${action.class || ''}`,
             title: action.label || '',
-            onClick: () => runRowAction(action, row, 'button'),
+            onClick: () => action.click?.(row.original, columns.value, props.table, filters),
           }, h('i', { class: action.icon || 'pi pi-cog' }))
     ).filter(Boolean),
     SpeedDialEnabled.value
       ? h(PVTablesSplitButton, {
           actions: nemu_actions.value,
-          onPvtablesMenuAction: (e) => runRowAction(nemu_actions.value[e.action] || { action: e.action }, row, 'menu'),
+          onPvtablesMenuAction: (e) => {
+            if (nemu_actions.value[e.action]?.click)
+              nemu_actions.value[e.action].click(row.original, columns.value, props.table, filters)
+          },
         })
       : null,
   ]),
@@ -1302,7 +1284,6 @@ watch(lineItems, (rows) => {
   const sameRows = topRowId != null && Array.isArray(rows) && rows.some(r => r && r.id == topRowId)
   nextTick(() => {
     if (!suppress && !_scrollToLastPending && !sameRows) {
-      if (scrollRef.value && scrollRef.value.scrollTop) pvtLog(`${props.table}: lineItems обновились — прокрутка в начало (было ${scrollRef.value.scrollTop}px)`)
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
       // После обновления lineItems cell.id может измениться (пустая строка → реальная запись).
@@ -1364,8 +1345,6 @@ const onToggleColumns = (val) => {
 
 // ─── Initialization (mirrors PVTables.vue onMounted) ─────────────────────
 onMounted(async () => {
-  pvtInstallGlobal()
-  pvtLog(`${props.table}: TanTable mounted`)
   // Читаем реальный размер кнопки из CSS-переменной PrimeVue
   const cs = getComputedStyle(document.documentElement)
   const remVal = cs.getPropertyValue('--p-button-icon-only-width').trim()
@@ -1529,9 +1508,6 @@ onMounted(async () => {
     deleteLineItemDialog    = crudComposable.deleteLineItemDialog
     deleteLineItemsDialog   = crudComposable.deleteLineItemsDialog
     mywatch                 = crudComposable.mywatch
-    // Отладка: открылся ли диалог и с какой строкой
-    watch(lineItemDialog, v => pvtLog(`${props.table}: диалог редактирования ${v ? 'ОТКРЫТ' : 'закрыт'}`, v ? { ...lineItem.value } : ''))
-    watch(deleteLineItemDialog, v => pvtLog(`${props.table}: подтверждение удаления ${v ? 'ОТКРЫТО' : 'закрыто'}`))
     openNew                 = crudComposable.openNew
     editLineItem            = crudComposable.editLineItem
     hideDialog              = crudComposable.hideDialog

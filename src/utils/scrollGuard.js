@@ -10,7 +10,6 @@
 // паразитное. Запоминаем прокрутку страницы и всех таблиц (.tan-scroll вне окон) на открытии
 // и возвращаем её при каждом изменении, пока body заблокирован и ещё 400 мс после снятия
 // блокировки (закрытие тоже перекладывает страницу).
-import { pvtLog } from './pvtDebug'
 
 const RELEASE_MS = 400
 let active = null
@@ -23,13 +22,11 @@ const start = () => {
   const onEl = (e) => {
     const el = e.currentTarget, s = saved.get(el)
     if (!s || (el.scrollTop === s.top && el.scrollLeft === s.left)) return
-    pvtLog(`окно открыто: таблица сдвинулась ${Math.round(s.top)} → ${Math.round(el.scrollTop)} — возвращаю`)
     el.scrollTop = s.top
     el.scrollLeft = s.left
   }
   const onWin = () => {
     if (window.scrollY === winY && window.scrollX === winX) return
-    pvtLog(`окно открыто: страница сдвинулась ${winY} → ${window.scrollY} — возвращаю`)
     window.scrollTo(winX, winY)
   }
   els.forEach(el => el.addEventListener('scroll', onEl))
