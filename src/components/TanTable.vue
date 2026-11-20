@@ -218,6 +218,20 @@ const actions_row      = ref(false)
 const SpeedDialEnabled = ref(false)
 const speedDialActions = ref([])
 const modalFormDialog  = ref(false)
+// PrimeVue Dialog при открытии ставит фокус на первую кнопку окна (focus() без preventScroll),
+// и браузер прокручивает СТРАНИЦУ — таблица визуально прыгает вверх. Dialog шлёт 'show'
+// синхронно прямо перед focus(): запоминаем прокрутку и возвращаем её сразу после фокуса
+// (микрозадача — до отрисовки) и ещё раз в следующем кадре.
+const holdPageScroll = () => {
+  const x = window.scrollX, y = window.scrollY
+  const restore = (when) => {
+    if (window.scrollY === y && window.scrollX === x) return
+    pvtLog(`${props.table}: окно открылось и сдвинуло страницу ${y} → ${window.scrollY} — возвращаю (${when})`)
+    window.scrollTo(x, y)
+  }
+  Promise.resolve().then(() => restore('микрозадача'))
+  requestAnimationFrame(() => restore('кадр'))
+}
 watch(modalFormDialog, v => pvtLog(`${props.table}: модальная форма действия ${v ? 'ОТКРЫТА' : 'закрыта'}`))
 const modalFormData    = ref({})
 const modalFormAction  = ref(null)
@@ -1953,7 +1967,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     </div>
 
     <!-- ── CRUD Dialogs ── -->
-    <Dialog v-if="lineItemDialog" v-model:visible="lineItemDialog" modal class="tan-edit-dialog">
+    <Dialog @show="holdPageScroll" v-if="lineItemDialog" v-model:visible="lineItemDialog" modal class="tan-edit-dialog">
       <template #header>
         <div class="flex items-center justify-between gap-3 w-full">
           <span class="font-semibold">Редактировать</span>
@@ -1992,7 +2006,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       @restored="onVersionRestored"
     />
 
-    <Dialog v-if="deleteLineItemDialog" v-model:visible="deleteLineItemDialog" header="Confirm" modal>
+    <Dialog @show="holdPageScroll" v-if="deleteLineItemDialog" v-model:visible="deleteLineItemDialog" header="Confirm" modal>
       <div class="confirmation-content">
         <i class="pi pi-exclamation-triangle p-mr-3" style="font-size:2rem" />
         <span v-if="lineItem">Вы хотите удалить эту запись?</span>
@@ -2003,7 +2017,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
       </template>
     </Dialog>
 
-    <Dialog v-if="deleteLineItemsDialog" v-model:visible="deleteLineItemsDialog" header="Confirm" modal>
+    <Dialog @show="holdPageScroll" v-if="deleteLineItemsDialog" v-model:visible="deleteLineItemsDialog" header="Confirm" modal>
       <div class="confirmation-content">
         <i class="pi pi-exclamation-triangle p-mr-3" style="font-size:2rem" />
         <span>Вы хотите удалить отмеченные записи?</span>
@@ -2016,7 +2030,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
 
     <!-- Модальная форма действия. Поля берутся либо из конфига (modal_form),
          либо из ответа сервера — тогда приходят ещё заголовок, вкладки и кнопки. -->
-    <Dialog v-if="modalFormDialog" v-model:visible="modalFormDialog"
+    <Dialog @show="holdPageScroll" v-if="modalFormDialog" v-model:visible="modalFormDialog"
       :header="modalFormTitle || modalFormAction?.modal_form?.title || modalFormAction?.action || 'Действие'"
       :style="modalFormWidth ? { width: modalFormWidth } : undefined"
       modal>
@@ -2088,7 +2102,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
   />
 
   <!-- ── Прямой файл-браузер из ячейки (один клик) ── -->
-  <Dialog
+  <Dialog @show="holdPageScroll"
     v-model:visible="browserOpen"
     header="Выбор файла"
     :modal="true"
@@ -2110,7 +2124,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
   </Dialog>
 
   <!-- ── Image preview (для type=file изображений) ── -->
-  <Dialog
+  <Dialog @show="holdPageScroll"
     v-model:visible="imagePreviewOpen"
     :header="imagePreviewName || 'Превью'"
     :modal="true"
@@ -2158,7 +2172,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
   </Dialog>
 
   <!-- ── File field editor: отдельный Dialog, не Popover ── -->
-  <Dialog
+  <Dialog @show="holdPageScroll"
     v-model:visible="fileEditOpen"
     :header="activeFull?.col?.label ?? 'Файл'"
     :modal="true"
