@@ -58,6 +58,7 @@
 import EditField from "./EditField.vue";
 import PVFormBlocks from "./PVFormBlocks.vue";
 import apiCtor from './api.js'
+import { pvtLog } from '../utils/pvtDebug'
 import { useNotifications } from "./useNotifications";
 import VRuntimeTemplate from "vue3-runtime-template-next";
 import Tabs from 'primevue/tabs';
@@ -245,6 +246,7 @@ export default {
     }
   },
   created() {
+    pvtLog(`PVForm created: таблица=${this.mywatch.table || '-'}, watch=${this.mywatch.enabled ? JSON.stringify(this.mywatch.fields) : 'нет'}, полей=${(this.columns || []).length}`, { ...this.modelValue })
 
     // Установка активного таба по умолчанию
     if (this.form && this.form.tabs) {
@@ -406,6 +408,7 @@ export default {
       }
     },
     async watch_form(values, field, value, oldValue) {
+      pvtLog(`PVForm watch_form → ${this.mywatch.table}.${field}: ${oldValue} → ${value}`, { ...values })
       try {
         const response = await this.api.action('watch_form', {
           filters: this.mywatch.filters,
@@ -416,6 +419,7 @@ export default {
           oldValue: oldValue
         })
         
+        pvtLog(`PVForm watch_form ← ${this.mywatch.table}.${field}`, response)
         if (!response || !response.success) {
           const msg = (response && response.message) || 'сервер не вернул ответ'
           console.error(`[PVForm] watch_form ${this.mywatch.table}.${field}: ${msg}`, response)

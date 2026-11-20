@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useNotifications } from "./useNotifications";
+import { pvtLog } from "../utils/pvtDebug";
 
 // console.log(import.meta.env)
 
@@ -93,7 +94,9 @@ export default (tableName, timeout = 60000) => {
     },
 
     update: async (data = null, params = {}) => {
+      pvtLog(`api ${tableName} → update id=${data?.id}`, data)
       const response = await instance.patch('/', data, { params })
+      pvtLog(`api ${tableName} ← update id=${data?.id}`, response)
       return response
     },
 
@@ -136,7 +139,9 @@ export default (tableName, timeout = 60000) => {
         
       }
 
+      pvtLog(`api ${tableName} → action «${action}»`, params)
       const response = await instance.post('/', params, { params: query})
+      pvtLog(`api ${tableName} ← action «${action}»`, response)
       return response
     },
   }

@@ -1,5 +1,6 @@
 import { markRaw } from 'vue';
 import { compile } from 'vue';
+import { pvtLog, pvtError } from '../utils/pvtDebug';
 
 /**
  * Вычисляет default-значение поля с поддержкой магических значений.
@@ -379,6 +380,7 @@ export function usePVTableActions({
    * @param {String} type - Тип действия ('head' или 'row')
    */
   const showModalForm = (action, rowData, type) => {
+    pvtLog(`${props.table}: showModalForm «${action?.action}» (${type}), строка id=${rowData?.id}`, { action, rowData });
     modalFormAction.value = action;
     modalFormRowData.value = rowData;
     modalFormType.value = type;
@@ -403,7 +405,9 @@ export function usePVTableActions({
       }
     }
     
+    pvtLog(`${props.table}: showModalForm — поля и значения`, modalFormColumns.value.map(c => c.field), { ...modalFormData.value });
     modalFormDialog.value = true;
+    pvtLog(`${props.table}: showModalForm — modalFormDialog = true`);
   };
 
   /**
@@ -515,7 +519,8 @@ export function usePVTableActions({
    * Отправить данные модальной формы
    */
   const submitModalForm = async () => {
-    if (!modalFormAction.value) return;
+    pvtLog(`${props.table}: submitModalForm «${modalFormAction.value?.action}» (${modalFormType.value})`, { ...modalFormData.value });
+    if (!modalFormAction.value) { pvtLog(`${props.table}: submitModalForm — нет modalFormAction, выходим`); return; }
     
     let filters0 = prepFilters();
     let requestData = { ...modalFormData.value, filters: filters0 };
@@ -542,7 +547,9 @@ export function usePVTableActions({
       const actionName = action.action;
       const rowData = modalFormRowData.value;
       const type = modalFormType.value;
+      pvtLog(`${props.table}: submitModalForm → api.action «${actionName}»`, requestData);
       const resp = await api.action(actionName, requestData);
+      pvtLog(`${props.table}: submitModalForm ← ответ «${actionName}»`, resp);
       emit('get-response', {table: props.table, action: actionName, response: resp});
 
       if (!resp.success) {
@@ -560,7 +567,7 @@ export function usePVTableActions({
         refresh(false);
       }
     } catch (error) {
-      console.log('error', error);
+      pvtError(`${props.table} submitModalForm`, error, error?.payload || error?.response?.data);
       notify('error', { detail: error.message });
     }
   };
@@ -612,6 +619,7 @@ export function usePVTableActions({
    * @param {Object} tmp - Объект действия
    */
   const defRowAction = async (event, tmp) => {
+    pvtLog(`${props.table}: defRowAction «${tmp?.action}», строка id=${event?.id}, modal_form=${!!tmp?.modal_form}`);
     // Если есть modal_form, показываем форму
     if (tmp.modal_form) {
       showModalForm(tmp, event, 'row')
@@ -628,7 +636,9 @@ export function usePVTableActions({
     }
     
     try {
+      pvtLog(`${props.table}: defRowAction → api.action «${tmp.action}»`, requestData)
       const resp = await api.action(tmp.action, requestData)
+      pvtLog(`${props.table}: defRowAction ← ответ «${tmp.action}»`, resp)
       emit('get-response', {table:props.table,action:tmp.action,response:resp})
       if(!resp.success) {
         notify('error', { detail: resp.message });
@@ -637,7 +647,7 @@ export function usePVTableActions({
       }
       refresh(false)
     } catch (error) {
-      console.log('error',error)
+      pvtError(`${props.table} defRowAction «${tmp?.action}»`, error, error?.payload || error?.response?.data)
       notify('error', { detail: error.message });
     }
   };
