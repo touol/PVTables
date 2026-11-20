@@ -54,6 +54,7 @@ import { useTanCellSelection } from '../composables/useTanCellSelection'
 import { useMobileLayout }    from '../composables/useMobileLayout'
 import { useTanRowDrag }     from '../composables/useTanRowDrag'
 import { pvtLog, pvtError, pvtInstallGlobal } from '../utils/pvtDebug'
+import { guardScrollOnDialog } from '../utils/scrollGuard'
 
 import TanToolbar         from './TanToolbar.vue'
 import TanPaginator       from './TanPaginator.vue'
@@ -218,20 +219,8 @@ const actions_row      = ref(false)
 const SpeedDialEnabled = ref(false)
 const speedDialActions = ref([])
 const modalFormDialog  = ref(false)
-// PrimeVue Dialog при открытии ставит фокус на первую кнопку окна (focus() без preventScroll),
-// и браузер прокручивает СТРАНИЦУ — таблица визуально прыгает вверх. Dialog шлёт 'show'
-// синхронно прямо перед focus(): запоминаем прокрутку и возвращаем её сразу после фокуса
-// (микрозадача — до отрисовки) и ещё раз в следующем кадре.
-const holdPageScroll = () => {
-  const x = window.scrollX, y = window.scrollY
-  const restore = (when) => {
-    if (window.scrollY === y && window.scrollX === x) return
-    pvtLog(`${props.table}: окно открылось и сдвинуло страницу ${y} → ${window.scrollY} — возвращаю (${when})`)
-    window.scrollTo(x, y)
-  }
-  Promise.resolve().then(() => restore('микрозадача'))
-  requestAnimationFrame(() => restore('кадр'))
-}
+// Окна (Dialog) не должны сдвигать фон — см. utils/scrollGuard.js
+const holdPageScroll = guardScrollOnDialog
 watch(modalFormDialog, v => pvtLog(`${props.table}: модальная форма действия ${v ? 'ОТКРЫТА' : 'закрыта'}`))
 const modalFormData    = ref({})
 const modalFormAction  = ref(null)
