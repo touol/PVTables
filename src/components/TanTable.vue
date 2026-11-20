@@ -1280,11 +1280,25 @@ const resetVirtualizerCache = () => {
 }
 watch([tanSorting, expanded], () => { resetVirtualizerCache() }, { deep: true })
 
-watch(lineItems, () => {
+// Строка вверху видимой области — по ней решаем, тот же ли это набор строк после перезагрузки.
+// Запоминаем на прокрутке (а не в watch lineItems): к моменту watch flatItems уже новые.
+let topRowId = null
+const rememberTopRow = () => {
+  const el = scrollRef.value
+  if (!el || !virtualizer.value) { topRowId = null; return }
+  const top = el.scrollTop
+  const it = virtualizer.value.getVirtualItems().find(v => v.end > top && flatItems.value[v.index]?.type === 'row')
+  topRowId = it ? (flatItems.value[it.index]?.row.original?.id ?? null) : null
+}
+
+watch(lineItems, (rows) => {
   resetVirtualizerCache()
   const suppress = consumeSkip?.()
+  // Те же строки (обновили после действия, правки, ответа подтаблицы) — прокрутку не трогаем.
+  // В начало — только если набор строк сменился: фильтр, сортировка, страница.
+  const sameRows = topRowId != null && Array.isArray(rows) && rows.some(r => r && r.id == topRowId)
   nextTick(() => {
-    if (!suppress && !_scrollToLastPending) {
+    if (!suppress && !_scrollToLastPending && !sameRows) {
       if (scrollRef.value && scrollRef.value.scrollTop) pvtLog(`${props.table}: lineItems обновились — прокрутка в начало (было ${scrollRef.value.scrollTop}px)`)
       if (scrollRef.value) scrollRef.value.scrollTop = 0
     } else if (activeInline.value) {
@@ -1698,7 +1712,7 @@ defineExpose({ refresh, recalculateHeight: calculateTableHeight, scrollToLast, r
     </div>
 
     <!-- ── Scroll container ── -->
-    <div ref="scrollRef" class="tan-scroll" :class="{ 'tan-cell-select-mode': cellSelectionMode }" :style="autoFitHeight ? { height: localScrollHeight } : { maxHeight: localScrollHeight }">
+    <div ref="scrollRef" class="tan-scroll" @scroll.passive="rememberTopRow" :class="{ 'tan-cell-select-mode': cellSelectionMode }" :style="autoFitHeight ? { height: localScrollHeight } : { maxHeight: localScrollHeight }">
       <table class="tan-table" :style="{ width: tableInstance.getTotalSize() + 'px' }">
 
         <!-- HEAD -->
