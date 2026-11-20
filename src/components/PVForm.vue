@@ -130,8 +130,11 @@ export default {
       stop_watch_props: false,
       watchOld: {},
       watch_first: true,
-      api: null,
-      notify: null,
+      // Сразу в data(), а не в created(): watcher model с immediate срабатывает раньше
+      // created(), и watch_form при открытии формы падал на null-api, а catch — на
+      // null-notify («this.notify is not a function»), так что ошибка сервера терялась.
+      api: apiCtor(this.mywatch.table),
+      notify: useNotifications().notify,
       activeTab: null,
       usedFieldsInTabs: new Set()
     }
@@ -242,10 +245,7 @@ export default {
     }
   },
   created() {
-    this.api = apiCtor(this.mywatch.table)
-    const notifications = useNotifications()
-    this.notify = notifications.notify
-    
+
     // Установка активного таба по умолчанию
     if (this.form && this.form.tabs) {
       const firstTabKey = Object.keys(this.form.tabs)[0]
@@ -416,8 +416,10 @@ export default {
           oldValue: oldValue
         })
         
-        if (!response.success) {
-          this.notify('error', { detail: response.message }, true)
+        if (!response || !response.success) {
+          const msg = (response && response.message) || 'сервер не вернул ответ'
+          console.error(`[PVForm] watch_form ${this.mywatch.table}.${field}: ${msg}`, response)
+          this.notify('error', { detail: `Форма (${this.mywatch.table}, поле ${field}): ${msg}`, life: 10000 })
           return
         }
         
@@ -461,7 +463,10 @@ export default {
           }
         }
       } catch (error) {
-        this.notify('error', { detail: error.message }, true)
+        // Полностью — со стеком и ответом сервера (axios кладёт его в error.response)
+        console.error(`[PVForm] watch_form ${this.mywatch.table}.${field}:`, error, error?.response?.data)
+        const msg = error?.response?.data?.message || error?.message || String(error)
+        this.notify('error', { detail: `Форма (${this.mywatch.table}, поле ${field}): ${msg}`, life: 10000 })
       }
     }
   }
