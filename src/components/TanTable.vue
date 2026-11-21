@@ -579,8 +579,10 @@ const dataColDefs = computed(() =>
     // можно вернуть ту же шапку в пол-экрана.
     minSize: headerMinWidth(col),
     maxSize: 1200,
-    enableSorting: col.type !== 'html',
-    enableColumnFilter: col.type !== 'html',
+    // html-колонка показывает разметку: фильтр — если сервер умеет его по исходной колонке (filter_field) или
+    // по условию из конфига (filter_sql); сортировка — только по исходной колонке (filter_field)
+    enableSorting: col.type !== 'html' || !!col.filter_field,
+    enableColumnFilter: col.type !== 'html' || !!col.filter_field || !!col.filter_sql,
     filterFn: stringIncludesFilter,
     meta: col,
     cell: ({ getValue, row }) => {
