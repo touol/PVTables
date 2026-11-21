@@ -142,7 +142,7 @@ const {
 
 const { rowClass, rowStyle, cellClass, cellStyle } = useRowHighlight(row_setting, row_class_trigger)
 
-const rowsPerPage = ref(10)
+const rowsPerPage = ref(100)
 
 watch(dynamicSelects, (v) => {
   for (let k in v) selectSettings.value[k] = v[k]
@@ -1313,7 +1313,7 @@ watch(lineItems, (rows) => {
 })
 
 // ─── Paginator ────────────────────────────────────────────────────────────
-const currentPageSize = ref(10)
+const currentPageSize = ref(100)
 const currentPage  = computed(() => currentPageSize.value > 0 ? Math.floor(first.value / currentPageSize.value) + 1 : 1)
 const totalPages   = computed(() => currentPageSize.value > 0 ? Math.ceil(totalRecords.value / currentPageSize.value) : 1)
 
@@ -1354,7 +1354,7 @@ onMounted(async () => {
   }
 
   loading.value = true
-  lazyParams.value = { first: 0, rows: 10, sortField: null, sortOrder: null }
+  lazyParams.value = { first: 0, rows: 100, sortField: null, sortOrder: null }
   try {
     const response = await api.options()
     if (!response.data.hasOwnProperty('fields')) {

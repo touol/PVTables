@@ -649,7 +649,7 @@ function deleteLineItem() { _crudDeleteLineItem?.() }
 function doDeleteSelected() { _deleteSelectedLineItems?.() }
 
 // ─── Pagination ───────────────────────────────────────────────────────────
-const currentPageSize = ref(10)
+const currentPageSize = ref(100)
 const currentPage  = computed(() => currentPageSize.value > 0 ? Math.floor(first.value / currentPageSize.value) + 1 : 1)
 const totalPages   = computed(() => currentPageSize.value > 0 ? Math.ceil(totalRecords.value / currentPageSize.value) : 1)
 
