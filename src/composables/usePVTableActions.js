@@ -321,6 +321,18 @@ export function usePVTableActions({
           
         default:
           if (!tmp.hasOwnProperty("class")) tmp.class = "";
+          // Действие-ссылка (actions.*.link): адрес считает gtsAPI — у строки в row.gtsapi_links[имя],
+          // у кнопки шапки в tmp.href. Работает кнопкой строки, пунктом меню строки (menu: 1) и в шапке.
+          if (tmp.link) {
+            if (!tmp.hasOwnProperty("icon")) tmp.icon = "pi pi-external-link";
+            const linkName = action;
+            const openLink = (href) => {
+              if (!href) { notify('error', { detail: 'У ссылки нет адреса' }); return }
+              window.open(href, tmp.link.target || '_blank');
+            };
+            if (tmp.row && !tmp.click) tmp.click = (row) => openLink(row?.gtsapi_links?.[linkName]);
+            if (tmp.head && !tmp.head_click) tmp.head_click = () => openLink(tmp.href);
+          }
           if (!(tmp.head_click || tmp.click)) {
             if (tmp.head) tmp.head_click = () => defHeadAction(tmp);
             if (tmp.row) tmp.click = (event) => defRowAction(event, tmp);
